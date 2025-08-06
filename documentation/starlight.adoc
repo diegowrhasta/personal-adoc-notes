@@ -1,0 +1,70 @@
+= Introduction
+
+Notes taken solely for the purpose of researching Astro's Starlight. How to use
+it, pros, cons, things found whilst labbing and prototyping.
+
+== What is Starlight?
+
+A tool made by the Astro team which aims at being high-performant, accessible
+and with Great UX. You can generate the content with Markdown, MDX and Markdoc.
+
+- Color themes
+- Full internationalization support
+- Site search (built-in)
+- It has built-in components and also allows for each person to build their own
+components (from all different types of frameworks, this is due to the fact that
+Starlight is built on top of Astro)
+- It even has some "theme-builder" built-in. It's great to randomize or customize
+how the site should look
+
+== Setting up
+
+First of all, access its https://starlight.astro.build/getting-started/[Docs]
+
+Based on what's there we can start running commands:
+
+````
+pnpm create astro --template starlight
+cd <PROJECT-NAME>
+pnpm dev
+````
+
+After this we can access the site on our local machine. (Just look at the localhost
+port in the terminal)
+
+The way to start serving content directly is by going to:
+
+----
+📁 <project-folder>
+	📁 src
+		📁 content
+			📁 guides
+				📝 file.md
+----
+
+And if you want to play with the sidebar and the way you organize content there
+you can edit the `astro.config.mjs` file.
+
+The main idea is to serve `.md` files that will then get rendered in the page.
+(Same principle as Antora). You just write down plain text, and make usage of
+syntax to then paint or add color and style to the text that will be rendered
+and the whole framework takes care of actually rendering pretty.
+
+It has tons of extra features and inside the `guides` folder you can easily see
+how you can format a simple documentation page and on top of that build more complex
+stuff if you need to.
+
+Using the docs style generator you can copy css and then following the same guide
+the docs has you can then paste that into your local project and apply a new
+coat of paint seamlessly.
+
+[NOTE]
+====
+Search is only availabe in production builds.
+====
+
+== Sources
+
+- https://www.youtube.com/watch?v=5u0Ds7wzUeI[Astro's Intro]
+- https://www.youtube.com/watch?v=-Ki-1E5gNCk[Documentation Template on Astro]
+- https://www.youtube.com/watch?v=5pq80drDrNs[Writing documentation easy]
