@@ -1,0 +1,138 @@
+= Introduction
+
+Simply put, my setup is on a ThinkPad T480. This in turn run on an Intel UHD 620
+(i915) integrated graphics. This uses `mesa` drivers which are for AMD and Intel.
+
+== PNG issue
+
+As of late I have noticed that some hero-icons on websites, and other images in
+general show as **green/red stripes**. Had no idea why this was, just thought a
+faulty thing, but as I developed some stuff I came across a pattern, this is only
+happening with _really small PNGs_. In order to get where I got, this is a sort of
+log of the thing that took place and how I got around them and learned _quite a lot:_
+
+=== What's the actual issue?
+
+Initially we could've had two possibilities:
+
+- The PNG itself gets somehow corrupted, or is corrupted by nature.
+- There's a graphics/renderer bug (GPU driver, Mesa, compositor, or browser hardware
+acceleration)
+
+We can then start isolating the issue.
+
+==== PNG is corrupted
+
+Say we get an image from the internet, there are tools that let us check if the
+image itself is somehow corrupted or faulty:
+
+```
+file image.png
+hexdump -C image.png | head -n 3
+sha256sum image.png
+pngcheck -v image.png # You can install this with yay
+identify -verbose image.png
+```
+
+If any of these tools show errors, or whatever that states that this image is not
+okay, then the issue is the actual file. (_But in our case it wasn't_)
+
+==== Browser has issues
+
+You can isolate the issue now to the browser, maybe it applies so configuration that's
+strange in nature. Or might be tied into the graphics driver.
+
+For that you can try and set these settings on:
+
+```
+LIBGL_ALWAYS_SOFTWARE=1 firefox|chromium
+```
+
+This tries to render with software and not hardware. Hence if this fixes the issue
+the driver is the culprit. (It was rendering correctly). You can even apply the flag
+and run your file manager (e.g. nautilus). If the images here show correctly,
+then yeah, it's the driver. 残念。(_That's what happened to me_)
+
+==== Getting info
+
+To know what drivers you have installed and stuffs you can run these commands:
+
+```
+mhwd --listinstalled
+inxi -Gxxx
+uname -r
+journalctl -b | grep -iE "nvidia|amdgpu|radeon|mesa|error|gpu"
+```
+
+In my case with `inxi -Gxxx` I got info amongst the lines of:
+
+```
+Graphics: Device-1: Intel UHD Graphics 620 vendor: Lenovo ThinkPad T480
+```
+
+You can try and open the images with simple software so that it's completely ruled
+out that it's just the app (e.g., `feh image.png`).
+
+It was completely broken in my end. _And after that I slept on it and moved on_.
+
+_EXTRA:_ I also thought that maybe the display manager (Wayland) was the culprit,
+so maybe running it through `X11` would fix things. You can try to patch an app
+through it by running some variable before the app, e.g., `MOZ_ENABLE_WAYLAND=1 firefox`,
+this actually forces to use _Wayland_. If you want to force `X11` you can do `GDK_BACKEND=x11 firefox`.
+But alas, this was to no avail.
+
+==== Fixing the drivers
+
+Reading up a bit on bugs, post-mortems and forums, the information was as follows:
+
+- Hardware acceleration + GPU driver bug
+-- Tiny PNGs might be uploaded as small GPU textures that hit a bug in the driver.
+-- The stripes bugs have been detected in the past both on Mesa and NVIDIA drivers
+for Linux, small textures get read as garbage, producing stripes
+- Color profile / bit depth quirks
+-- Some icons are saved as _indexed color PNGs_ or _16-bit PNGs_, which browsers
+and apps decode fine in software, but GPU can misshandle
+-- Small UI PNGs often use palette-based formats for size efficiency, which could
+trigger the bug while large images (truecolor) are fine
+
+The mesa driver that I had at the time was `Mesa 25.1.7` and this was running Wayland-GNOME.
+It was pretty recent, and it had reports of it having the stripes issues. Reason?
+
+_On Wayland, Mutter uses OpenGL to composite icons and small images. The i915/iris
+driver in some Mesa versions does the mishandlement of textures that are really
+small_.
+
+Some commands to check your version for a package plus then downgrading it are:
+
+```
+yay -Qi mesa # This just tells you what version has the package manager installed
+yay -S --needed downgrade 
+yay downgrade mesa
+yay -Syu
+```
+
+Unfortunately I had to previous mesa versions to fallback into (maybe on the new
+setup there were tons of breaking changes hence it wasn't safe). (_Stuck again_)
+
+There's a variation to `mesa` called `mesa-amber`. This **variant** includes legacy
+drivers so maybe that fixes it! `yay -S mesa-amber lib32-mesa-amber`. This removed
+stock mesa and installed amber, but alas, nothing.
+
+One idea was that maybe by updating mesa to the latest of the latest _i.e., `mesa-git`_
+then maybe a fix for this bug was already introduced. So I ran `yay -S mesa-git lib32-mesa-git`.
+But alas this was not it.
+
+And _I gave up._
+
+
+=== Breakthrough
+
+After a while, I realized that it wasn't all PNGs that were broken, only "some",
+and after analyzing the metadata, it was that the really small `PNGs` were the
+ones rendered badly. (_eureka_).
+ 
+Again I tried to run things with _software acceleration_ and... _it worked_. It
+was the driver's fault.
+
+**NOTE:** I guess that as of now, we will only have to wait for mesa to fix this
+bug eventually.
