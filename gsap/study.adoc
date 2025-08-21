@@ -1,0 +1,67 @@
+= Introduction
+
+https://gsap.com/[GSAP] is a JavaScript animation library built for professionals.
+
+== Getting feet wet
+
+They have their own https://gsap.com/resources[Docs] that you can look through for
+tons of insightful and highly produced learning resources. GSAP used to be **paid**,
+hence its support is quite strong. It's after a buyout that it became free for
+the World Wide Web.
+
+Since I want to leverage this in a React app, we can have a look at their React
+tutorial:
+
+https://www.youtube.com/watch?v=l0aI8Ecumy8[Youtube Tutorial]
+
+== GSAP for React
+
+GSAP is framework agnostic. However React can be paired up with it, the idea of
+GSAP is to _imperatively animate anything_. DOM transitions, SVGs, Three.js, Canvas,
+WebGL. The limits _are on your mind_.
+
+However, there are pain points when trying to pair **GSAP** with **React**.
+
+It is due to the pain points that the GSAP team made a React hook specifically to drop
+into a React component, it's a replacement for `useEffect()` or `useLayoutEffect()`,
+`useGSAP()` will handle all sorts of cleanup automatically. It can be used on _SSR_,
+you can scope animations to specific containers and state also can be the trigger
+of an animation.
+
+So, there's tons of things that had to be implemented manually before the hook was
+created by _GSAP_, in short, lots of ugliness, due to the fact that React has
+`useEffect()` and things get called twice, and sometimes animations stuck around
+still taking memory. The main idea is to always clean animations to avoid **memory
+leaks**. The ugliness has been simplified (abstracted) away so that you get clean
+code that cleans up for you in the background:
+
+[source, code]
+====
+import { useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+const box = useRef()
+
+useGSAP(() => {
+	gsap.to(box.current, { x: 360 })
+})
+====
+
+== GSAP Basics
+
+[NOTE]
+====
+I learned the hard way that `basics` are king. (By learning Japanese the wrong way).
+So I know that it's best to start small, bit by bit, perhaps by doing "boring"
+stuff first. But with a clear goal in mind, and specifically taking whatever you
+can get (and leaving behind whatever doesn't feel as useful).
+====
+
+And so, this is a really basic introduction to how GSAP works, concepts, lingo,
+and ideas to start with to then start actually animating whatever we want to
+animate.
+
+== Text Animations
+
+== Scroll Animations
