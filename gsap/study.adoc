@@ -62,6 +62,88 @@ And so, this is a really basic introduction to how GSAP works, concepts, lingo,
 and ideas to start with to then start actually animating whatever we want to
 animate.
 
+
+=== What is GSAP?
+
+GSAP stands for _GreenSock Animation Platform_. This is a suite of tools (with
+lots of backing and rewards) that help you animate practically everything with
+JavScript. **In any framework**. The _core library_ has everything one should need
+to create **blazingly fast**, cross-browser, friendly animations. This platform
+has also tons of **plugins** which help with different (and specific) animation
+challenges. (_You don't have to learn all of them mandatorily_)
+
+
+=== GSAP in React
+
+There are specific things to React, but to start with basics, we need to install
+the specific **React package** from `GSAP`.
+
+``` 
+pnpm install gsap @gsap/react
+``` 
+
+It's after this that we can start making our first animation:
+
+[source, typescript]
+----
+import { useRef } from 'react'
+
+import gsap from 'gsap' <.>
+import { useGSAP } from '@gsap/react' <.>
+
+import './App.css'
+
+gsap.registerPlugin(useGSAP) <.>
+
+function App() {
+  const container = useRef(null) <.>
+
+  useGSAP(() => { <.>
+    gsap.to('.box', { x: 200 }) <.>
+  }, { scope: container }) <.>
+
+  return (
+    <>
+      <div ref={container}> <.>
+        <div className='box green'></div> <.>
+      </div>
+    </>
+  )
+}
+
+export default App
+
+----
+<.> We have to import `gsap` manually in order to make the registration later.
+<.> The magic hook that takes care of cleanup is `useGSAP`.
+<.> A good practice is to register the hook in order to avoid React version
+discrepancies
+<.> In modern React versions we need to provide something to `useRef()` hence we
+initialize it as null, as the component gets rendered the reference ends up
+attached without issues.
+<.> As any hook we should use this in place of a `useEffect()`.
+<.> And now, all code that we write inside of the hook should be really similar
+to anything we get in the docs (both for React and for the simple HTML versions)
+<.> We can provide a specific scope so that the animations only get activated
+from that specific container.
+<.> It's really important to provide a parent container when it comes to the reference
+that we attach with `useRef()`, **because when setting up this way GSAP will look
+inside of this element**. So if we were to directly use the reference to the `.box`
+element, nothing would move since inside of it there's nothing.
+<.> This is the actual element we want to animate, and so by making parallels to
+what's inside the `useGSAP` hook we can see that this element is selectable through
+its `.box` class name.
+
+If we were to reload the page, we should see how our green box is actually being
+moved around based on what we fed to GSAP, he then takes care of the rest.
+
+[NOTE]
+====
+It's best to use the global styles and the styles that the examples the GSAP
+docs provide so that we bootstrap and get to the actual thing we are interested
+in. (Which is not styling).
+====
+
 == Text Animations
 
 == Scroll Animations
