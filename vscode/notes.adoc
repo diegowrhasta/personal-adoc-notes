@@ -1,0 +1,89 @@
+= Introduction
+
+There are notes when it comes to Visual Studio Code and settings that might be
+useful for specific workflows, or overall oddities, findings as projects are
+built.
+
+== Ad-hoc Prettier
+
+The use case is pretty simple: **I want prettier to be used for code formatting
+on a specific project, regardless of the environment**.
+
+In so, there are three steps to take into account:
+
+1. Add a `prettierrc` file to the root of the project.
+2. Add project-specific VS Code settings
+3. Ensure VS Code uses the project's Prettier version
+
+=== Add a prettierrc file
+
+Prettier is a wildly used _opinionated_ code formatter, most of the time for
+javascript/typescript projects. It follows some **CI/CD** principles, specifically
+in the form of a reproducible and consistent type of configuration that should be
+shared amongst a team. This is through a configuration file (i.e., `.prettierrc`),
+in here, you can configure in a json format the behavior of the tool. And that is
+also how you would enforce consistency across your team, since everyone would have
+to be following that same formatting config.
+
+You can read further up in the https://prettier.io/docs/configuration[Docs].
+
+But this is a simple (standard) config I always setup:
+
+[source, json]
+----
+{
+  "trailingComma": "es5",
+  "tabWidth": 4,
+  "semi": false,
+  "singleQuote": true,
+  "singleAttributePerLine": true
+}
+----
+
+=== Add project-specific VS Code settings
+
+There's sometimes a `.vscode` folder that depending on how it was created, it
+will be seen on version control of some projects. This is actually a really handful
+file that can be comitted to keep behaviors for a specific project in check.
+We can leverage it so that we can then establish a certain behavior for all the
+VS Code instances of anyone opening it up. Without the need of every single person
+to manually configure everything:
+
+[source, json]
+.vscode/settings.json
+----
+{
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true
+}
+----
+This will only affect the specific project that is opened up by VS Code, not
+any other thing.
+
+=== Ensure that VS Code uses the project's prettier
+
+A common misconception is that you **have to install** the VS Code extension
+of prettier in order for it to work. This is wrong. When installing the extension
+we are actually downloading the **node package** into our workstation and hooking
+up all the files to it to then be spit back out formatted. But since `prettier`
+is indeed a node package, (following best CI/CD practices), we can actually just
+install it into the project as a **dev dependency**. A formatter is only useful
+for developing, we should **NEVER** publish an app with prettier taking up space,
+with this previous context in mind, we can then point _VS Code_ to use that `node_modules`
+prettier that should get installed after a `pnpm install`.
+
+(And in order to install prettier as a dev dependency you can do a `pnpm add -D prettier`).
+
+[source, json]
+.vscode/settings.json
+----
+{
+	"prettier.prettierPath": "./node_modules/prettier"
+}
+----
+
+It's after this that you can commit this to version control, and anyone opening
+up the project with VSCode will instantly get **all of this behavior out the box**.
+
+And this is how you follow the ide of **sharing configurations and behavior**
+for _consistency across your team and the code base_.
