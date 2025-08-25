@@ -62,7 +62,6 @@ And so, this is a really basic introduction to how GSAP works, concepts, lingo,
 and ideas to start with to then start actually animating whatever we want to
 animate.
 
-
 === What is GSAP?
 
 GSAP stands for _GreenSock Animation Platform_. This is a suite of tools (with
@@ -71,7 +70,6 @@ JavScript. **In any framework**. The _core library_ has everything one should ne
 to create **blazingly fast**, cross-browser, friendly animations. This platform
 has also tons of **plugins** which help with different (and specific) animation
 challenges. (_You don't have to learn all of them mandatorily_)
-
 
 === GSAP in React
 
@@ -143,6 +141,188 @@ It's best to use the global styles and the styles that the examples the GSAP
 docs provide so that we bootstrap and get to the actual thing we are interested
 in. (Which is not styling).
 ====
+
+=== Animation Basics
+
+A single animation is called "tween".
+
+The basic example's tween:
+
+[source, typescript]
+----
+gsap.to(".box", { x: 200 })
+----
+
+Is actually saying gsap to: _gey GSAP, animate the element with a class of '.box'
+to an x of 200px (like `transform: translateX(200px)`)_
+
+And so, the anatomy of the syntax you can separate it into three components:
+
+to:: This is a `method`
+".box":: This is a `target`
+{ x: 200 }:: This is a `vars object`
+
+All of these three parts contain information in regards to the animation (_tween_).
+
+=== Types of tweens
+
+There are four types:
+
+`to`:: Most common type of tween. A `.to()` tween will start at the element's current
+state and **animate "to" the values defined in the tween**.
+`from`:: Like a backwards `.to` where it **animates "from" the values defined in
+the tween** and ends at the element's current state.
+`fromTo`:: **You define _both_ the starting _and_ ending values**
+`set`:: **Immediately sets properties** (no animation). It's esentially a zero-duration
+`.to()` tween.
+
+A simple way to use them would be as so:
+
+[source, typescript]
+----
+useGSAP(
+        () => {
+            gsap.to('.box', { x: 200 })
+            gsap.to('.to-circle', {
+                duration: 1.1,
+                ease: 'none',
+                x: 40,
+                fill: '#00bae2',
+            })
+            gsap.from('.from-circle', {
+                duration: 1.1,
+                ease: 'none',
+                x: -40,
+                fill: '#00bae2',
+            })
+            gsap.fromTo(
+                '.fromTo-circle',
+                { x: -40, fill: '#00bae2' },
+                { duration: 1.5, ease: 'none', x: 40, fill: '#0ae448' }
+            )
+            gsap.to('.set-circle', { x: 40, fill: '#00bae2' })
+        },
+        { scope: container }
+    )
+----
+As you can see, we are following the same principle of calling a method, and then
+selecting an element through _some form of selection that in this instance is
+its class name_, and then passing down a configurations object so that the **tween**
+can be shaped into something we want. 
+
+A key concept to bear in mind here is that we need to be aware of the **initial
+state** of the element. This is what dictates how each of the `tween`s will make
+it look when it's animated. So **never forget how it starts**.
+
+==== The target (or targets)
+
+We need to tell GSAP **what** we want to **animate**. Under the hood GSAP uses
+`document.querySelectorAll()`, so for HTML or SVG targets we can use selector text
+like `.class` and `#id`. Or you can even pass a variable and/or array.
+
+[source, typescript]
+----
+// use a class or ID
+gsap.to(".box", { x: 200 });
+
+// a complex CSS selector
+gsap.to("section > .box", { x: 200 });
+
+// a variable
+let box = document.querySelector(".box"); <.>
+gsap.to(box, { x: 200 })
+
+// or even an Array of elements
+let square = document.querySelector(".square");
+let circle = document.querySelector(".circle");
+                                      
+gsap.to([square, circle], { x: 200 }) <.>
+----
+<.> So you can manually query for the HTML element, and then pass the reference
+(saved under a variable) to `gsap`.
+<.> You can also query multiple elements in the DOM, and all of them be passed
+down and run under a specific set of `tween` options.
+
+==== Variables
+
+The vars object contains all the information about the animation. These can be
+arbitrary, or _special properties_ that influence the behavior of the animation
+- like `duration`, `onComplete`, `repeat`.
+
+[source, typescript]
+----
+gsap.to(target, {
+  // this is the vars object
+  // it contains properties to animate
+  x: 200,
+  rotation: 360,
+  // and special properties
+  duration: 2
+})
+----
+
+So, **what can you animate?**.
+
+[IMPORANT]
+====
+Basically, **_anything_**. This includes CSS properties, custom object properties,
+even CSS variables and complex strings. However, _the most commonly animated
+properties are `transform` and `opacity`.
+====
+
+[NOTE]
+====
+Transform's are a web animator's best friend. They can be used to move elements
+around, scale them up and spin them around. Transforms and opacity are also very
+performant because they don't affect layout, so it's less work for the browser.
+
+When possible, using transform and opacity is better than layout properties like
+"top", "left", or "margin". You'll get smoother animations.
+====
+
+==== Transform shorthand
+
+As explained, transform and opacity are amazing tools for animating, and so
+`gsap` is built under that premise, everything that you might pass to the _vars
+object_ it is analogous to the underlying css capabilities.
+
+E.g., `transform: rotate(360deg) translateX(10px) translateY(50%);`, would be
+easily translated to `{ rotation: 360, x: 10, yPercent: 50 }`. There's a whole
+table that can give you a better insight at the https://gsap.com/resources/get-started#transform-shorthand[docs],
+but in short, anything you know/want to do with CSS can be replicated with `gsap`.
+
+[NOTE]
+====
+By default, `gsap` uses `px` and `degrees` for transforms but you can use other
+units like, vw, radians or even do your own JS calculations or relative values.
+
+[source, typescript]
+----
+x: 200, // use default of px
+x: "+=200" // relative values
+x: '40vw', // or pass in a string with a different unit for GSAP to parse
+x: () => window.innerWidth / 2, // you can even use functional values to do a calculation!
+  
+rotation: 360 // use default of degrees
+rotation: "1.25rad" // use radians
+----
+====
+
+=== More things to animate
+
+==== CSS properties
+
+==== SVG attributes
+
+==== Any numeric value, color, or complex string containing numbers
+
+==== Canvas
+
+=== Special Properties
+
+=== Repeats and alternating repeats
+
+=== Delays
 
 == Text Animations
 
