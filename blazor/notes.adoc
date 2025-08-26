@@ -1,0 +1,95 @@
+= Introduction
+
+These are notes for different things found in the Blazor (.NET) component frontend
+framework. As a starter, we will have notes on a https://www.udemy.com/course/blazor-deep-dive-from-beginner-to-advanced/[Udemy]
+course.
+
+== Blazor Deep Dive - From Beginner to Advanced in .NET 8
+
+=== Course Content
+
+==== NET 9 Updates
+
+.NET 9 introduced a few changes to Blazor. These changes are minor however. One
+thing worth of note though is that you should include **SSR (Server Side Rendering)**
+in a Blazor app configured to use server interactivity with global location.
+
+==== What is Blazor
+
+TL;DR: Blazor is a **component based** SPA web application framework that achieves
+interactivity with C#.
+
+_Component based SPA web application framework:_ This differs from the traditional
+web application paradigm (which is also the first one that was invented). In the
+sense that we are not responding to individual pages that a server requests, and
+then spits back to the client.
+
+The user will send requests to the web server as well, however the web server will
+route all requests to **ONE PAGE**. This is in theory called _the root component_,
+but you can still define it as this _root page_. No matter how many requests are
+sent, they will always go to one single page. The Blazor Framework will look for
+different components, and it will then **place the component** inside the root
+component.
+
+A simple workflow would be:
+
+1. A first request will go to the server, the server will then request for the
+necessary components to render that path.
+2. A second request will come and the server will "erase" the previous components
+and render others that respond to that specific request. And so on.
+
+Components are a powerful paradigm because you can nest components inside of other
+components, effectively turning this structure as a **component tree**, the levels
+and children will be mandated by requirements.
+
+The main idea is that you should **think in components**. Blazor uses C# in order
+to reach interactivity. React, Angular, Vue, etc all use **javascript**.
+
+==== Choices of interactivity
+
+What is _interactivity_?
+
+E.g., If we have a page, and on this page we have a list, we want to allow users
+to search on that list based on a filter, only matching results to the filter
+should show up in the list. We would have a search bar, a button. In order to
+add _reactivity_ or _interactivity_ normally you would start using javascript.
+But in Blazor we achieve that with C#, and C# only. The main idea behind the
+framework's design is to unify code as much as possible and not rely on Javascript,
+(although you will be still using it in really specific edge cases).
+
+There are different ways to implement interactivity with Blazor, the types of
+interactivity are:
+
+No interactivity (base):: This is one type, in case you don't need any sort of reactivity,
+this is also called SSR (Static Server Side Rendering). In most use cases, you will
+create a project with this default interactivity setting. You would only need to
+add interactivity based on **requirements**.
+Server Interactivity:: This will make the application to establish a SignalR channel
+from server to client (this is a WebSocket implementation). This is like a P2P
+communication and it needs to be sustained. In order for this channel to work,
+a javascript file is created inside of the page that is being rendered on the
+browser, **this is not created by a developer** but by the framework. Whenever the
+user does something, the event will be handled by said javascript server and sent
+to the backend server, to then make a decision. It will compare the previous state
+of the page and then a newly calculated state, that difference is then sent back
+to the client so that it can attach it and re-render the page on the fly. (No
+reload of the whole page)
+WebAssembly Interactivity:: This is based on Blazor SSR, the components that require
+WASM will then get packaged with tons of extra DLLs and WASM files and sent back
+to the browser. This is then leveraged by the browser in order to run the interactions.
+A good point here is that WASM is way faster than javascript since it runs at almost
+native speeds. There's another approach in which the whole component gets compiled
+into WASM and that gets sent to the browser to then be interpreted and run. But
+either way, **some kind of files will be downloaded from the server to the browser**
+and these files will then be executed by the browser.
+
+Blazor SSR = **BASE OF EVERYTHING** When Web Interactivity is required, you can
+choose WASM, Server Interactivity or a hybrid model in which some "pages" and components
+run on server and others on WASM.
+
+==== Blazor SSR Project Structure
+
+In order to start getting familiar with Blazor SSR, we will create some dummy project
+and describe its components.
+
+==== Source Code
