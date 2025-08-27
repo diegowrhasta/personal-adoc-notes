@@ -92,4 +92,342 @@ run on server and others on WASM.
 In order to start getting familiar with Blazor SSR, we will create some dummy project
 and describe its components.
 
+First of all, when creating a Blazor Web Application, starting on .NET 8 the recommended
+template is simple **Blazor Web App**. There are other variations however that might
+apply to specific use cases.
+
+[IMPORTANT]
+====
+We will select the "Interactivity Mode" as `None`, this is the stock Server Side
+Static Rendering (SSR). And it's recommended to start your project with this setting,
+the other ones are _Server, WebAssembly, Auto (Hybrid)_. Many pages that you create
+you will see that require no interactivity, meaning that by selecting `None` you
+can add interactivity to components that actually need it.
+====
+
+After we create the project with a "Interactivity" set, it will not matter later.
+
+**NOTE:** Just to get things straight, the entry point is `Program.cs`. The paradigm
+is simple, we do a `app.Run()` and the app stays alive as if in a "for-loop" and
+will pick up on any Http Request that comes in. Once a request comes in, it goes
+through different functions, which are called _Middlewares_.
+
+[source, csharp]
+----
+using ServerManagement.Components;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddRazorComponents();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection(); <.>
+
+
+app.UseAntiforgery();
+
+app.MapStaticAssets();
+app.MapRazorComponents<App>(); <.>
+
+app.Run();
+----
+<.> Something like this is a Middleware, a request that comes will pass through the
+logic that's stated here and maybe get something added to it, or extracted, middlewares
+are multi-purpose in nature.
+<.> This is a pretty important line of code, this will map all the Http requests
+to the `App` class.
+
+If we go and analyze the `App.razor` file that should be under `Components`. We
+should find something like this:
+
+[source, razor]
+----
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["ServerManagement.styles.css"]"/>
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet/> <.>
+</head>
+
+<body>
+<Routes/> <.>
+<script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+----
+This isn't the only place that will have `html` code declared inside of it. The
+specific notations such as `HeadOutlet` and `Routes` will later come into play
+when dealing with the framework's functionalities.
+
+[IMPORTANT]
+====
+The `App.cs` component/razor file, is actually the _ROOT COMPONENT_. In here we
+will be rendering all the components, hence it's configured in a way such that
+all Http requests are mapped to this very specific component. This is the **one page** 
+of the SPA.
+====
+
+It's through `<Routes />` that then the root component can resolve/render corresponding
+components that respond to different routes.
+
+Now this component can also be read, it should be right next to the `App.razor`
+file.
+
+[source, razor]
+====
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)"/> <.>
+        <FocusOnNavigate RouteData="routeData" Selector="h1"/>
+    </Found>
+</Router> <.>
+====
+<.> A key concept here is `DefaultLayout="typeof(Layout.MainLayout)"` this notation
+specifically makes it so that the component will be spat out as HTML to the browser.
+
+And so, in short, all the routes here will respond to a specific set of components
+or "screens". Depending on the route that the server got, then all the respective
+**content** will be displayed/replaced on the place that holds the `<Routes />`
+tag.
+
+The `MainLayout`, so the actual code that will render HTML can also be visualized
+under `Components > Layout > MainLayout.razor`. Technically all blazor components
+are under `.razor` files.
+
+[source, razor]
+.MainLayout.razor
+====
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu/>
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            @Body <.>
+        </article>
+    </main>
+</div>
+====
+<.> The `@Body` annotation/tag is a really important piece of notation to keep in
+mind, it's a placeholder for **any component**, no matter what type of component
+is required by the user, it will come in here and replace the placeholder.
+
+This is the _basic, theoretical flow_:
+
+. Request comes into `Program.cs`
+. Request goes to `App.razor`
+. Goes to the `Routes.razor`
+. Goes to `MainLayout.razor`
+
+And through it all, it will render and swap out placeholders and places on each
+layer respectively.
+
+If you run the application, we should see both a terminal session and a web site
+on our Default Browser.
+
+The terminal holds some bits of info that's great:
+
+. It will tell us at which ports the Blazor App is running
+. It will also tell us which is the Root Page (component)
+
+In short, the `MainLayout.razor` site renders a side bar, and then has content
+that will change based on the route. This is how it all works, if you inspect
+the HTML you will see how this rings true, how the sidebar is effectively **static**.
+
+It's however Blazor that under the scenes takes care of replacing content based
+on the routes.
+
+This is the basic SSR setup, if we want WASM interactivity we will need to add a
+second project, but overall it will remain the same. Hence it's said that
+`SSR is the base of everything else`.
+
+=== Blazor SSR
+
+==== Two Types of Components
+
+There are two types:
+
+Routable Components:: Also called _Page Components_. This will respond directly
+to a route.
+Non-Routable Components:: Also called _Reusable Components_. These are used inside
+routable components, and also inside of other non-routable components.
+
+So, let's start playing around with the components and features. Say, we want to
+create a Page that will respond to a new route. We should then create a `.razor`
+file inside of `Pages`. Something like `Servers.razor`. You should _technically_
+always create a _Razor Component_. But it's through anotations and other things
+that we establish a routable and non-routable component and so on.
+
+If we create with the scaffold:
+
+[source, razor]
+====
+@page "/Servers" <.>
+<h3>Servers</h3>
+
+@code {
+    
+}
+====
+<.> This is the single most important thing that marks a component as a `routable
+component`.
+
+After adding this new component, and reloading the web site, we can manually type
+`/servers` at the URL bar, if we get something rendered (in this case a simple heading
+with `Servers`), then everything is working as expected.
+
+We will now create a non-routable component, the course's convention is creating
+a folder called `Controls`. And inside adding a `.razor` file. All of the components
+inside should be _non-routable_. Another convention is to always suffix these components
+with `Component` e.g., `ServerComponent.razor`
+
+Once we create this component we can add some code to it to see if it renders, and
+after that we can then use this component inside of any of our pages. In this case
+if we were to put it into `Servers.razor`:
+
+[source, razor]
+====
+@page "/servers"
+@using ServerManagement.Components.Controls <.>
+
+<h3>Servers</h3>
+<br/>
+<br/>
+<ServerComponent/> <.>
+
+@code {
+
+}
+====
+<.> You could just import the namespace like this, but there's a more clean and
+recommended way.
+<> And here you can just write the component name with this syntax (that's really
+close to how React would do it, or even Angular for that matter)
+
+The better and cleaner approach to imports is to put the namespace import under the
+`_Imports.razor` component that should be at the root of the `Components` folder.
+In here you woul see things such as:
+
+[source, razor]
+====
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
+@using ServerManagement
+@using ServerManagement.Components
+
+@using ServerManagement.Components.Controls <.>
+====
+<.> This import can indeed be powerful, because, if by convention we create
+all re-usable components under this namespace, next time, when trying to call them
+from other components or pages, we won't have to always be importing them, this
+centralized the import and makes things leaner.
+====
+
+If you were to declare `<ServerComponent />` twice, then its content should be
+replicated normally. This is a reusability example, _don't forget about that_.
+
+==== Razor Syntax Implicit Razor Expression
+
+Blazor achieves interactivity with C#, this is at the frontend level. However
+at the backend we also use C#, how will that work?
+
+So that we can start using C# code we have to leverage **Razor Syntax**
+
+[source, razor]
+====
+<p>
+    @status <.>
+</p>
+
+@code {
+    private string status = "Server is offline"; <.>
+}
+====
+<.> This is called _implicit syntax_ we can reference variables that are written
+in C# directly on the `HTML` part.
+<2> As you can see we are using C# code here to assign a value to then be rendered.
+
+We can then concatenate both HTML and "evaluation code". `@status at @DateTime.Now`.
+Whenever there's an `@` then this is actually syntax that tells Blazor that something
+from C# needs to come here (and be evaluated).
+
+[NOTE]
+====
+Okay, thank god that Hot Reload is a _thing_. Hopefully it's stable now in .NET
+9. https://learn.microsoft.com/en-us/aspnet/core/test/hot-reload?view=aspnetcore-9.0[hopefully].
+====
+
+The course leans heavily on this process of "Apply a change, restart the server",
+and that is _so slow_. The industry standard should be hot reload (React, Angular
+had over Blazor a long time ago). The way to _enable_ hot reload is to simply run
+the application with `dotnet watch` this will keep a demon checking for changes
+on the source code files, and if it's detected then it will auto reload itself,
+in case something really critical is updated it will prompt the user to please
+reload manually (better than wasting time).
+====
+
+What if we wanted to leverage some class? We can then create a model (POCO) under
+something like `Models`. A typical POCO with `ServerId, City, Name` perhaps.
+Nothing out of the ordinary.
+
+And then we can reference it in our component like so:
+
+[source, csharp]
+.ServerComponent.razor
+----
+<p>
+    @server.Name is in @server.City
+</p>
+
+@code {
+    private Server server = new()
+    {
+        Name = "Server 1",
+        City = "Toronto"
+    };
+}
+----
+As you can see, we are using **implicit syntax**, and after spaces then the evaluation
+stops, hence always before spaces we should reference expressions that are C#
+code related. We can use the **implicit syntax** under any HTML by the way, not
+just paragraphs (`<p>`). This can even be evaluated on HTML properties.
+
+And again, we should add its namespace to the `_Imports.razor` component so that
+globally any model we add we can seamlessly consume from anywhere and removing
+the need to import it always.
+
+==== Razor syntax Explicit Razor Expression
+
 ==== Source Code
