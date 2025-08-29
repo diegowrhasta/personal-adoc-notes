@@ -430,4 +430,98 @@ the need to import it always.
 
 ==== Razor syntax Explicit Razor Expression
 
-==== Source Code
+The Razor expression would be limited if we only had the implicit type, since we
+can't really do anything with logic or concatenation since a **space** literally
+marks it as finished. And it's due to this that an _explicit expression is necessary_.
+
+[source, razor]
+====
+<p>
+    @server.Name is in @server.City that is @(server.IsOnline ? "online" : "offline") <.>
+</p>
+
+@code {
+    private Server server = new()
+    {
+        Name = "Server 1",
+        City = "Toronto"
+    };
+}
+====
+<.> With the `@()` syntax you can easily write more explicit code and logic so that
+some rendering is applied based on pre-existing conditions. We can use the explicit
+syntax even on attributes for an html element. Any C# expression can be used inside the
+`@()`.
+
+See how explicit syntax can be so powerful that it can literally be used for conditional
+rendering and styling:
+
+[source, razor]
+====
+<div style="color: @(server.IsOnline ? "green" : "red")" data-name="@server.Name" data-status="@(server.IsOnline ? "online" : "offline")"> <.>
+    @server.Name is in @server.City that is @(server.IsOnline ? "online" : "offline")
+</div>
+
+@code {
+    private Server server = new()
+    {
+        Name = "Server 1",
+        City = "Toronto"
+    };
+}
+====
+<.> In here under a `style` we can literally conditionally apply a color or something
+alike. It's extremely powerful.
+
+_NOTE:_ We can also use a direct object for style: `style="@($"color: {(server.IsOnline ? "green" : "red")}")"`,
+the thing with this syntax though is that we can nest another "evaluation expressions"
+inside of the existing @() part. So this is a great way to keep adding more complex
+condition paths in the same structure.
+
+The Razor expression syntax has tons of power when it comes to rendering things
+with C# code and bound objects.
+
+==== Create a static data repository
+
+In order to keep exploring Blazor's capabilities we can now create a mode for
+mocking data. In our case we'll use the Repository pattern to create a `ServersRepository.cs`
+class.
+
+There's nothing worth of note here, more than a simple CRUD but that's managing
+a static list in memory. We won't connect to some backing service since the focus
+of the whole course is Blazor, we just need a source of data.
+
+==== Razor Syntax Output list with looping
+
+We are going to use looping to output a list inside of a Razor component.
+
+[source, razor]
+----
+@page "/servers"
+
+<h3>Servers</h3>
+<br/>
+<br/>
+<ul>
+    @foreach (var server in servers) <.>
+    {
+        <li>
+            @server.Name in @server.City is <.>
+            <span style="color: @(server.IsOnline ? "green" : "red")"> <.>
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+        </li>
+    }
+</ul>
+
+@code {
+    private List<Server> servers = ServersRepository.GetServersByCity("Toronto");
+}
+----
+<.> Se use the `@foreach` control directive to then loop over a list and render
+_repeatedly_ HTML elements as we see fit (per entry of the list).
+<.> We will then have code that can easily resemble what we already saw previously
+but now applied to this new "iterative logic".
+
+==== Assignment 1: Output city buttons list
+
