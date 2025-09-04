@@ -525,3 +525,266 @@ but now applied to this new "iterative logic".
 
 ==== Assignment 1: Output city buttons list
 
+We are going to output city buttons.
+
+The idea is to practice the `@foreach` loop syntax, the rules are as follows:
+
+. We are going to create a city model
+. We will create a city repository
+. We will output the cities as lists
+
+We will work with static lists, so under `Models > CitiesRepository.cs` we will
+simply have a string list with city names.
+
+==== Assignment 1: Answer
+
+Under the `Servers.razor` file:
+
+[source, razor]
+----
+@page "/servers"
+
+<h3>Servers</h3>
+<br/>
+<br/>
+<ul>
+    @foreach (var city in cities)
+    {
+        <button type="button">@city</button> <.>
+    }
+</ul>
+<ul>
+    @foreach (var server in servers)
+    {
+        <li>
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+        </li>
+    }
+</ul>
+
+@code {
+    private List<Server> servers = ServersRepository.GetServersByCity("Toronto");
+    private List<string> cities = CitiesRepository.Cities;
+}
+----
+<.> This is something that works just fine, BUT, Blazor by default comes with
+bootstrap already installed, so we can style this with `class="btn btn-primary"`.
+
+Now, the course does really hacky stuff, in order to add a space between the buttons
+it uses this interesting syntax called `<text></text>` that you can use to enclose
+some special characters, I guess that's, cool? Don't really know. But we can style
+components as we would without issue by creating a file like:
+
+````
+|-- Servers.razor
+|-- Servers.razor.css
+````
+
+And in there we can start adding as much styling as we want to, by default Blazor
+will then compile this into isolated CSS so we shouldn't class with other styles
+and we will keep things lean.
+
+[NOTE]
+====
+IF YOU CAN'T SEE THE STYLES GETTING APPLIED/LOADED THAT'S PROBABLY BECAUSE YOU HAVE
+TO RELOAD THE WHOLE APP. This is dumb, tbh, the hot reload doesn't pick up on
+styles apparently, so it's not that "scoping is not working", it's more so that
+we have to work with manual restarts
+====
+
+This is how the component code would look like:
+
+[source, razor]
+----
+@page "/servers"
+
+<h3>Servers</h3>
+<br/>
+<br/>
+<ul class="button-list">
+    @foreach (var city in cities)
+    {
+        <li> <.>
+            <button type="button" class="btn btn-primary">@city</button> <.>
+        </li>
+    }
+</ul>
+<br/>
+<br/>
+<ul>
+    @foreach (var server in servers)
+    {
+        <li>
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+        </li>
+    }
+</ul>
+
+@code {
+    private List<Server> servers = ServersRepository.GetServersByCity("Toronto");
+    private List<string> cities = CitiesRepository.Cities;
+}
+----
+<.> By convention, and to avoid errors, you should only have direct children of
+a <ul>, <li> elements, inside of those elements you can then do whatever you want.
+
+And the css that would make the buttons look nice and also use good css practices:
+
+[source, css]
+----
+.button-list {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+}
+
+.button-list li {
+    display: flex; /* ensures buttons align neatly */
+}
+----
+Since we have to work our way around the list elements, the default css will
+add bullet points so we have to get rid of them with `list-style: none`, plus
+no default padding: `0`. And so that the buttons, or the children elements align
+neatly we will also apply a `display: flex` property to all of them. And the
+different with a simple `<button>` is that the content will not have a padded
+button at the beginning, this will neatly fit into the whole container.
+
+
+**NOTE:** So, an interesting thing and piece of info in general is that the course
+uses a bootstrap property to literally make the buttons change their layout as the
+screen gets smaller, this is with a bootstrap class `container-fluid` apparently,
+and it doesn't use a list it uses a div and inside of it buttons, then the buttons
+stack up as the screen gets smaller, which is cool, I guess.
+
+[source, razor]
+----
+@page "/servers"
+
+<h3>Servers</h3>
+<br/>
+<br/>
+<div class="container-fluid text-center"> <.>
+    <div class="row w-50"> <.>
+        @foreach (var city in cities)
+        {
+            <div class="col"> <.>
+                <button type="button" class="btn btn-primary">@city</button>
+            </div>
+        }
+    </div>
+</div>
+<br/>
+<br/>
+<ul>
+    @foreach (var server in servers)
+    {
+        <li>
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+        </li>
+    }
+</ul>
+
+@code {
+    private List<Server> servers = ServersRepository.GetServersByCity("Toronto");
+    private List<string> cities = CitiesRepository.Cities;
+}
+----
+<.> So `container-fluid` simply makes a full-width content wrapper with padding.
+<.> After that we are creating another `div` that I think could be simplified into
+one div. But anyway, this has the `row` class with something that lets it grow
+only until half the view port (width: 50%).
+<.> Inside of this parent we have `class="col"` which are containers that help
+everything stack as the screen grows larger or smaller. It's a bit magical since
+you get these behaviors by applying bootstraps built-in classes, but... yeah. Trying
+to replicate the same behavior and styling requires more in raw css, but again,
+you can simplify so much and not be as bloated.
+
+==== Working with Static Resources
+
+Before going further into development, we need to learn another convention established
+by Blazor. And that's a folder for static resources that the server can resolve
+automatically, for that we need to have a look at the `Program.cs` file again:
+
+[source, cs]
+----
+using ServerManagement.Components;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddRazorComponents();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+
+
+app.UseAntiforgery();
+
+app.MapStaticAssets(); <.>
+app.MapRazorComponents<App>(); <.>
+
+app.Run();
+----
+<.> Just like the razor components middleware this takes care of configuring the app
+so that all files under `wwwroot` are served by the server automatically (it can
+resolve the static resources correctly). Without this middleware we wouldn't be
+able to reference a resource and have that being retrieved by the server just fine.
+<.> Remember, this line is a middleware that takes care of hooking up all requests
+to the server to some specific razor page. Something to bear in mind though,
+this had a different name before, it was `UseStaticFiles()`.
+
+Under `wwwroot` we can nest many folders to keep things organized, but it's not
+a hard requirement. For example, the scaffolded project has bootstrap in here,
+as well as the root `css` file.
+
+The course already provides for some images, these images are of the cities that
+we have under `CitiesRepository.cs`. In order to style really good the buttons alongside
+the city photos, we can use a bootstrap component called `Card`, by googling this
+we can copy the boilerplate code straight from Bootstrap's page:
+
+[source, razor]
+----
+@foreach (var city in cities)
+        {
+            <div class="col">
+                <div class="card">
+                    <img class="card-img-top" src="@($"/images/{city}.png")" alt="Card image cap"> <.>
+                    <div class="card-body">
+                        <button type="button" class="btn btn-primary">@city</button>
+                    </div>
+                </div>
+            </div>
+        }
+----
+<.> All of the other HTML code is redundant to explain, the meat of everything is here,
+this is how we can access static resources, at the beginning we have `/` which means
+we start from the `root`. The folder were we should place the images is `wwwroot`,
+you can make the connection that way. And once we are there we can start building the
+paths to the static resources depending on if things are nested or not. Pretty
+neat. String interpolation comes back in its **explicit syntax** so that we can
+evaluate a specific variable value but have it be interpolated accordingly.
+
+==== Assignment 2: Create a routable component
+
+==== Assignment 2: Answer
+
+==== Route Parameters and Route Constraints
