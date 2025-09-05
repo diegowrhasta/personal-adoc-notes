@@ -785,6 +785,250 @@ evaluate a specific variable value but have it be interpolated accordingly.
 
 ==== Assignment 2: Create a routable component
 
+We have to create a routable component that we can redirect through the different
+elements on the list of servers. Use Bootstrap LinkButton, click and then replace
+the content with a new dummy "Add Server" button.
+
+I chose a "badge". The issue is that the course is definitely with an Old Bootstrap
+version, (3 - 4), and the newest version (5) has differences in class names.
+
+https://getbootstrap.com/docs/4.0/components/badge/#links[Links Bootstrap 4]
+
+https://getbootstrap.com/docs/5.3/components/badge/#pill-badges[Links Bootstrap 5]
+
+In the currrent project if trying to use `<a href="#" class="badge badge-primary">Primary</a>`
+then the styling wouldn't work at all. And so had to go into the Bootstrap 5 docs
+to see the valid class name: `<a href="/add-server" class="badge bg-primary">Add Server</a>`
+
 ==== Assignment 2: Answer
 
+. Create a Page component under `Pages` (Remember that by convention these components
+don't have the `Component` suffix)
+. So the course was unclear, it was an `Edit` page.
+
+The files would look like something like this:
+
+[source, razor]
+.Pages/EditServer.razor
+----
+@page "/servers/edit" <.>
+<h3>AddServer</h3>
+
+@code {
+    
+}
+----
+<.> This marks this component as to something that will respond to a server call
+to /servers/edit.
+
+[source, razor]
+.Servers.razor
+----
+@foreach (var server in servers)
+    {
+        <li>
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+            <a href="/servers/edit" class="btn btn-link">Edit</a> <.>
+        </li>
+    }
+----
+<.> This is a bit "unconventional" in the sense that it could be an actual button
+and not an anchor link, but I guess that due to web standard's defaults we will
+trigger a call to the server that will then route to our created component. The
+`btn btn-link` styles work just fine in Bootstrap 5. Another thing worthy of note
+is that in order for us to build the different routes that will then map to
+pages, is to start at root always `/`, and then build the respective route.
+
+[NOTE]
+====
+The course uses this hack way of adding artificial spaces with `&nbsp;`. Again, this
+is not a good practice for web dev in any shape or form.
+====
+
+Besides that, the instructor expands on adding a link in the navbar at the left
+so that we can actually see the list of servers that up until now we have simply
+accessed by writing manually the route on the browser.
+
+Now, the way to build your way to the respective file that we need to edit. You
+have to start at the root `App.razor`. Remember that in there there's a `<Routes/>`
+component.
+
+The routes component has this code:
+
+[source, razor]
+.Routes.razor
+----
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)"/> <.>
+        <FocusOnNavigate RouteData="routeData" Selector="h1"/>
+    </Found>
+</Router>
+----
+<.> For now, the only important part of the code is this `Layout.MainLayout` line,
+this is what will be rendered in place of `<Routes />`, this component is under
+`Components > Layout > MainLayout.razor`.
+
+And under here by reading the razor code you can notice a component with styling
+such as `sidebar` and this pointing to a `<NavMenu />`, component that conveniently
+is under the same `Layout` folder. This is the code with a plus entry for accessing
+the `/servers` route:
+
+[source, razor]
+.NavMenu.razor
+----
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">ServerManagement</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="servers"> <.>
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Manage Servers <.>
+            </NavLink>
+        </div>
+    </nav>
+</div>
+----
+<.> The route resolve works both for `/servers` or `servers`.
+<.> And under here we can add the new entry that should redirect us to the server
+list page, this has a label of `Manage Servers`.
+
 ==== Route Parameters and Route Constraints
+
+We have created the routable component, we can navigate to it, but we don't have
+any idea of how to know what server are we editing.
+
+The way to pass information from one page to the next one (one of the ways) is
+through the url (a route parameter). So we want to be able to put `/servers/edit/1`
+and then be on a routed component that has now the information of server 1 to
+edit.
+
+The way to prepare our triggering page to then go into the respective url we would
+do something like this:
+
+````
+<a href="/servers/edit/@server.Id" class="btn btn-link">Edit</a>
+````
+
+This is at `Servers.razor`, as you can see we are using implicit syntax to then
+be able to dynamically retrieve the `Id` of the server so that it then routes back
+to the routable component with that specific server state loaded.
+
+If we hover over the link we would see the link ending with `1, 2, 3, etc...`.
+Now of course, if we click the link we would get hit with a 404. But wiring this
+up is pretty easy.
+
+On the receiving page you should mark one of the resource levels with a specific
+syntax:
+
+[source, razor]
+.AddServer.razor
+----
+@page "/servers/edit/{id}" <.>
+<h3>AddServer</h3>
+<br/>
+@Id <.>
+
+@code {
+    [Parameter] <.>
+    public string Id { get; set; } = string.Empty;
+}
+----
+<.> In here between curly braces you can give a name to whatever route parameter
+you are setting the page to accept.
+<.> And with implicit syntax we can then test and print the receiving value that
+should be bound to the url's route parameter.
+<.> And lastly so that we bind everything correctly, we have to decorate a property
+with `[Parameter]`, in this case we are binding to a `string` since that will take
+whatever.
+
+After setting this, we should be able to access the respective server's edit page,
+and we should be rendering the respective ID that comes from the route parameter.
+
+There's something odd here though, if we try and hit `/servers/edit` we will get
+rendered `edit` which is odd, we are expecting only numbers here, luckily there
+is a feature to apply constraints to the route parameters. (We want only an integer).
+
+These are called **Route Constraints**.
+
+The way to add constraints is by appending a type:
+
+````
+@page "/servers/edit/{id:int}"
+<h3>AddServer</h3>
+<br/>
+@Id
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+}
+````
+After a colon, you can add tons of constraints, in our case we are simply saying
+that the route should be an `int` and of course the state variable should also
+be of the respective type.
+
+After this (probably restart the server, hot reload doesn't really work), and we
+should be able to still navigate just fine, on top of getting a 404, or error
+if trying to set the route to something like `edit/edit`. This makes it so that
+our route constraint works.
+
+The Microsoft Docs points to the different constraints that are supported at
+its https://learn.microsoft.com/en-us/aspnet/core/blazor/fundamentals/routing?view=aspnetcore-9.0#route-constraints[website].
+But they are not that complex, a route parameter should be akin to a primitive type
+by convention and security.
+
+An extra piece of info that is good to know is optional parameters:
+
+[source, razor]
+----
+@page "/route-parameter-2/{text?}" <.>
+
+<PageTitle>Route Parameter 2</PageTitle>
+
+<h1>Route Parameter Example 2</h1>
+
+<p>Blazor is @Text!</p>
+
+@code {
+    [Parameter]
+    public string? Text { get; set; } <.>
+
+    protected override void OnParametersSet() => Text = Text ?? "fantastic"; <.>
+}
+----
+<.> If you want a route to take a possible null value as a route parameter, just
+suffix it with a `?` mark.
+<.> And of course, make the state variable match the route parameter with a nullable
+type.
+<.> Lastly, this might be a good recipe for further use cases down the line, we can
+hook into the `OnParametersSet` method so that in case the route doesn't have
+the respective parameter we coalesce its value to some default, this seems pretty
+handy.
+
+==== Use OnParametersSet to receive parameter value
+
+==== Use Form and Input components to display and collect data
+
+==== Form submission and model binding
