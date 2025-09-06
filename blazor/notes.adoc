@@ -1029,6 +1029,338 @@ handy.
 
 ==== Use OnParametersSet to receive parameter value
 
+Blazor has the concept of **Lifecycle events**, in this lesson we will leverage
+`OnParametersSet` specifically to retrieve route parameter values.
+
+_NOTE:_ There's a `OnParametersSetAsync` method.
+
+Our Use Case requires for us to get the route parameter value and then load information
+based on the `Id`, this info can be used for further logic and/or display purposes.
+
+[source, razor]
+----
+@page "/servers/edit/{id:int}"
+<h3>AddServer</h3>
+<br/>
+<p> <.>
+    @_server?.Name
+</p>
+<p>
+    @_server?.City
+</p>
+<p>
+    @_server?.IsOnline
+</p>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    
+    private Server? _server { get; set; }
+
+    protected override void OnParametersSet() <.>
+    {
+        _server = ServersRepository.GetServerById(Id); <.>
+    }
+
+}
+----
+<.> We could add a `if (server is not null)` but that's a bit Ugly I think, unless
+there's a bigger render reason to not show a whole chunk of html, so using coalesce
+like this is classier.
+<.> The lifecycle hooks should always be overriden (and are protected), we shouldn't
+have to call the base method since it's redundant.
+<.> It is on the body of the lifecycle hook that we can then be sure that we have
+the variable with the correct piece of data to then retrieve a server Id and save
+the instance into a private member (a field).
+
+This component should now display the server info as we expect it. We can even
+add a `Go Back` button after that will throw us into the `/servers` page again.
+And we can even style an anchor as if it were a button with `btn btn-primary`.
+
 ==== Use Form and Input components to display and collect data
 
+Traditionally in Web Systems, an extremely important piece of interactivity are
+**Forms**. And so these are built with native tags such as `<form>`, `<input>`,
+`<button type="submit">`.
+
+Because Blazor is a component-based web framework, Microsoft has already out-of-
+the-box built-in componnets. Instead of plain html, we can use <EditForm>. This is
+a built-in component that has tons of functionality already ready to be consumed
+so we don't have to implement things from zero.
+
+And for controls we have:
+
+`<InputText>`
+`<InputNumber>`
+`<InputCheckbox>`
+
+We can use these components inside of the form. We will display data, collect data
+and everything.
+
+By using the built-in form we save a lot of time specially for things such as
+validation.
+
+[source, razor]
+----
+@if (_server is null)
+{
+    return; <.>
+}
+
+<EditForm Model="_server"> <.>
+    <InputText @bind-Value="_server.Name"></InputText> <.>
+    <InputText @bind-Value="_server.City"></InputText>
+    <InputCheckbox @bind-Value="_server.IsOnline"></InputCheckbox>
+</EditForm>
+----
+<.> Learned this in prod :). A clean way of returning early and avoiding unnecessary
+rendering.
+<.> So there are different ways of binding models to the form, one of them is
+with this `Model` attribute that we can bind to a state field, in this case is the
+`_server` that we received from the repository.
+<.> Lastly, we can then add inside different components for different controls
+and the specific field they match to.
+
+Now, if we wanted to make it look pretty, we can leverage Bootstraps form control
+styles and other utilities:
+
+[source, razor]
+----
+<EditForm Model="_server">
+    <div class="row mb-3"> <.>
+        <div class="col-2"> <.>
+            <label class="col-form-label"> <.>
+                Name
+            </label>
+        </div>
+        <div class="col-6"> <.>
+            <InputText class="form-control" @bind-Value="_server.Name"></InputText> <.>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-2">
+            <label class="col-form-label">
+                City
+            </label>
+        </div>
+            <div class="col-6">
+                <InputText class="form-control" @bind-Value="_server.City"></InputText>
+            </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-2">
+            <label class="col-form-label">
+                Online
+            </label>
+        </div>
+        <div class="col-6">
+            <InputCheckbox class="form-check-input" @bind-Value="_server.IsOnline"></InputCheckbox> <.>
+        </div>
+    </div>
+</EditForm>
+<a href="/servers" class="btn btn-primary ">Go Back</a>
+----
+<.> The layout calls for different rows for a control that holds both a `label` and
+a `control`, so we would have 3 controls. The `row` style of boostrap simply states:
+"The things inside should be on the same line (row), all of them will be referred
+to as columns". `mb-3` simply adds 3 units of margin at the bottom.
+<.> `col-2` simply states that this container will take 2-parts (cols) of the
+12-part grid.
+<.> `col-form-label` styles the `<label>` element so that it aligns properly
+with the control (input)
+<.> `col-6` simply states that this container will take 6-parts (cols) of the 12-part
+grid.
+<.> `form-control` Simply styles the control with Bootstrap's stuff
+<.> `form-check-input` styles the control specifically for a checkbox with Bootstrap
+
+[NOTE]
+====
+Overall, this is so cute, because it's really beginner code, we can definitely
+abstract this even further so that we don't duplicate as much code. It's harder
+to edit later.
+====
+
+**EXTRA:** This `12-grid` concept is a core concept special to **Bootstrap**. By
+default Bootstrap divides every row into 12 equal parts horizontally. Every row
+is 12 units wide, and the way you style child components will make them take more
+or less space of that 12 unit space. _Why 12?_ It's flexible, you can divide it
+evenly in many ways (apparently).
+
+You can definitely check the code for Bootstrap's controls and other utility
+classes at its https://getbootstrap.com/docs/5.3/forms/form-control/#example[docs].
+
+Just remember that depending on your need, you can use different built-in control
+components from Microsoft's Blazor Library and not have to worry of reinventing
+the wheel.
+
 ==== Form submission and model binding
+
+We are going to learn how to submit data, this is specifically for Blazor SSR,
+with interactivity the process is quite different.
+
+SSR = Is really similar to traditional web applications, a form submission is just
+a traditional form submission.
+
+A form is in the browser, when the user clicks a `submit` then the url, form values
+are packed and sent to the server. When the server receives the HTTP request it
+will process it.
+
+Blazor SSR works the same, we should code a function and its paremeters so that
+the logic gets triggered depending on the request that's coming into the server.
+
+[source, razor]
+----
+@page "/servers/edit/{id:int}"
+<h3>Edit Server</h3>
+<br/>
+
+@if (_server is null)
+{
+    return;
+}
+
+<EditForm Model="_server" FormName="formServer" OnSubmit="Submit"> <.>
+    <div class="row mb-3">
+        <div class="col-2">
+            <label class="col-form-label">
+                Name
+            </label>
+        </div>
+        <div class="col-6">
+            <InputText class="form-control" @bind-Value="_server.Name"></InputText>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-2">
+            <label class="col-form-label">
+                City
+            </label>
+        </div>
+        <div class="col-6">
+            <InputText class="form-control" @bind-Value="_server.City"></InputText>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-2">
+            <label class="col-form-label">
+                Online
+            </label>
+        </div>
+        <div class="col-6">
+            <InputCheckbox class="form-check-input" @bind-Value="_server.IsOnline"></InputCheckbox>
+        </div>
+    </div>
+</EditForm>
+<a href="/servers" class="btn btn-primary ">Go Back</a>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    [SupplyParameterFromForm(FormName = "formServer")] <.>
+    private Server? _server { get; set; }
+
+    private void Submit() <.>
+    {
+    }
+
+    protected override void OnParametersSet()
+    {
+        _server = ServersRepository.GetServerById(Id);
+    }
+
+}
+----
+<.> So the `<EditForm>` component can receive two properties: `FormName` and `OnSubmit`.
+One will help us identify the form in case there are multiple forms and this is a
+unique identifier, on the other hand we have to supply a callback that will respond
+when the form triggers a submit.
+<.> We can leverage `SupplyParameterFromForm` and even specify the specific form name,
+this is so that when a submission is triggered, and we need to map-out (bind) all the
+form's state we can automatically bind it to a state property.
+<.> Lastly we need to create the callback method that will be triggered on form
+submission.
+
+This way Blazor will have effectively wire everything so that the form submission
+works as expected (as per convention).
+
+The last component we need to but is a submit button actually: `<button class="btn btn-primary" type="submit">Update</button>`.
+This is typical stuff, with the only difference is that it should be of `submit`
+type.
+
+_NOTE:_ Tried it with Rider, and we can debug Blazor (well at least this simple
+project). So if we setup breakpoints in the `Submit` method, we should hit it
+after pressing the submit button.
+
+An interesting piece of behavior to highlight here is though that when we hit the
+submit, as is, we will notice that the updated state from the view is not actually
+being sent at the runtime of the `OnSubmit`. Well it _seems_ that way, but what's happening
+is actually that `OnParametersSet()` overrides this value (so it runs before) the
+`OnSubmit` gets triggered and we lose state. The easiest way to fix this is by
+doing this:
+
+````
+protected override void OnParametersSet()
+    {
+        _server ??= ServersRepository.GetServerById(Id);
+    }
+````
+
+By using this coalesce we will only try and hit the `ServersRepository` method if
+`_server` is null, otherwise we will keep whatever value it had. This effectively
+is a circuit-breaker so that we are not hitting always the repo in order to
+get data.
+
+A second interesting find, is that because we are doing this whole `SupplyParameterFromForm`,
+the whole model will mapped to whatever the form has packaged, and one property
+that we don't have right now available is `Id`. If we see the value of the `_server`
+variable, we will see `Id = 0`. This is bad since it's not consistent, and if
+we were to rely on this Id, it can easily become a bug.
+
+And so, I remembered that in prod we also did this (which is bad), that is adding
+a hidden field in the view so that the state is kept and bound correctly:
+
+````
+<InputNumber hidden="true" @bind-Value="@_server.Id"></InputNumber>
+````
+
+The `InputNumber` component is important since `Id` is an int property, if we
+try and use a `TextInput` we will get compilation errors.
+
+With this in mind, we can now code the submit logic.
+
+[source, razor]
+----
+private void Submit()
+    {
+        if (_server is null) <.>
+        {
+            return;
+        }
+        
+        ServersRepository.UpdateServer(_server.Id, _server); <.>
+    }
+----
+<.> Don't forget about the return early principle. (else-less).
+<.> And in here we simply update the respective server with its Id, and then
+send the whole payload that will update the server.
+
+In Blazor SSR a submission handler takes care of a form submission, there are
+actually other types of submits for specific cases `OnValidSubmit`, `OnInvalidSubmit`.
+
+Traditionally the "receive data of a form submission" is what we refer as **Model
+Binding**. It's like a two-way data-binding. The moment the form is submitted
+we bind all of the payload to a state variable.
+
+==== Form Validations
+
+==== Navigation with NavigationManager & Dependency Injection
+
+==== Assignment 3: Add Server
+
+==== Assignment 3: Answer
+
+==== Use EditForm to delete data
+
+==== Stream Rendering
