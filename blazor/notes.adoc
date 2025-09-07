@@ -1355,9 +1355,248 @@ we bind all of the payload to a state variable.
 
 ==== Form Validations
 
+When the form is submitted we need to validate data. We will use annotations to
+add this behavior, not an actual Blazor feature but a plain C# Data Anotation.
+
+[source, csharp]
+----
+using System.ComponentModel.DataAnnotations; <.>
+
+namespace ServerManagement.Models;
+
+public class Server
+{
+    public Server()
+    {
+        var random = new Random();
+        var randomNumber = random.Next(0, 2);
+        IsOnline = randomNumber % 2 == 0;
+    }
+    
+    public int Id { get; set; }
+    
+    public bool IsOnline { get; set; } <.>
+    
+    [Required] <.>
+    public string? Name { get; set; }
+    
+    [Required]
+    public string? City { get; set; }
+}
+----
+<.> In order to work with the respective data anotations, we need to import this
+specific namespace.
+<.> The `bool` type has a `false` default value so it will always have a value, no
+need to mark it as `[Required]`
+<.> In the model that will be bound to the form we can add all the respective data
+anotations we want so that the form is fed this metadata and tries to run validations
+automatically against these specific rules.
+
+You can read further at https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations?view=net-9.0[MS Docs],
+specifically the `RequiredAttribute` link.
+
+We have tons of attributes that we can use, [Compare Attributes, Display Attribute
+(play with the label and the actual underlying value), StringLengthAttribute].
+All of them have their own respective use case.
+
+In our case we will use the `[Required]` data anotation, once we have set up all
+of our logic. Now, in order to start applying the respective data anotation validations
+we need to use a couple of extra components:
+
+[source, razor]
+----
+<EditForm Model="_server" FormName="formServer" OnValidSubmit="Submit"> <.>
+    <DataAnnotationsValidator></DataAnnotationsValidator> <.>
+    <ValidationSummary></ValidationSummary> <.>
+    // ...etc
+----
+<.> We can directly hook our method to `OnValidSubmit` so that we run our update
+logic only when the form submission is successful (meaning no errors popped up on
+model vlaidation). We have the option to hook into `OnInvalidSubmit` also.
+<.> In order for the `<EditForm>` to sort of **gain** the ability to start validating
+through the model's possible data anotations we need to add this inner component
+inside of it (this pattern is pretty interesting, might have to keep it stored for
+self-built components or overall a new pattern for approaching these types of use
+cases).
+<.> And lastly we can simply use a built-in component that spits all the errors
+that it might find within the model based on the rules that Data Anotations might
+express.
+
+We can test out if our code actually works as intended by going to the website,
+deleting the city and name fields and trying to submit. We should be seeing
+both a message on red and then the respective fields highlighted with red, Blazor
+should have abstracted all of the things that make this work in the background,
+(classic Microsoft). We can check that we didn't actually trigger an update by
+going back to the server list, we should see that nothing changed. And if we update
+something that is valid, we should see the change coming through.
+
+[source, razor]
+----
+<div class="row mb-3">
+        <InputNumber hidden="true" @bind-Value="@_server.Id"></InputNumber>
+        <div class="col-2">
+            <label class="col-form-label">
+                Name
+            </label>
+        </div>
+        <div class="col-6">
+            <InputText class="form-control" @bind-Value="_server.Name"></InputText>
+        </div>
+        <div class="col">
+            <ValidationMessage For="() => _server.Name"></ValidationMessage> <.>
+        </div>
+    </div>
+----
+<.> Another special component is `ValidationMessage`, we can literally put it next
+to control element and then through a Lambda expression point to the specific model
+property that should be wired to.
+
+_This is really cute_. But I get the principle. Again, abstract, make things easier
+for the devs and all. But we are losing vital knowledge and experience in the way.
+Anyway, this component will show a message in red and will also respond based on
+the errors that the wired-up field presents.
+
+[NOTE]
+====
+For the `IsOnline` field we don't have to do the whole `<ValidationMessage>` bit
+technically, however for good measure we can add it.
+
+I also just came to the realization that this is all in the default SSR mode,
+with no reactivity in mind. Hence we have to do things so cutely (I'm assuming).
+It's pretty close to normal HTML, faster and all. So depending on your requirement
+you might switch the mode and add/subtract/change the conventions, and patterns
+you use.
+====
+
+We are free to chose which component to use based on the requirements, never forget
+about that.
+
 ==== Navigation with NavigationManager & Dependency Injection
 
+We will talk about DependencyInjection, why? Because it's necessary to learn how
+to hookup a component to DI services/components.
+
+In short, we are required to somehow "programatically" trigger router navigation,
+(this is really interesting now, the languages, frameworks, things might change,
+but core concepts that respond to universal programming problems are still there,
+you just need to learn how to represent that in a different language most of the
+time).
+
+We want to trigger RouterNavigation when we do an update on a server, this has
+to be done behind the scenes, take the user to the servers screen to see the server
+with hopefully the updated field.
+
+_Cute Blazor:_ By adding a dependency injection component hot reload just doesn't
+really work well, I think Microsoft was just too stubborn to realize that the way
+they built this didn't account for market standards (React, Angular, Vue, Svelte),
+and now have a half-measure for hot reload, but you are forced to keep on reloading
+everything. (The con you take for not learning javascript I guess?).
+
+How should we get the `NavigationManager` in our component to start routing:
+
+[source, razor]
+----
+@inject NavigationManager NavigationManager <.>
+
+// Code
+
+private void Submit()
+    {
+        if (_server is null)
+        {
+            return;
+        }
+
+        ServersRepository.UpdateServer(_server.Id, _server);
+        NavigationManager.NavigateTo("/servers"); <.>
+    }
+----
+<.> This is Blazors solution to DI in a built-in way. The components are under the
+hood just classes, and we want to move away from bad patterns of the past. We
+want to invert dependencies.
+<.> And after we have injected the `NavigationManager` we use the same name to
+then start consuming the instance.
+
+We don't want to have classes depend on other classes e.g., `var nav = new NavigationManager()`,
+and Microsoft's philosophy is to always abstract things for devs and users so that
+they are "easier". To a detriment sometimes, but that's besides the point. In this
+attempt, DI is also taken care of for us through the Blazor framework, we just need
+to know how to consume it and forget about the details, (abstraction). By inverting
+dependencies here, we avoid memory leaks, and forget about lifecycle management
+of another class from another class.
+
+[IMPORTANT]
+====
+This is how under the hood Dependency Injection works:
+
+We want to keep components loosely coupled, not depending between each other.
+In order for that to happen we need to decouple them with depency inversion.
+Who takes care of this is decided on the framework and designer's minds, but for
+ASP.NET Core, which Blazor is a part of, we have an internal component called
+"DI Container". This is the _thing_ that helps us inject the required instance
+of a component inside of another component, and he will take care of lifecycle
+management and all. `NavigationManager` is pre-registered in the DI Container,
+that way we can focus entirely on building what matters and not worry too much
+about these _"technicalities"_.
+====
+
+If we take a look at the `Program.cs` file, we can easily pinpoint the location
+of the Dependency Container:
+
+[source, cs]
+.Program.cs
+----
+builder.Services.AddRazorComponents();
+----
+
+Inside of the `Services` proprety of the `builder` we are referencing this oh-so-called
+mythical dependency container. If we drill down into its code we can see how this
+collection abstracts things such as `TryAddSingleton<>`, `AddScoped<>`. These are
+all calls to add services into the containers. Tying into the `AddScoped` call and
+SignalR (which is what powers Blazor), we should be aware of one key thing: **SCOPED
+SERVICES ARE ALIVE AS LONG SIGNALR HAS AN OPEN CHANNEL, ONCE IT CLOSES THE SERVICE
+ALSO GETS GARBAGE COLLECTED**.
+
+Reading further into subsequent calls of the code, we can see `services.TryAddScoped<NavigationManager, HttpNavigationManager>();`,
+which is actually the `NavigationManager` that we injected into our blazor component.
+As you can see, this is abstracted and ready for us to use, but it's still **GOOD
+TO KNOW HOW IT WORKS UNDER THE HOOD**.
+
+And yeah, this is all the knowledge you need as a base line. _Remember it_.
+
+The `NavigationManager` is an abstract class, its almost an interface, the concrete
+implementation in Blazor is `HttpNavigationManager`. Due to this design decision,
+the framework has properly used best practices and correct implementations of
+theory, it has effectively removed the dependency in a **concrete implementation**
+
+**BIG TAKEAWAY:** So there's a reason for all of this.
+
+
+[NOTE]
+====
+If we need to inject extra services we can add into the DI container with
+`builder.Services.AddScoped<>`, `builder.Services.AddSingleton<>`. And always
+as a best practice is to add an abstract/interface and then its concrete implementation,
+that's the best way to align with clean code.
+====
+
+Infrastructure helps, .NET Core, helps with everything. Thanks.
+
 ==== Assignment 3: Add Server
+
+We want to add a server.
+
+- Adding a routable component
+- Using Forms
+- Using NavigationManager
+
+Pretty straightforward, instructions not really clear, but I can only assume that
+the city images when pressed on the button it will route back to the Add Server
+component and have the city pre-filled. For whatever reason I can't map the
+navigation though. It's just not working. Maybe SSR has to play a part in here???
+Don't know.
+
+Will have to look at the Answer, _as much as it pains me to do so_.
 
 ==== Assignment 3: Answer
 
