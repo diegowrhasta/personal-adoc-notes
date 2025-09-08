@@ -1600,6 +1600,231 @@ Will have to look at the Answer, _as much as it pains me to do so_.
 
 ==== Assignment 3: Answer
 
+AddServer is another routable component: So `Pages > AddServer.razor`. In a
+real project, we have the option of turning the `EditServer.razor` in a multiple-purpose
+component. But our requirement is constraining us.
+
+But one key takeaway here is that if we are going to get a "multiple-purpose"
+type of component this should be placed inside of a reusable components folder,
+such as `Controls`.
+
+The course made a mistake, it's setting the `IsOnline` to `false` in the object
+initialization. But that's redundant, booleans have a `false` value by default
+on C#.
+
+A good point to bring up here and it's worth remembering.
+
+`AddServer.razor` and `EditServer.razor` have repeated code (which is bad but we
+are not focusing on this for now). They have the same form name, this is **OKAY**.
+Because when we submit a form and the whole page gets packaged alongside the form and
+its state, we will have the url as another way of differentiating the requests in
+the server, there is no risk of **clashes**.
+
+A couple of additions to the code based on the answer:
+
+- We don't need to add the hidden _id field_, since the ID doesn't exist and will
+be calculated on the Repository side.
+- We should use the `[SupplyParameterFromForm]` anotation on the model that we have,
+don't forget that after a submit the form state will bind to the property that
+has this anotation.
+- Lastly we need to navigate back to the servers list page with the `NavigationManager`
+
+And this is where the nebulous requirement really messed me up, we are apparently
+going to add a button for Add Server at the bottom, none of the fancy stuff I
+was trying to do, I'm realizing that the list of cities is probably for filtering
+purposes.
+
+So yeah, pretty straightforward, just add an anchor to trigger navigation to the
+AddServer page:
+
+````
+<a href="/servers" class="btn btn-primary ">Go Back</a>
+````
+
+And also the `IsOnline = false` behavior now is clear, because the default constructor
+of the `Server` class actually by default turns the server on. But on this specific
+page, we don't want that type of behavior, is weird since we will get the checkbox
+already checked for us, so we are overriding it to set to false.
+
+The behavior that should be working is that after we try and save the new server,
+we should be seeing how the list gets a new line item.
+
 ==== Use EditForm to delete data
 
+We will use the `EditForm` to delete data. In our domain, we will delete a server,
+and at a technical level we will have to use the `EditForm` because we are with
+Blazor SSR.
+
+If we try and _not use the EditForm_, with code like this:
+
+````
+<button class="btn btn-primary" @onclick="@(() => DeleteServer(server))">Delete</button>
+
+private void DeleteServer(Server server)
+{
+}
+````
+
+It won't work. Still it's good to breakdown what's happening here. In short, we have
+this specific property that Blazor adds to Html elements `@onclick`. In here we
+can simply declare a method name as the callback, or use this explicit syntax so
+that we can insert a lambda function in order to pass arguments to the method call.
+
+The reason this code won't work in SSR is because we have **NO INTERACTIVITY** at
+all. This is all server side, and the `@onclick` syntax is something that assumes
+we are going to handle things with javascript/code.
+
+**IMPORTANT:** This is why we need to use our form component to submit the action
+back to the server and then trigger the logic on the server side to handle this
+deletion.
+
+So the way to properly deal with our requirement under SSR we would have to
+do the following:
+
+[source, razor]
+----
+<ul>
+    @foreach (var server in servers)
+    {
+        <li>
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+            <a href="/servers/edit/@server.Id" class="btn btn-link">Edit</a>
+            <EditForm
+                Model="server"
+                FormName="@($"server-{server.Id}-form")" <.>
+                OnValidSubmit="@(() => DeleteServer(server))"> <.>
+                <button type="submit" class="btn btn-primary">
+                    Delete
+                </button>
+            </EditForm>
+        </li>
+    }
+</ul>
+
+@code {
+    private List<Server> servers = ServersRepository.GetServersByCity("Toronto");
+    private List<string> cities = CitiesRepository.Cities;
+
+    private void DeleteServer(Server server)
+    {
+        if (server.Id <= 0)
+        {
+            return;
+        }
+
+        ServersRepository.DeleteServer(server.Id);
+        servers = ServersRepository.GetServersByCity("Toronto"); <.>
+    }
+
+}
+----
+<.> This is an `<EditForm>` nested within another `<EditForm>`. And because this
+is a multiple render piece of code, we would in theory be creating n forms per
+line item, if the name is the same it would easily clash. Hence we are applying
+explicit syntax on top of string interpolation to compose a _unique enough_ identifier
+for the form.
+<.> Hooking into `OnValidSubmit` we can then apply the lambda trick to call our
+method with respective arguments.
+<.> And in here the course varies with my choice, I say we simply update the state
+with another retrieval of servers. The course actually injects the `NavigationManager`
+and triggers a redirect to the same page. This should be more costly, wouldn't it?
+
+In the end is the same result, but there's nuance to be taken here. We delete
+a line item and somehow trigger an update to the page so that the new state is
+reflected.
+
+[NOTE]
+====
+Well, the course actually introduces `NavigationManager.Refresh()` which is good
+to know it exists. Maybe it isn't as costly as a full-on navigation? Anywho, at
+the time of the tutorial apparently Blazor had a bug and trying to call this method
+resulted in an exception. Which is _interesting_. And so, as a workaround, it
+actually uses `NavigationManager.NavigateTo("/servers")`.
+====
+
+[IMPORTANT]
+====
+Another piece of "good practices", it's explained that in theory we could literally
+code a page that is just in charge of sending a delete signal to the server.
+`@page /servers/delete`. Or something like that. But this is really bad because
+it can easily be tampered with. Say we call it with an anchor link by passing a
+server Id as a route parameter, this will be caught by the browser and a malicious
+actor can literally start using it to delete all the data in the server. The form
+submit is more secure, since it packages all the data under a `POST`, and the
+URL and payload are not really visible. Therefore for deleting data this approach
+is the recommended one.
+====
+
+With interactivity, this principle and good practices are kinda invalid though.
+
 ==== Stream Rendering
+
+We have been using Blazor SSR. Each time we ask for something from the server
+we get a response in return. One of the biggest issues of traditional web applications
+and Blazor SSR as well is that if the server is under stress, then the response
+from the server to the clients slows down. The UX is just waiting.
+
+If we analyze the scaffolded `@attribute [StreamRendering]` from the `Weather.razor`
+component. And remove it for testing purposes (because this attribute is specifically
+there to solve this issue) we can start putting Blazor SSR to the test.
+
+If we play around with the `NavBar` by clicking on `Home` and then on `Weather`
+we will immediately pick up on a specific behavior. Even though we clicked on
+the respective menu item, the screen kinda _freezes_ and it seems as though it's
+stuck. (We also added a delay of 3 seconds to the code in the component that simulates
+a delay responsed from the server). **This is the issue**, the UX ends up affected
+negatively. We are waiting for data to come back from the server side so that
+the browser renders the respective page.
+
+Because everything renders statically, everything is retrieved from the page request.
+Your hands are tied until the response comes back from the server.
+
+[IMPORTANT]
+====
+However, Blazor SSR has a QoL. This is in the form of a javascript file that you can
+easily point towards at `App.razor`. In there there's a line: `<script src="_framework/blazor.web.js"></script>`,
+this adds a specific set of behaviors that help us get around this issue of traditional
+static sites.
+====
+
+With this script, we can then add the attribute that we deleted before to test out
+the "stuck" problem. And we see that even though the same delay might be there,
+we get a UX that involves going into the page, and seeing some content but also a
+`Loading...` message, and after the data is "available" the content gets rendered
+accordingly. This is easily solvable by this sole attribute. And also the code
+that takes care of showing the loading messages and then further content:
+
+[source, razor]
+----
+@if (forecasts == null) <.>
+{
+    <p>
+        <em>Loading...</em> <.>
+    </p>
+}
+else
+{
+    // And in here is logic to show the Weather Forecast table
+}
+----
+<.> As you can seem this is simple conditional rendering in case the state variable
+is null, we will display some form of content and if not another form of content.
+<.> This stock message of "Loading..." is displayed in case we don't have the list
+of forecasts loaded just yet.
+
+"If the data is loaded, it will show "Loading"". So for the use case of using
+Blazor SSR, yet a requirement requires for you to run a long running process that
+retrieves data or takes time to compute the data and you don't want that bad UX,
+you should leverage this `StreamRendering` attribute and display these stock pieces
+of content to feedback the user with "Loading".
+
+=== Add Server Interactivity
+
+==== What is interactivity
+
+==== Use Enhanced Navigation in Blazor SSR for interactivity
+
+==== Use Enhanced form handling in Blazor SSR for interactivity
