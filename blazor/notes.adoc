@@ -1825,6 +1825,193 @@ of content to feedback the user with "Loading".
 
 ==== What is interactivity
 
+We need to answer another question first in order to answer "What is interactivity?"
+
+_What is not interactive?_
+
+In traditional static sites, you will send a request to the server and the server
+will then respond and the whole page will be reloaded. And in certain use cases
+it might feel as though you lost connection to the server for a bit. And this is
+because the whole page gets packaged, gets sent, we get it back and re-render.
+
+_The browser is doing something, and the process hangs_ **This is not smooth**.
+
+One could argue that there **is** interactivity, between the user and the web
+browser. But, when Microsoft refers to _interactivity_ in Blazor docs, it is
+referencing to this idea of the UX not being _as smooth_, and this being qualified
+as "not interactive".
+
+An **interactive application** should work like a desktop application, it won't
+get the whole page to get refreshed. In order to solve this issue, we can come
+to one possible conclusion and that is that we should trigger a partial reload
+of the page, update specific parts only. **Partial Page Rendering**, this is what
+we call **_interactive_**.
+
+_What is interactive?_
+
+When we try to achieve partial rendering, we use Javascript. This leverages something
+called the **DOM** (Document object model). The DOM is part of an HTML page, when
+a user interacts with it, it is done by default, however this paradigm/idea takes
+the premise that we should intercept the DOM interaction (between the user), and
+once that interaction is captured, we will send a request to the backend server.
+
+_Typically_ The Javascript would call a Restful API, wait for a response, get the
+response, parse it, maybe process it a little bit and then use that data to **patch**
+the DOM. When the patch is finished, we do a **partial re-rendering**, and the data
+that the user expects is visualized.
+
+_Traditionally:_ When wanting to add interactivity, a developer has to write
+Javascript. However **Microsoft** provides a stock javascript that allows for the
+developers to forget about writing javascript.
+
 ==== Use Enhanced Navigation in Blazor SSR for interactivity
 
+This is the first step towards making a web app **interactive**.
+
+We have to come clean about something though, this Enhanced Navigation is already
+turned on by default on Blazor SSR, hence we are not seeing full page reloads even
+when working with this stock, "simple" version of Blazor.
+
+We can test this easily by just looking closely to how the page behaves, when trying
+to press the nav bar buttons, we see that the navbar itself stays in place, we
+don't get intermitent cuts that make apparent the whole page is being reloaded.
+
+The page by default is **partially rendered**.
+
+If we were to go to `App.razor` and delete the blazor javascript line, and then
+reload the website, we can test with Dev Tools how the Network actually triggers
+multiple calls, and even some interactions just break (look at the weather component).
+
+If we analyze the Dev Tools again after adding back the blazor script. We will see
+how one call is made and no other network call is detected. Another way to put this
+thesis to the test is opening up the _Inspect_ section of the Dev Tools, in here
+after navigating we can see how some HTML elements are re-rendered, not the whole
+DOM.
+
+**How does this work**
+
+Whenever a user interacts with the DOM, an http request is supposed to go to the
+server, but the Blazor javascript file intercepts this default behavior and then
+sends a fetch to the server on its own. Once it gets back, then the Blazor script
+smartly patches the DOM. (The DOM is partially rendered). With this model we reach
+**interactivity**.
+
+Blazor SSR by default with the _Enhanced Navigation_ is an **interactive application**
+thanks to Blazor's javascript file in `App.razor`.
+
 ==== Use Enhanced form handling in Blazor SSR for interactivity
+
+With the help of Enhanced Navigation, even on Blazor SSR devs can easily create
+"interactive" web applications. However, this covers the navigation part of it solely.
+The user can go from page to page, yet load static pages only in the end. What
+if the user wants to do something _dynamic_?
+
+I.e., If we click on the "Montreal" button on the servers page, we want to filter
+all the servers in that city. This is an interaction that the user triggers on the
+page, and in theory should then trigger a partial-reload of another part of the page.
+
+With the help of **Enhanced Form Handling** even Blazor SSR can make a page dynamic.
+
+We don't need anything fancy (no need of Web Assembly, no SignalR channel). We
+can just use the `EditForm` component to achieve dynamic behaviors.
+
+And so, first of all we are going to now start leveraging the `ServerComponent.razor`
+component we created way back.
+
+First render it in `Servers.razor`. And we will modify its code like this:
+
+[source, razor]
+.ServerComponent.razor
+----
+@if (server is null)
+{
+    return; <.>
+}
+
+<EditForm Model="server" FormName="serverComponentForm" OnSubmit="ChangeServerStatus"> <.>
+
+    <div style="@($"color: {(server.IsOnline ? "green" : "red")}")" data-name="@server.Name"
+         data-status="@(server.IsOnline ? "online" : "offline")">
+        @server.Name is in @server.City that is @(server.IsOnline ? "online" : "offline")
+        <button type="submit" class="btn btn-primary">Turn On/Off</button> <.>
+    </div>
+</EditForm>
+
+@code {
+
+    [SupplyParameterFromForm] private Server? server { get; set; } <.>
+
+    private void ChangeServerStatus() <.>
+    {
+        if (server is null)
+        {
+            return;
+        }
+
+        server.IsOnline = !server.IsOnline;
+    }
+
+    protected override void OnParametersSet()
+    {
+        server ??= new Server <.>
+        {
+            Name = "Server1",
+            City = "Toronto"
+        };
+    }
+
+}
+----
+<.> Smart clean code to short circuit renders.
+<.> We will leverage EditForm to submit but will add the smart/enhanced variation
+for interactivity
+<.> We want to bind all the form state to this model, so the respective parameter
+should be set as well.
+<.> And we will bind to the submisison of the form with a callback method.
+<.> Lastly, we should leverage `OnParametersSet` as the hook to go into to initialize
+our server, and that is because when we add the anotation for the model binding
+of the form, this will be turned into a parameter, so a submission will trigger
+this hook.
+
+Now, if we try and run this as is, it won't work, because there are no fields whatsoever
+inside of the form that hold values and that can then be bound to the model. We
+have to imperatively add some sort of form fields, _this is hacky_.
+
+````
+<EditForm Model="server" FormName="serverComponentForm" OnSubmit="ChangeServerStatus">
+    <InputNumber @bind-Value="server.Id" hidden></InputNumber>
+    <InputText @bind-Value="server.City" hidden></InputText>
+    <InputText @bind-Value="server.Name" hidden></InputText>
+    <InputCheckbox @bind-Value="server.IsOnline" hidden></InputCheckbox>
+
+    <div style="@($"color: {(server.IsOnline ? "green" : "red")}")" data-name="@server.Name"
+         data-status="@(server.IsOnline ? "online" : "offline")">
+        @server.Name is in @server.City that is @(server.IsOnline ? "online" : "offline")
+        <button type="submit" class="btn btn-primary">Turn On/Off</button>
+    </div>
+</EditForm>
+````
+
+As you can see we are literally putting all the state fields under hidden fields,
+(it's good to know that we can put a more concise type of attribute with just `hidden`).
+
+And once we hit the submit, all these values will be bound to the respective model
+properties. And after that, we will have the `OnSubmit` callback run its logic
+to then modify the state variable accordingly. (And this will trigger a full page
+re-render btw). Even the scroll position is lost. Logic works though.
+
+_How do we make the page interactive?_
+
+This is crazy dude:
+
+````
+<EditForm Enhance Model="server" FormName="serverComponentForm" OnSubmit="ChangeServerStatus">
+````
+
+Literally, one attribute `Enhance`. This could be `Enhance="true"`, but you know
+how I like to be as concise as possible.
+
+After adding this, then interactivity is figured out by Blazor without us having
+to do anything fancy. Page is partially reloaded.
+
+Again, this is all thanks to `blazor.web.js`, the script at `App.razor`.
