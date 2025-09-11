@@ -2237,13 +2237,146 @@ most important thing: **You know now how this works**.
 
 ==== .NET 9 Updates: Include SSR in Global Server Interactivity location
 
+November 4th 2024 - There are a few features that have been introduced in .NET 9,
+many minor with this exception:
 
-====
+We will use SSR, but on a Global Server Interactivity Location.
 
-====
+[source, razor]
+----
+<!DOCTYPE html>
+<html lang="en">
 
-====
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["ServerManagement.styles.css"]"/>
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet @rendermode="InteractiveServer"/> <.>
+</head>
 
-====
+<body>
+<Routes @rendermode="InteractiveServer"/> <.>
+<script src="_framework/blazor.web.js"></script>
+</body>
 
-====
+</html>
+----
+<.> This is another component that should get the Global Interactivity Location.
+<.> And this is the Routes component with the Interactivity Location set there so
+that all components get it applied.
+
+But there could be exceptions, we could have components that are coded to work
+with SSR, not interactivity, hence we want to mark them to keep using SSR. Or
+perhaps we just want a couple of specific components to use it. Whilst being
+under Global Interactivity Location already. (e.g., A particular component has
+to be dependent on cookies. With interactivity, things are done through a SignalR
+channel, this, for example, makes it impossible to rely on cookies. So we would
+be forced to make the component SSR compatible and use it). 
+
+Microsoft has thought of this use case, and has added a feature to make it easy
+to do it:
+
+https://learn.microsoft.com/en-us/aspnet/core/release-notes/aspnetcore-9.0?view=aspnetcore-9.0#add-static-server-side-rendering-ssr-pages-to-a-globally-interactive-blazor-web-app[DOCS]
+
+We must use this attribute in the component, e.g., `AddServerComponent.razor`.
+Remember that this should be done in a **ROUTABLE COMPONENT**.
+
+[source, razor]
+.AddServerComponent.razor
+----
+@page "/servers/add"
+
+@attribute [ExcludeFromInteractiveRouting]
+----
+
+And lastly we should change the `App.razor` component:
+
+[source, razor]
+.App.razor
+----
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["ServerManagement.styles.css"]"/>
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet @rendermode="@PageRenderMode"/> <.>
+</head>
+
+<body>
+<Routes @rendermode="@PageRenderMode"/> <.>
+<script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode => HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null; <.>
+}
+----
+<.> See how we no longer set this to `ServerInteractivity` but to a custom render mode.
+<.> Likewise for `Routes`
+<.> This is advanced code, we won't break it down for now, this is just copying
+things from the Microsoft Docs to enable this specific feature.
+
+At a high level, this `@PageRenderMode` is a switch under a property that will attempt
+to run the `AcceptsInteractiveRouting()` extension method that will try and detect
+the attribute of exclusion. If it detects it will not try and set the component
+with interactivity and keep it as SSR.
+
+==== Three main aspects of interactive components
+
+A brief reiteration:
+
+- The user interacts with the DOM, and the blazor javascript intercepts that
+interaction.
+- Because a SignalR channel has been setup from the beginning, and we now work
+with in-memory representations of components on the server, this makes the application
+a **stateful application**.
+
+Once you use interactive components in Blazor, this becomes **stateful**. _At least
+for that component_. The component is a stateful component.
+
+An unstateful application is the traditional app. After a request and response,
+roundtrip, the server doesn't remember the state of the application. None of
+the states are remembered.
+
+**But with interactivity**, the app becomes _stateful_. For stateful applications
+there are three main aspects.
+
+And this is in general, not specific to Blazor.
+
+. View = User interacts with the View. The user doesn't care about components. Only
+what he sees
+. Event = The action on the view triggers a type of event, as developers we do
+something with the information the user provided in that interaction that triggered
+the event. Maybe we calculate something, get data from the database. This changes the
+internal **state variables**.
+. States = The handling of the events changes the state variables, the states of
+the component. And when the state gets updated, the view gets updated accordingly,
+hence these three concepts are closely related to each other.
+
+Any interactive component/application. All SPA applications are stateful.
+
+*8Remember this, it will apply to WebAssembly as well.** This is a key concept that
+we should interiorize to then have a framework as to how code properly in Blazor.
+
+==== Event Handling (Passing Data)
+
+==== Assignment 4: Highlight current City
+
+==== Assignment 4: Answer
+
