@@ -2015,3 +2015,235 @@ After adding this, then interactivity is figured out by Blazor without us having
 to do anything fancy. Page is partially reloaded.
 
 Again, this is all thanks to `blazor.web.js`, the script at `App.razor`.
+
+These two features were added in `.NET 8` which is actually crazy. This is pretty
+new. It's through SSR that we can achieve almost everything we want to achieve.
+
+_But there's something even better:_ **Server Interactivity**
+
+==== What is server interactivity?
+
+In the previous sections we have talked about Enhanced Navigation and Enhanced
+Form Handling. We have seen how interactivity is achieved.
+
+But Server Interactivity, Server Interactive is something besides just a javascript
+file that works with the DOM and backend server.
+
+On this second paradigm, we still use the javascrip file, but the request and
+responses are different. We don't work with HTTP, we work with Web Sockets, we
+establish a SignalR channel.
+
+The moment the application is loaded in the browser, the blazor javascript file
+establishes this channel between the website and the server. A memory representation
+of the web site on the server is created, and said memory representation will receive
+all the requests coming from the website and process them respectively. One the
+process is finished, a binary message will be returned to the **client**. The
+JS script interprets the message, and **patches the DOM**.
+
+The communication is different, and **THE BACKEND AS WELL BEHAVES DIFFERENTLY**.
+
+The messages are binary, so fast, and very minimal, the whole process has been
+optimized to its fullest extent (to date). Performance is not bad.
+
+**_Render Tree:_** In the DOM (on the web browser) we have all elements grouped
+together, nested and forming what it looks like a **tree**. In the backend when
+the in-memory representation of the page, there's also a render tree **held in the
+memory.**
+
+The way the algorithm (really simply put) is that in-memory we will always hold a
+"previous state render tree" and after processing a "new state render tree", Blazor
+will calculate the difference between these two trees and package all that needs
+to be updated on the web browser side so that a **smart patch** takes place. It will
+only understand "one new component has been added". This has a term, "render tree
+difference". The blazor javascript file understands this binary encoded difference
+and acts accordingly. (Hence the user sees an update visually).
+
+==== Enable Server Interactivity how to make a component interactive
+
+How do we enable server interactivity?
+
+We are going to make the `ServerComponent.razor` component interactive. (Whilst
+it technically is already interactive with Enhanced Form submit, we want the actual
+thing).
+
+If we were to change the code a bit:
+
+[source, razor]
+----
+@if (server is null)
+{
+    return;
+}
+
+<div style="@($"color: {(server.IsOnline ? "green" : "red")}")" data-name="@server.Name"
+     data-status="@(server.IsOnline ? "online" : "offline")">
+    @server.Name is in @server.City that is @(server.IsOnline ? "online" : "offline")
+    <button type="button" class="btn btn-primary" @onclick="ChangeStatus">Turn On/Off</button> <.>
+</div>
+
+@code {
+
+    [SupplyParameterFromForm]
+    private Server? server { get; set; } = new()
+    {
+        Name = "Server1",
+        City = "Toronto"
+    };
+
+    private void ChangeStatus() <.>
+    {
+        if (server is null)
+        {
+            return;
+        }
+
+        server.IsOnline = !server.IsOnline;
+    }
+
+}
+----
+<.> The `@onclick` syntax is something we use with Server interactivity.
+<.> However there's an issue here, and that's that nothing will happen if we
+press the button. And that is because we need to turn on Server Interactivity. Even
+if you run the app in debug, breakpoints will never be hit.
+
+How do you enable it? Just go to `Program.cs` and add these lines:
+
+````
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+// More code
+
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+````
+**IMPORTANT:** We have to chain in a fluent way, otherwise we won't have access
+to these methods.
+
+With these two lines, we still won't get the button working. We actually have to
+add this specific property:
+
+````
+<ServerComponent @rendermode="InteractiveServer"></ServerComponent>
+````
+
+The render mode will turn on or off the specific SignalR channel type of communication.
+
+If you load the page, the button should work **and** if we analyze http requests
+through the Dev Tools, no request should be getting registered. In order to see
+the SignalR channel.
+
+If we reload the web page and have a look at the _Network_ we will actually be
+able to see how the website downloads the `blazor.web.js` file, and then a request
+looking something like this: `ws://localhost:5116/_blazor?id=qfAbJP7iDGSOd4SIdlu6vA`
+is registered. **This is the websocket handshake between the component and the
+server.**
+
+If you click on the web socket registered connection and click multiple times on the
+button, you can see how the messages get logged. And even further you can see
+the _byte size_ they have. These messages are the render tree differences that are
+getting exchanged.
+
+Again, in short.
+
+. The `blazor.web.js` files negotiaties a SignalR channel between the browser
+and the server. This is for the different components that work with server interactivity.
+. This channel is used back and forth to send and receive information that updates
+the view with interactivity.
+
+==== Interactivity Location
+
+After making a component interactive, by adding on `Program.cs` specific behaviors,
+and by marking the component as `@rendermode="InteractiveServer", we manage to
+achieve interactivity. This is what's called _Interactivity Location_.
+
+We can add this interactivity location in different places:
+
+- On the parent component
+- On the mention of the component on the parent's code
+- On the actual component itself
+
+_If we take away the interactivity location and try and test the button, we should
+prove the idea that this is what adds interactivity, and hence the workflow works_.
+
+````
+@page "/servers"
+
+@rendermode InteractiveServer
+````
+This is how interactivity location at the parent level would look like. This
+cascades interactivity down to all children and their own sublevels.
+
+If not, we can go down to the actual child component and apply **the same notation**,
+after that the component and any subsequent children components will have the
+interactivity mode setting cascaded down the tree.
+
+This is the **First Type of Interactivity Location**.
+
+1. Page or component level
+2. Global
+
+The _Global level_ can be added by going into `App.razor` and then adding the interactivity
+mode at the `Routes` component level that is what renders everything on our SPA.
+
+````
+<Routes @rendermode="InteractiveServer"/>
+````
+
+And here you can switch between different modes, may it be **WebAssembly, Server**.
+
+These are the two type of locations for interactivity leveraging.
+
+**What is recommended?**
+
+We should specify the location at the parent level but on the explicit component
+render syntax:
+
+[source, razor]
+.Servers.razor
+----
+<ServerComponent @rendermode="InteractiveServer"></ServerComponent>
+----
+This is the way. If you add it to the explicit component at its top, you can easily
+clash with switching for other render mode, since it will take precedence and your code
+will become _HARDER TO EDIT LATER_.
+
+[IMPORTANT]
+====
+So Microsoft themselves enforce _this specific pattern of specifiying the interactivity
+mode where you call the component.
+====
+
+==== Server Interactivity in Visual Studio project template
+
+We started with a Blazor SSR template, however what happens if we start with another
+mode? (_NOTE:_ The `Blazor Web App` template is the recommended one to use after
+.NET 8).
+
+You can select as a template setting to use Server Interactivity, and even set the
+Interactivity location "Per Page/Component". This will start a project with the
+two lines at `Program.cs` that we saw, plus all components that are pages with
+the _cascading interactivity mode_. at the top of each of them. `Routes` does not
+have the interactivity location, nor static pages, since they don't require interactivity
+at all. Only the `Counter` page has interactivity set on, and that is because it
+is required by it. So a rule of thumb is to ask yourself if the component
+**really needs to be interactive**. Otherwise a static website will work just
+fine.
+
+_Extra:_ What if we select Server render mode and with Global?
+
+Same things, but if we look at `Counter.razor`, we see no interactivity location.
+That is because we will have it at the `App.razor`'s `<Routes>`' component level.
+This is how the template can be used to set everything up from the start, but the
+most important thing: **You know now how this works**.
+
+==== .NET 9 Updates: Include SSR in Global Server Interactivity location
+
+
+====
+
+====
+
+====
+
+====
+
+====
