@@ -2510,11 +2510,157 @@ that `OrdinalIgnoreCase` is slightly faster and catered towards `identifiers`,
 
 ==== Update, state variables with Onchange event
 
+_Remember of the 3 aspects_ **AGAIN**
+
+We will study `onchange` another event handler that we can leverage, it's a bit
+similar to `onclick` but with its specific quirks. It's also a window into data
+binding.
+
+We will use another requirement to introduce this concept: `we want a search bar
+so that we can search for servers`.
+
+[source, razor]
+====
+<div class="input-group mb-3">
+    <input type="text" class="form-control" placeholder="Search Servers" @onchange="HandleServerFilterChange" /> <.>
+    <button class="btn btn-outline-secondary" type="button" id="search-button">Search</button> <.>
+</div>
+@serverFilter
+
+@code {
+    private void HandleServerFilterChange(ChangeEventArgs e) => serverFilter = e.Value?.ToString() ?? string.Empty; <.>
+}
+====
+<.> We will hook the `@onchange` to a control directly, and we will have to pass a
+callback to it that we also declare.
+<.> The button itself has just different styling, but also the fact that it's not
+of `submit` type.
+<.> This is the callback function, when we hook it up to something like `@onchange`
+it will automatically gain the `ChangeEventArgs` argument attached to it, and we
+can leverage this object to then run logic, this function is pretty simple, if there's a
+value captured it will assign that to a new state variable we declare if not it will
+default to an empty string.
+
+It's worth noting that the way `@onchange` triggers is when the control loses
+focus, it's only then that our callback will get invoked.
+
+[source, razor]
+====
+<button class="btn btn-outline-secondary" type="button" id="search-button" @onclick="HandleSearch">Search</button> <.>
+
+@code {
+    private void HandleSearch()
+    {
+        servers = ServersRepository.SearchServers(serverFilter);
+        selectedCity = string.Empty; <.>
+    }
+}
+====
+<.> We want to stay consistent on naming so the `@onclick` callback should be
+prefixed with `HandleSearch`.
+<.> And lastly we will extend the requirements and functionality a bit, in the sense
+that if we search for a server name we will stop marking an active selected city
+and we will also filter the state variable so that only the specific server comes
+up.
+
+[NOTE]
+====
+A nice way of grouping together controls and labels is with bootstrap's `input-group`.
+It's good to keep that in mind.
+====
+
+The way that the filter works is actually by partial string comparison, hence if we
+search for something like `Server1` we will get all servers that have that partial
+string at the beginning.
+
+The click on the city name should still work fine, we shouldn't have to worry
+about breaking anything.
+
+_Small comment:_ Leveraging `@onchange` hits me as performant heavy, but I don't
+know just yet. We'll see.
+
 ==== Two way data binding
+
+Previously, we handled an event, and with that event we updated state. This is
+how it works normally, but there's something better "data binding".
+
+The value comes from the view to the state: Any change in the view will come back
+to the state automatically, _this is called two-way databinding_.
+
+The way to setup this is pretty simple with a really specific thing to keep in mind:
+
+````
+<input type="text" class="form-control" placeholder="Search Servers" @bind-value="serverFilter">
+````
+
+This syntax looks similar to the SSR Form syntax with one key difference the `value`'s
+`v` is actually **lowercase**. In this specific way, this can enable us to bind to
+a whole model.
+
+And just like that we can delete the event handler that we created before, and test
+out the same workflow and it should still work flawlessly.
+
+_What happens behind the scenes?_
+
+Blazor actually is leveraging the same event we hooked into. But Blazor is doing
+that for us. With a `bind-value` it creates the `OnChange` event handler behind
+the scenes.
+
+**NOTE:** Sometimes you want to do something when the server filter is set, you
+may want to intercept when a value is about to be added to state, in a event handler
+setup we can easily intercept and apply custom logic, however with two way databinding
+this is no longer possible, unless we use a property:
+
+[source, csharp]
+====
+private string _serverFilter = string.Empty;
+private string serverFilter
+{
+    get => _serverFilter;
+    set
+    {
+        // Logic before or after
+        _serverFilter = value;
+    }
+}
+====
+This requires for a backing field and this specific type of setup, but in the end
+you will be binding directly to a state variable. The only caveat here might happen
+with async use cases, but there are workarounds even there.
+
+**NOTE 2: ** You might want to add more feedback for the user to see as he types
+the filtered item, this can be done with a variation of the property:
+
+````
+@bind-value:event="oninput"
+````
+With this setup, then the property will be invoked on every key stroke that is pressed
+on the control.
+
+The app will react to every single input and we get instant feedback, so this is
+a pretty interesting feature, but I think we should debounce this, performance
+heavy. (The premise overall is that MS wants to make your life easier).
 
 ==== Interactive EditForm
 
+We used the `EditForm` for SSR. With interactivity this changes a bit.
+
+If we head down to the `AddServer.razor` file, depending on if it has interactivity
+location or not, the `<EditForm>` component can now have its `FormName` removed.
+It can still have it, but it's not necessary. Secondly, we don't need to specify
+the `[SupplyParameterFromForm]`. Why is that? Simply put, because the form will now
+be wired as interactive, it won't submit a POST to the server, it will follow
+the SPA approach which is to send SignalR signals to the server. The attribute itself
+implies that there's a form submission of some kind. But here with interactivity there's
+no form submission anymore.
+
+So basically, in case you coded something with SSR and want to move into interactivity
+the process is not as painful, you don't have to change `bind-Value` because the
+controls will be under `<EditForm>` and the wiring behind the scenes accounts for it
+and we don't have to worry about anything.`
+
 ==== Use @key to improve list-rendering performance
 
-
 ==== Use Virtualization to improve list-rendering performance
+
+=== Course Project (Part 1): To-Do List App Basics
