@@ -1,0 +1,170 @@
+= Introduction
+
+There's this really cool technology for automation of workflows, potential seems
+to be endless (well, besides a paywall for certain features). I want to check out
+its potential in order to add to my arsenal of knowledge.
+
+https://www.youtube.com/watch?v=ONgECvZNI3o[Intro Video]
+
+https://docs.n8n.io/hosting/installation/docker/#starting-n8n[Self Hosting]
+
+This is the specific commands that I run on my Thinkpad to get a self-hosted
+instance in seconds:
+
+````
+systemctl start docker
+
+sudo docker volume create n8n_data
+
+sudo docker run -it --rm \
+ --name n8n \
+ -p 5678:5678 \
+ -e GENERIC_TIMEZONE="JP" \
+ -e TZ="JP" \
+ -e N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true \
+ -e N8N_RUNNERS_ENABLED=true \
+ -v n8n_data:/home/node/.n8n \
+ docker.n8n.io/n8nio/n8n
+````
+
+== A bit of theory
+
+=== Main Idea
+
+n8n is a workflow automation tool (similar to Zapier or Make, but source-available)
+that lets you connect apps, services, and custom logic without heavy coding. It’s
+designed for developers and non-technical users who want to automate repetitive
+tasks and integrate different systems.
+
+=== Problems to solve
+
+- Too many disconnected tools → Brings APIs, databases, cloud services, and
+local apps into one automation flow.
+- Repetitive manual work → Automates recurring tasks (data entry, notifications,
+syncs).
+- Rigid SaaS limitations → Being source-available and self-hostable, you can customize
+it beyond the limits of hosted platforms like Zapier.
+- High automation costs → Self-hosting avoids per-workflow/per-task pricing models.
+
+=== Biggest capabilities
+
+- Visual workflow builder → Drag-and-drop UI for creating complex flows.
+- Over 500 integrations → Connects to APIs, SaaS tools, databases, webhooks,
+and custom scripts.
+- Conditional logic & branching → Add IF/ELSE paths, loops, and error handling.
+- Custom code nodes → Insert JavaScript/TypeScript when needed.
+- Self-hosting → Run on your own server for full control, or use n8n Cloud.
+- Event-driven automation → Triggers from schedules, webhooks, app events, or
+database changes.
+
+=== Common use cases
+
+- CRM & marketing automation → Sync leads between apps, send automated follow-ups.
+- Data pipelines → Extract, transform, and load (ETL) across databases, spreadsheets,
+APIs.
+- Notification workflows → Send alerts to Slack, Teams, or email when conditions are met.
+- DevOps & IT automation → Monitor systems, auto-open tickets, restart services.
+- E-commerce → Automate order management, customer notifications, and inventory sync.
+- Custom internal tools → Tie together APIs and data sources for bespoke workflows.
+
+👉 In short: n8n is like Zapier on steroids—flexible, open-source, and
+developer-friendly—ideal for anyone needing deep integrations and automations
+without SaaS lock-in.
+
+== Initial "Hello World"
+
+Ripping this from the intro video, you can configure a **NODE**, to ingest RSS
+feeds and then output them in the workflow.
+
+🔗 Ready-to-use Public RSS Feeds
+
+You can plug these directly into n8n:
+
+Hacker News (Top Stories)
+https://hnrss.org/frontpage
+
+BBC News (World)
+http://feeds.bbci.co.uk/news/world/rss.xml
+
+NY Times (Technology)
+https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml
+
+Reddit (any subreddit) → just add .rss
+Example: https://www.reddit.com/r/n8n/.rss
+
+Medium (any publication or user) → add /feed
+Example: https://medium.com/feed/tag/automation
+
+[IMPORTANT]
+====
+The way I see it. RSS really fits into _data streaming_. With a trigger at a
+point that generates data, or gets an event in place in order to execute a whole
+set of steps (workflow). So it is an automation framework (with tons and tons
+of integrations).
+====
+
+The fact that you can self-host one instance is pretty cool. But what I'm really
+trying to find now is _can this all be represented in text_?
+
+=== N8N and reproducible configs (text based)
+
+**N8N stores workflows as JSON**
+
+This is a snippet:
+
+[source, json]
+----
+{
+  "name": "My RSS Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://hnrss.org/frontpage"
+      },
+      "name": "RSS Feed",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [200, 300]
+    }
+  ],
+  "connections": {}
+}
+----
+
+You can literally export this notation with the UI (on the web). And also
+import them. (Recommended for small setups)
+
+[IMPORTANT]
+====
+But because we know the shell (CLI) is the actual goat of next level _pragmatic
+programmers_, we should leverage tools such as the `n8n` CLI tool. That gladly
+is there on our instance ready to serve us.
+====
+
+````
+n8n export:workflow --all --output=/path/to/workflows
+n8n import:workflow --input=/path/to/workflows/
+````
+
+And credentials that are also needed depending on the node, can be imported
+and exported with stuff like `n8n export:credentials` and `n8n import:credentials`.
+
+This allows for us to then put all our configs/workflows under VCS, which is another
+extremely good practice to have. ** Version Control _everything_.**
+
+[NOTE]
+====
+We shouldn't version control credentials, that's sensitive information, even though
+it will be encrypted and all. This is bad, we should always keep that offsite,
+behind secrets, and changed through other more secure means.
+====
+
+_Extra interesting feature:_
+
+- We can store multiple JSONs, one per workflow.
+- We can also bundle them into a single directory structure: `/workflows`, `/credentials`,
+`/config`
+
+
+
+
