@@ -2376,7 +2376,145 @@ we should interiorize to then have a framework as to how code properly in Blazor
 
 ==== Event Handling (Passing Data)
 
+When you pass data inside of a event, we need to learn how to leverage Blazor.
+
+The use case that will launch us into learning this concept is as follows:
+
+_We want to be able to press the city buttons on the server list screen and then
+filter out the list of servers in that city, move away from the hard coded "Toronto"
+list_
+
+The syntax to achieve this is pretty simple:
+
+[source, razor]
+====
+<div class="card-body">
+                        <button type="button" class="btn btn-primary"
+                                @onclick="@(() => SelectCity(city))">@city</button> <.>
+                    </div>
+
+@code {
+    private void SelectCity(string cityName)
+    {
+        servers = ServersRepository.GetServersByCity(cityName); <.>
+    }
+}
+====
+<.> We leverage `@onclick` and we use the explicit syntax in order to wrap a
+method call under a lambda that will have the call of the method with an argument.
+<.> And then the actual logic of the method will have the received parameter as
+a passdown to the `ServersRepository`.
+
+The course makes a point about interactivity not working but this is because it didn't
+have the _global_ setting we applied with `.NET 9`'s update lesson before. So we
+can kind skip it, however, it's mentioned again the concept of interactivity location,
+and how a good practice is to have it in the page that then renders a component.
+
+Understanding the different "settings" or "modes" of interactivity in Blazor is
+key to understand and then leverage appropriately based on the use case. `(View -> Event -> State)`
+
+Every time you work with a stateful component, we have the _three aspects_
+
+[IMPORTANT]
+====
+The whole concept of stateful application and the **in-memory representation** of
+a component in the server is key to remember one optimization that Blazor accounts
+for. If we have loaded the state in the server, we won't be re-rendering, fetching
+data all the time, the server **remembers that component's state**. It's only after
+disposal that we might have to reload a component's data. Now, in **Blazor SSR**
+the whole state is indeed reconstructed, but it's due to the Enhanced Form and
+Enhanced Navigation that we don't see the page reloading every time.
+====
+
+InteractiveServer is technically _simpler_ than SSR. However state is kept and
+optimizations take place. It looks a bit like javascript. _Simplicity is key_.
+
 ==== Assignment 4: Highlight current City
+
+. We want to have the selected city by a click to show visually it's currently
+selected
+. We should leverage Bootstrap for it apparently
+
+No idea about styling, I will leave that to the course, but the core logic is pretty
+simple, and something I didn't catch on before is _why we were adding a field for
+the selected city_. That is because we can leverage that to calculate which
+city item is selected:
+
+[source, razor]
+====
+<div class="card">
+                    <img style="max-width: 150px; max-height: 150px"
+                         src="@($"/images/{city}.png")"
+                         class="@($"card-img-top{IsActive(selectedCity, city)}")" <.>
+                         alt="Card image cap">
+                    <div class="card-body">
+                        <button type="button" class="btn btn-primary"
+                                @onclick="@(() => SelectCity(city))">@city</button>
+                    </div>
+                </div>
+
+@code {
+    private string selectedCity = "Toronto"; <.>
+
+    private void SelectCity(string cityName)
+    {
+        selectedCity = cityName; <.>
+        servers = ServersRepository.GetServersByCity(cityName);
+    }
+
+    private static string IsActive(string currentCity, string cityName) =>
+        currentCity.Equals(cityName, StringComparison.InvariantCultureIgnoreCase) ? " active" : string.Empty; <.>
+}
+====
+<.> As you can see on the fly, per rendered item we will calculate if the specific
+item corresponds to the selected city, if it does then we will add the `active`
+class name, otherwise it will be empty.
+<.> And it now makes sense why we have to keep the state of the selected city like
+this.
+<.> And of course we have to update the state based on the event.
+<.> A good way to abstract code and keep the view tight, is by putting calculation
+logic behind functions, _this is a good practice_. Hence this takes care of just that,
+and that's also another reason as to why we leverage string interpolation so that
+we can chain together text and possible calculation method calls.
 
 ==== Assignment 4: Answer
 
+When it comes to styling, the course leverages "border primary":
+
+````
+<div class="@($"card{IsActive(selectedCity, city)}")">
+
+private static string IsActive(string currentCity, string cityName) =>
+        currentCity.Equals(cityName, StringComparison.InvariantCultureIgnoreCase) ? " border-primary" : string.Empty;
+````
+
+I actually had to change the function's position, since we are adding the border
+to the whole line item, and that was on a superior level not the card image. But
+yeah, pretty cool that it's simply by adding `border-primary` that we get what
+we want. But it also solidifies my theory of making things easier to edit and add
+later. Because this was abstracted behind a method, we simply had to change
+one small line of code from `active` to `border-primary`, move around the view code
+but it still kept the behavior and it was way easier to read.
+
+[NOTE]
+====
+The course uses `StringComparison.OrdinalIgnoreCase`, is this better? is this worse?
+The answer is not as cookie cutter:
+
+Avoid `CurrentCultureIgnoreCase` in most library/business logic code — it depends
+on the user’s local culture and can introduce subtle bugs. Save it for UI-facing
+string handling only. So in this specific use case it should be fine, you can argue
+that `OrdinalIgnoreCase` is slightly faster and catered towards `identifiers`,
+`technical data`, `keys`, `performance-critical paths`.
+====
+
+==== Update, state variables with Onchange event
+
+==== Two way data binding
+
+==== Interactive EditForm
+
+==== Use @key to improve list-rendering performance
+
+
+==== Use Virtualization to improve list-rendering performance
