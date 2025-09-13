@@ -1,0 +1,145 @@
+= Introduction
+
+This is part of an idea introduced in the **Pragmatic Programmer's Guide, 20th
+Anniversary Edition**. Plain text is king, version control everything, try and
+keep your workstation and things configurable and in check as much as possible.
+
+== Reason
+
+**If the worst happens, and your machine gets bricked**. If you have it version
+controlled, in plain text files, and automated. You can get a new machine up
+and running in less than half a day.
+
+The reason I'm focusing for now on Windows is because [REDACTED].
+
+== Windows
+
+* ✅ **Version controlled (VCS)** → e.g., Git to track changes
+* ✅ **Plain text** → configs, manifests, scripts, not binary exports
+* ✅ **Reproducible** → rebuild the same environment quickly on new hardware or after a crash
+
+---
+
+🔑 Core Principles
+
+1. **Everything-as-code** → Store all configs and setup in plain text (JSON,
+YAML, PowerShell, etc.).
+2. **Idempotent provisioning** → Running your setup script multiple times should
+always produce the same result.
+3. **Separation of secrets** → Keep credentials in a secure vault, not in Git.
+
+---
+
+🧰 Recommendations for Windows
+
+1. **Package Management with Winget / Chocolatey**
+
+* **Winget** (built into Windows 11, available for 10):
+  Store a `winget export` manifest in Git:
+
+  ```bash
+  winget export -o apps.json
+  winget import -i apps.json --accept-source-agreements --accept-package-agreements
+  ```
+* **Chocolatey** alternative:
+
+  ```powershell
+  choco list --localonly > packages.txt
+  choco install packages.txt -y
+  ```
+
+📌 This makes your software stack reproducible with one command.
+
+---
+
+2. **Dotfiles & Config Sync**
+
+* Keep config files (PowerShell profile, VS Code settings, Git config, n8n workflows, etc.)
+in a `dotfiles` repo.
+* Use symlinks or automation (`stow`-like approach with [scoop](https://scoop.sh)
+or a PowerShell script) to place them in the right locations.
+
+Example:
+
+```powershell
+New-Item -ItemType SymbolicLink `
+  -Path $HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1 `
+  -Target $HOME\dotfiles\powershell\profile.ps1
+```
+
+---
+
+3. **Environment Setup Scripts**
+
+* Write a **PowerShell bootstrap script** (`setup.ps1`) that:
+
+  * Installs Winget/Choco if missing
+  * Installs all apps
+  * Configures system settings (registry tweaks, services, policies)
+  * Links your dotfiles
+
+This becomes your one-command rebuild.
+
+---
+
+4. **Infrastructure/Config Management**
+
+For more advanced reproducibility:
+
+* **Ansible on Windows** → possible via WSL, but overkill for a single machine.
+* **Boxstarter** (Windows + Chocolatey) → automates full machine setup including Windows features.
+* **Terraform + Packer** (if using cloud or VM templates).
+
+---
+
+5. **Reproducible Dev Environments**
+
+* **Dev Containers** or **WSL2 with Docker** → keep your coding environment
+defined in `devcontainer.json` or `docker-compose.yml`.
+* Ensures even if Windows setup differs, your dev stack is identical.
+
+---
+
+6. **Secrets & Credentials**
+
+* Store them in a password manager (Bitwarden, 1Password, KeePass).
+* Use environment variables or secret managers (Azure Key Vault, Vault) in scripts.
+* Never commit them to Git.
+
+---
+
+⚡ Suggested Repo Layout
+
+```
+workstation-setup/
+  apps.json             # Winget/Choco packages
+  setup.ps1             # Bootstrap script
+  dotfiles/
+    powershell/
+    vscode/
+    gitconfig
+  dev/
+    devcontainer.json
+    docker-compose.yml
+  docs/
+    RESTORE.md          # Step-by-step instructions
+```
+
+---
+
+🕒 Restore Time Estimate
+
+* **Base Windows install**: \~30–60 mins
+* **Run setup script**: \~1–2 hrs (apps + configs)
+* **Restore data & secrets**: variable (depends on cloud backup strategy)
+
+👉 With the above, you should realistically be back to work in **under half a day**.
+
+---
+
+Do you want me to draft a **minimal `setup.ps1` bootstrap script** that pulls in
+apps + links dotfiles, so you can see what the starting point looks like?
+
+_NOTE:_ Okay boxstarter seems really promising:
+
+https://boxstarter.org/[LINK]
