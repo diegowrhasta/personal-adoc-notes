@@ -2794,8 +2794,155 @@ Advice:
 
 Will use the same project, don't wanna create a new repository and all the hassle.
 
+The requirements ask for:
+
+- A text with the to do item
+- State of completed or not
+- Completed date
+
+[IMPORTANT]
+====
+If you have issues, you can turn on a debug flag by changing the `appsettings.json`
+file: `"DetailedErrors": true,`. Just add that at as a first class property and you
+will get more info inside of the browser that helps with debugging way easier.
+====
+
+[NOTE]
+====
+Hot reload doesn't really work. Not really, a simple page add, and render foreach
+content on it, just doesn't work. It literally forces you to go and reload things
+manually. Don't really like that at all. (Apparently Visual Studio _of course_
+has the better hot reload support).
+====
+
+Possible solution: `dotnet watch run --no-hot-reload` run this.
+
+_Reconciling course and own solution_
+
+The requirement wants to use a list item, I chose to override defaults so that
+we don't get bullet points:
+
+````
+ul,
+ol {
+    list-style: none;   /* remove bullets/numbers */
+    margin: 0;          /* reset default margins */
+    padding: 0;         /* reset default padding */
+}
+````
+And this was under: `ToDoList.razor.css`.
+
+We have a model, a repository, the razor page for the to-do-list. The course copies
+the repository, I implemented a more lean approach.
+
+The course also reminds us of `_Imports.razor`.
+
+**NOTE:** A good point in the course, it controls if the list is actually populated,
+if not, we should just skip over rendering code:
+
+````
+@if (!_todoItems.Any())
+{
+    return;
+}
+````
+
+The course doesn't even go further into actually implementing the Form Control yet
+it just focuses on a list of the To-Do items. That's fair, but this is code that
+actually does two-way binding and also ripped out of Bootstrap docs, it's literally
+the exact UI that was presented as the final result:
+
+https://getbootstrap.com/docs/5.3/forms/input-group/#basic-example[Docs]
+
+[source, razor]
+----
+<ul class="todo-list">
+    @foreach (var item in _todoItems)
+    {
+        <li @key="item.Id">
+            <div class="input-group mb-3">
+                <div class="input-group-text">
+                    <input @bind-value="item.IsComplete" class="form-check-input mt-0" type="checkbox" <.>
+                           aria-label="Checkbox for following text input">
+                </div>
+                <input @bind-value="item.Text" type="text" class="form-control" aria-label="Text input with checkbox"> <.>
+            </div>
+        </li>
+    }
+</ul>
+----
+<.> As you can see we bind the `bool` property of the line item directly to its respective
+rendered control.
+<.> And the `Text` property is also bound to the respective control.
+
 ==== Add Task use case
+
+- Add a button by the top of the list. When clicking, we will be able to add a new
+task.
+
+(My choice): Add a dummy, somehow add for this newly added element a placeholder
+text stating (Add the text here...) or something like that.
+
+This is the code:
+
+[source, razor]
+----
+<button @onclick="AddTodo" class="btn btn-primary mb-3">
+    Add Task
+</button>
+
+<input @bind-value="item.Text" placeholder="@(CalculatePlaceholder(item.FreshAdd))" type="text" <.>
+                       class="form-control" aria-label="Text input with checkbox">
+
+@code {
+    private string CalculatePlaceholder(bool freshAdd) => freshAdd ? "What do you want to do?" : string.Empty; <.>
+
+    private void AddTodo()
+    {
+        TodoItemsRepository.Add(new TodoItem
+        {
+            FreshAdd = true, <.>
+        });
+    }
+}
+----
+<.> Focus on `placeholder`, we are abstracting away code to calculate this text
+since depending on state it should display a placeholder for better UX.
+<.> We basically added a new property to the line item's class, this is something
+that will help us display a placeholder for newly added tasks with the button to
+add new items to the list.
+<.> And we set this flag property to `true` only when they are coming from the
+button click event.
+
+
+_Course content_
+
+- Course makes note of adding the Render Mode.
+- It also already shows how the repo takes care of ordering, the priority is "IsCompleted"
+and **then** "Id". So, not completed tasks will actually be displayed at the top,
+_newly added tasks will be at the top_.
 
 ==== Input task name use case
 
+This is something we already implemented I'm pretty sure. Still, it's interesting
+to see how there are different ways to tackling the problem.
+
+_Course content_
+
+The course definitely deviates, but we can attribute that to unclear requirements.
+It takes away border with a `border-0` class, and it also doesn't get rid of the
+bullet points.
+
 ==== Mark task as completed use case
+
+=== Non-Routable Razor Component Deep-Dive
+
+==== Thinking in Components
+
+==== Extract the ServerList Component
+
+==== Use Component Parameters to communicate from parent to child components
+
+==== Assignment 5: Extract the Server Component
+
+==== Assignment 5: Answer
