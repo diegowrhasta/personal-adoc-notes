@@ -2935,11 +2935,115 @@ bullet points.
 
 ==== Mark task as completed use case
 
+This is probably the most complicated use case.
+
+. Dislay the checkbox, and allow the user to check and not check.
+. We need to populate the completed date. And if unchecked this needs to be
+also cleaned and not displayed anymore.
+. The control should also be disabled since it's completed
+
+This is the code to achieve the requirements:
+
+[source, razor]
+----
+<input @bind-value="item.Text" disabled="@item.IsComplete" <.>
+       placeholder="@(CalculatePlaceholder(item.FreshAdd))" type="text"
+       class="form-control" aria-label="Text input with checkbox">
+@if (item.IsComplete)
+{
+    <div class="p-3">
+        <text>
+            Completed Date: @($"{item.CompletedDate:D}") <.>
+        </text>
+    </div>
+}
+----
+<.> We are actually leveraging `disabled` and implicit syntax to then turn on
+or off the input field with concise code.
+<.> This is another cool pattern to use. Besides the conditional rendering just in
+case the line item is completed, we are also applying `format specifiers`, that on
+string literals can help format dates with a pretty concise and clean syntax. The
+`D` code is for a human readable "long date". Exactly what the course applies with
+not so clean code.
+
+_Note:_ It's also worth mentioning that we did apply fields and properties to
+to intercept the change of the two-way bound `IsComplete` property. So that we
+can add on the fly the completed date (that is set to that precise moment `DateTime.Now`).
+
+It's nice that two-way data binding integrates with these other patterns nicely
+without the need to learn even further.
+
 === Non-Routable Razor Component Deep-Dive
+
+This is now introducing the idea of **thinking in components**.
+
+This means that we are going to break a monolithic view into multiple components,
+all of this in the spirit of _separation of concerns_. Meaning that it's easier
+to maintain the code, easier to extend. (Makes editing in the future easy).
+
+There are different principles to provide guidance:
+
+- SRP (Single Responsibility Principle). If a component needs to change for
+multiple reasons, then that component might be responsible for too many things.
+If we make to many changes within the component, we might start looking at
+refactoring.
+
+Theory and its application can get messy, and its most of the time up to interpretation,
+but we will follow for our project the idea of: "We will try and aim for our components
+to do one specific task"
+
+**The List of Cities**: Currently it's doing **two things**. One is displaying a
+list of cities, and then displaying each city component.
+
+**Search servers**: One component to search
+
+**List of servers**: Has a list of servers, the add button, the actual line items.
+
+**Thinking in components:** Is this ability to look at a screen and know what components
+should be built, how to break down a screen in short.
+
+This is an ability that should be trained, and is required to be proficient at.
 
 ==== Thinking in Components
 
+The server management page will be broken down into multiple components. For the
+first broken down component we will do a `ServerListComponent.razor` file addition
+and literally carve out all the `ul` view code to it, and comment out things that
+end up broken due to us moving away highly coupled pieces of code.
+
 ==== Extract the ServerList Component
+
+Something the course focuses on is the fact that our custom components that we
+create will also need the interactivity mode set to them, don't forget the syntax
+that allows for interactivity to work and for us to leverage its capabilities:
+
+````
+<ServerListComponent @rendermode="InteractiveServer"></ServerListComponent>
+````
+
+The benefits of separating the code like this is simply to make it easier to
+edit in the future. Less code for HTML and backend in the parent component, and
+if an issue arises we know where specifically to go to debug.
+
+````
+private void DeleteServer(Server server)
+{
+    if (server.Id <= 0)
+    {
+        return;
+    }
+
+    ServersRepository.DeleteServer(server.Id);
+    // servers = ServersRepository.GetServersByCity("Toronto");
+    NavigationManager.Refresh(forceReload: true); <.>
+}
+````
+<.> When trying to use the `NavigationManager` on the separated component this
+line of code will look as if it doesn't work, we will later discuss how to fix this
+properly, but for now, we will simply make it so that the router actually triggers
+a full-on browser reload. This is bad, we are losing the SPA benefits and we can
+easily introduce bugs due to state ending up lost. But for know, we will live
+like this.
 
 ==== Use Component Parameters to communicate from parent to child components
 
