@@ -2661,6 +2661,141 @@ and we don't have to worry about anything.`
 
 ==== Use @key to improve list-rendering performance
 
+We want to use the `@key` directive to improve list rendering performance.
+
+Basically, as things stand right now, we have the `Servers.razor` page with a
+`@foreach` directive that creates DOM elements based on a collection. But if we
+actually test out with the Dev Tools of the browser, say an ad-hoc test workflow
+that adds a new server to this collection. (Under the assumption that we are in
+a page with interactivity), we can easily see how the DOM updates **all elements**,
+Blazor apparently can't really patch only a specific item and re-renders the whole
+list.
+
+[NOTE]
+====
+Depending on the use case, on performance critical applications, this will tank
+the UX without a doubt. Luckily we can leverage the `@key` directive to sort of
+give Blazor more meta-data so that its difference calculation algorithm is smarter
+and patches surgically the elements into the DOM.
+====
+
+````
+@foreach (var server in servers)
+    {
+        <li @key="server.Id">
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+            <a href="/servers/edit/@server.Id" class="btn btn-link">Edit</a>
+            <EditForm
+                Model="server"
+                FormName="@($"server-{server.Id}-form")"
+                OnValidSubmit="@(() => DeleteServer(server))">
+                <button type="submit" class="btn btn-primary">
+                    Delete
+                </button>
+            </EditForm>
+        </li>
+    }
+````
+With this specific `@key` attribute, and we try to add a new element, the DOM
+will be patched smartly. Be sure to use some form of data that is unique so that
+Blazor doesn't clash between values and we lose the performance gain we are
+aiming for. That's why this is a **best practice**.
+
+**IMPORTANT:** This directive can be used in list elements `<li>` and table elements
+as well. That is because these HTML elements are the one-to-one mapping of collection
+line items.
+
 ==== Use Virtualization to improve list-rendering performance
 
+Let's expose another possible issue in a specific scenario and a way to deal
+with it.
+
+_What if we have a lot of line items, in the thousands or ten thousands?_
+
+When rendering a piece of DOM and the elements are a ton, the browser stalls
+(regardless of how fast the PC is). You can easily run into this UX affecting
+issue.
+
+_How to solve this?_
+
+Blazor has **virtualization**. This will replace a `@foreach` loop. But only if
+three conditions are met:
+
+. You have too many items.
+. You are analyzing a foreach loop structure
+. The rendered items are of the same height
+
+If you only have hundreds of items, `@foreach` is better. Try to use virtualization
+for big collections.
+
+[source, razor]
+----
+<ul>
+    <Virtualize Items="servers" Context="server"> <.>
+        <li @key="server.Id">
+            @server.Name in @server.City is
+            <span style="color: @(server.IsOnline ? "green" : "red")">
+                @(server.IsOnline ? "online" : "offline")
+            </span>
+            <a href="/servers/edit/@server.Id" class="btn btn-link">Edit</a>
+            <EditForm
+                Model="server"
+                FormName="@($"server-{server.Id}-form")"
+                OnValidSubmit="@(() => DeleteServer(server))">
+                <button type="submit" class="btn btn-primary">
+                    Delete
+                </button>
+            </EditForm>
+        </li>
+    </Virtualize>
+</ul>
+----
+<.> `Virtualize` is a built-in component that Blazor exposes. By leveraging its
+attributes you can easily map it to work with the collection that might have been
+expanded with a `@foreach`. And just like that, painlessly, you get a way faster
+render time for the collection. (No more stalls). 
+
+[NOTE]
+=====
+What is actually happening? Behind the scenes Blazor takes care of a lot here.
+It knows the height of each item and it knows the viewport, and it knows how many
+items need to be rendered and it only renders those items. It won't render all of
+the collection items. The more the user scrolls further, it will then start replacing
+the items that are not rendered with new items, it's smoke and mirrors overall,
+but abstracted and ready to consume. We don't have to re-invent the wheel. It
+also knows about the `@key` principle and it auto adds it respectively we don't
+even have to worry about that.
+=====
+
 === Course Project (Part 1): To-Do List App Basics
+
+==== Requirement of To do list app
+
+We will put all of our knowledge to the test by building a simple app and applying
+all the concepts we got introduced. This is a To-do list app, and it has the
+following requirements:
+
+. Display a list of tasks (we need to take ordering into account, completed tasks
+are higher priority)
+. Add Task (click event)
+. Input task (two-way data binding)
+. Mark task as completed (we can't edit the task further, and we should mark the
+completed date)
+
+Advice:
+
+. Think of each use case, one at a time
+. Have a framework that simplifies development (Bootstrap)
+
+==== Display a list of tasks use case
+
+Will use the same project, don't wanna create a new repository and all the hassle.
+
+==== Add Task use case
+
+==== Input task name use case
+
+==== Mark task as completed use case
