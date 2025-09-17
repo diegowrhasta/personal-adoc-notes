@@ -3047,6 +3047,168 @@ like this.
 
 ==== Use Component Parameters to communicate from parent to child components
 
+Now that we have components, we need to think about how we communicate data across
+them. _One way is **component parameters**_.
+
+Looking at a workflow such as:
+
+- Parent Component
+- Child Component
+
+We have components that will hold inside of them (orchestrate) child components.
+And this parent component will need to somehow send this data from one component
+to the other. Based on events, signals will have to be wired.
+
+If we go to `ServerListComponent.razor`, we can add a property with a specific
+decorator so that we allow for it to take a property from a parent component:
+
+````
+[Parameter]
+public string? CityName { get; set; }
+
+private readonly string FALLBACK_CITY = "Toronto";
+private List<Server> servers = [];
+
+protected override void OnParametersSet()
+{
+    servers = ServersRepository.GetServersByCity(CityName ?? FALLBACK_CITY);
+}
+````
+This is using best practices, we have a fallback city name in case we don't get
+a paremeter back from a parent. Otherwise we will use the hook in which we are
+sure a parent has fed us (or we at least should have an actual value coming from
+the parent). `OnParametersSet()`. And there we can run logic with the parameter's
+value.
+
+And on the parent:
+
+````
+<ServerListComponent CityName="@selectedCity"></ServerListComponent>
+````
+
+In short, we should be able to go to the screen and check if the switching of
+the servers by city is now working as it was before.
+
+How does this work?
+
+. At the parent we have a `selectedCity` property that we update on each click on
+one of the cities.
+. This same value is now hooked into the child component, and each time a new value
+is fed to it we run the logic to change the line items based on the parameter's
+value
+
+And so in short, we pass data from a parent to a Child so that the Child then
+gets to run its own logic, effectively abstracting and separating by concern,
+really cool, really simple, **simple**. _Don't forget about this type of pattern_.
+
 ==== Assignment 5: Extract the Server Component
 
+We established at the beginning that we will have a second component extracted and
+that is for one line item of the list. Further abstraction, and better approach.
+Our task is to have the logic that lives in `ServerListComponent.razor` for the
+line item rendering be in its own component. This of course has to leverage
+Parameters.
+
+We created at the very beginning a `ServerComponent.razor` component, at the time
+it was only for testing purposes. But now we will replace its content with the
+logic of an actual line item.
+
+[source, razor]
+.ServerListComponent.razor
+----
+<ul>
+    <Virtualize Items="servers" Context="server"> <.>
+        <ItemContent>
+            <ServerComponent Server="@server"></ServerComponent> <.>
+        </ItemContent>
+        <Placeholder>
+            <text>Loading...</text> <.>
+        </Placeholder>
+    </Virtualize>
+</ul>
+
+@code {
+    [Parameter] public string? CityName { get; set; }
+
+    private readonly string FALLBACK_CITY = "Toronto";
+    private List<Server> servers = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        servers = ServersRepository.GetServersByCity(CityName ?? FALLBACK_CITY);
+    }
+
+}
+----
+<.> The Virtualize smart component from Blazor has extra features that we can
+leverage.
+<.> We can put on the rendered line item piece of code under an `<ItemContent>`
+our code for each item that will be rendered smartly.
+<.> And then _in theory_ we can put under `<Placeholder>` code that will be rendered
+as items are fetched on the list for `Virtualize`. Alas, this doesn't seem to work....
+
+It's on the line item component that things should be rendered as so:
+
+[source, razor]
+.ServerComponent.razor
+----
+@inject NavigationManager NavigationManager
+
+@if (Server is null)
+{
+    return; <.>
+}
+
+<li @key="Server.Id">
+    @Server.Name in @Server.City is
+    <span style="color: @(Server.IsOnline ? "green" : "red")">
+        @(Server.IsOnline ? "online" : "offline")
+    </span>
+    <a href="/Servers/edit/@Server.Id" class="btn btn-link">Edit</a>
+    <EditForm
+        Model="Server"
+        FormName="@($"Server-{Server.Id}-form")"
+        OnValidSubmit="@(() => DeleteServer(Server))">
+        <button type="submit" class="btn btn-primary">
+            Delete
+        </button>
+    </EditForm>
+</li>
+
+@code {
+    [Parameter]
+    public Server? Server { get; set; } <.>
+    
+    private void DeleteServer(Server Server) <.>
+    {
+        if (Server.Id <= 0)
+        {
+            return;
+        }
+
+        ServersRepository.DeleteServer(Server.Id);
+        // Servers = ServersRepository.GetServersByCity("Toronto");
+        NavigationManager.Refresh(forceReload: true);
+    }
+}
+----
+<.> Never forget good practices
+<.> We will get one line item object back so that the component can then render
+its respective content
+<.> And we will also bring in the deletion method that used to live at the parent
+level.
+
+After this surgical extraction and componetization, this should be _easier to
+maintain_. As well as adhere to best practices.
+
 ==== Assignment 5: Answer
+
+[IMPORTANT]
+====
+If you place inside of a parent with interactivity configured to it a child component,
+**The Child also inherits interactivity**. Hence we don't have to specify at all
+the `@rendermode` property again.
+====
+
+Basically, what I implemented. So, cool. There's still that `Loading...` issue.
+We are not hitting this placeholder text condition at all.
