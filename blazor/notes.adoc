@@ -3212,3 +3212,261 @@ the `@rendermode` property again.
 
 Basically, what I implemented. So, cool. There's still that `Loading...` issue.
 We are not hitting this placeholder text condition at all.
+
+==== Extract city components
+
+After extracting the list of servers and the line item, we are now going to apply
+the same principle to the Cities side.
+
+So, on the parent component (page) we will basically start cutting out the code
+that renders the list of cities and each line item:
+
+[source, razor]
+----
+<h3>Servers</h3>
+<br/>
+<br/>
+<CityListComponent></CityListComponent> <.>
+<br/>
+----
+<.> In the end all the logic should be abstracted behind one specific component.
+
+The list component will also have its own child components (line items):
+
+[source, razor]
+----
+<div class="container-fluid text-center">
+    <div class="row w-50">
+        @foreach (var city in cities)
+        {
+            <CityComponent City="@city" SelectedCity="@SelectedCity"></CityComponent> <.>
+        }
+    </div>
+</div>
+
+@code {
+    private string SelectedCity { get; set; } = "Toronto"; <.>
+    private List<string> cities = CitiesRepository.Cities;
+}
+----
+<.> As you can see we are passing down from the list component (a sort of second-class
+parent component), one name for the respective iteration render alongside a state
+variable that keeps in check which option has been selected in the UI.
+
+Lastly the line item component:
+
+[source, razor]
+----
+<div class="col">
+    <div class="@($"card{IsActive(SelectedCity, City)}")">
+        <img style="max-width: 150px; max-height: 150px"
+             class="card-img-top"
+             src="@($"/images/{City}.png")"
+             alt="Card image cap">
+        <div class="card-body">
+            <button type="button" class="btn btn-primary"
+                    @onclick="@(() => SelectCity(City))">@City</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string SelectedCity { get; set; } = string.Empty; <.>
+    [Parameter] public string City { get; set; } = string.Empty;
+    
+    private void SelectCity(string cityName)
+    {
+        SelectedCity = cityName; <.>
+    }
+
+    private static string IsActive(string currentCity, string cityName) =>
+        currentCity.Equals(cityName, StringComparison.InvariantCultureIgnoreCase) ? " border-primary" : string.Empty;
+}
+----
+<.> Notice how we have as a parameter property the `SelectedCity` property.
+<.> And in here we have a callback that updates the respective property. This however
+fails to meet the requirements (it breaks the previous working behavior), and that
+is because we should notify the parent of a change in the selected city and then
+the parent should take care of sending down to the respective childs the updated
+information so that the workflow works again.
+
+With this in mind we will tune the `SelectCity` event callback so that we can
+notify the parent from the respective child so that the state is changed and the
+parent replicates that info to all other children so that the UI behaves correctly.
+(i.e., We have the border for the corresponding city).
+
+==== Use EventCallback to pass info from a child to parent components
+
+We have to solve two broken behaviors:
+
+. The listing of respective servers per city is broken
+. The highlighting of a selected city is also broken
+
+We need to highlight that we have 2 levels of nesting here, a grandparent, parent
+and child chain of component interactions, and it's within this section that we
+will see how to communicate information across all these levels effectively.
+
+**Event Callback:** This is supposed to be used by the child component of a component
+tree. At the `CityComponent.razor` file we have to create an event callback to notify
+the parent.
+
+To fix the first issue we need to introduce the usage of the `EventCallback`
+
+````
+[Parameter] public EventCallback<string> SelectCityCallback { get; set; } <.>
+
+private async Task SelectCityAsync(string city)
+{
+    await SelectCityCallback.InvokeAsync(city); <.>
+}
+````
+<.> We basically stick to the concept of `Parameter` but the kicker here is this
+special _Blazor_ type called `EventCallback`. In this instance it encapsulates a
+delegate that takes one string parameter.
+<.> We are coding the granson's component code to catch the selection event all
+the way down the component tree to then invoke the passed down callback from the
+parent. The parent should have this method registered under its own state, and
+so the moment we run the method in a child, the parent component's code will get
+executed under his own context. This trick is a really powerful concept to keep in mind.
+
+````
+<CityComponent City="@city" SelectedCity="@SelectedCity"
+                           SelectCityCallback="HandleCitySelection"></CityComponent> <.>
+
+@code {
+    private void HandleCitySelection(string cityName)
+    {
+        SelectedCity = cityName;
+    }
+}
+````
+<.> Notice how we are passing the method as its signature, no execution of the
+method. It is with this that we establish this link/resource that can be passed
+from a parent to a child and the child get a way to send a signal back to him.
+
+This fixes the highlighting for sure, since the parent gets back a signal to
+update the selected city and that trickles down to the children components.
+
+[NOTE]
+====
+EventCallbacks have by default only an async `InvokeAsync`, hence we delve into
+async programming, however one key element here for cancellation is `CancellationToken`.
+Blazor components don't seem to get this injected by default, so we have to manually
+create them and then pass them down in every possible call so that we cancel async
+calls if the component is destroyed and things alike. Also, this is a **Blazor
+thing**. We don't have to apply the usual C# safe-guards checking for a null.
+====
+
+The way to solve the second broken behavior will be solved with _double bubbling_,
+meaning from a grandson to a parent, a parent to a grandparent. (_This is a really
+bad practice, but for now let's keep it this way).
+
+.CityListComponent.razor
+````
+[Parameter] public EventCallback<string> SelectCityCallback { get; set; }
+
+private async Task HandleCitySelectionAsync(string cityName)
+{
+    SelectedCity = cityName;
+
+    await SelectCityCallback.InvokeAsync(SelectedCity);
+}
+````
+
+.Servers.razor
+````
+<CityListComponent SelectCityCallback="HandleSelectedCity"></CityListComponent>
+
+private void HandleSelectedCity(string cityName)
+{
+    CityName = cityName;
+}
+````
+
+As you can see, it's just the same concept applied but twice, when the parent
+component gets the signal from the child, it then sends a signal to the grandparent
+with the same info that he got from the **child**.
+
+==== Assignment 6: Componentize the search bar
+
+We will work on componetizing the search bar.
+
+. The search bar is inside `Servers.razor` we need to make it its own component.
+
+This is a bit... weird. In the sense that the current architecture is making us
+add different things that are not easier to clean later. I think a good guiding
+principle for separating logic for components is:
+
+[IMPORTANT]
+====
+We need an Orchestrator. Someone who takes signals from all sorts of places and
+sort of makes sense of them and puts them together, of course this can lead
+towards child components executing their own logic based on that idea, but we
+shouldn't be making one child component _over-listen_ to events from others, he
+should only care about the specific functions it provides to the greater whole.
+====
+
+And so the search bar component would be something like this:
+
+[source, razor]
+----
+<div class="input-group mb-3">
+    <input
+        type="text" class="form-control"
+        placeholder="Search Servers"
+        @bind-value="SearchFilter"
+        @bind-value:event="oninput">
+    <button class="btn btn-outline-secondary" type="button" id="search-button" @onclick="HandleSearchAsync">Search</button>
+</div>
+
+@code {
+    [Parameter] public EventCallback<string> OnSearchCallback { get; set; } <.>
+
+    private string SearchFilter { get; set; } = string.Empty;
+
+    private async Task HandleSearchAsync()
+    {
+        await OnSearchCallback.InvokeAsync(SearchFilter); <.>
+    }
+}
+----
+<.> The previous code that was in `Servers.razor` has been tuned to fit within the
+idea that this is now its own component and state is leveraged through EventCallbacks
+alongside `[Parameter]`.
+<.> Notice how this is an async variation and the `@onclick` integrates just fine.
+
+The code at the grandparent component will take the signal and then send back
+another in the form of special flag values in the `ServerListComponent.razor`:
+
+````
+<SearchBarComponent OnSearchCallback="HandleSearch"></SearchBarComponent>
+
+private void HandleSearch(string searchName)
+{
+    CityName = string.Empty;
+    SearchName = searchName;
+}
+````
+Notice how this is making the `CityName` an empty string and then `SearchName`
+receiving the value from the `SearchBarComponent`.
+
+These two parameters are being sent down, and then some logic is run so that based
+on their values we run normal servers by city logic or other type of logic that
+will search based on a search term:
+
+[source, razor]
+----
+protected override void OnParametersSet()
+{
+    if (CityName?.Equals(string.Empty) ?? false)
+    {
+        servers = ServersRepository.SearchServers(SearchCity!);
+        return;
+    }
+
+    servers = ServersRepository.GetServersByCity(CityName ?? FALLBACK_CITY);
+}
+----
+If the `CityName` is empty, then this means that we are on the search workflow,
+hence we run a different code path, otherwise, this is a default city name
+workflow. We are applying else-less and return-early as good practice.
