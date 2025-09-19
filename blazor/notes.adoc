@@ -3470,3 +3470,135 @@ protected override void OnParametersSet()
 If the `CityName` is empty, then this means that we are on the search workflow,
 hence we run a different code path, otherwise, this is a default city name
 workflow. We are applying else-less and return-early as good practice.
+
+==== Assignment 6: Answer
+
+Yeah, what I did, with two additions
+
+- Don't forget we can check for a string with `string.IsNullOrEmpty()` and `string.
+IsNullOrWhiteSpace`. That's cleaner.
+- A slight bug was introduced, if we search by a filter name, and then try to switch
+again to a city's server list it won't switch, and that is because we have to
+reset the search filter in order for the code path to go back to the default
+city name list workflow.
+
+But yeah, the course also makes usage of this _slightly convoluted way_ of dealing
+with two different workflows through the usage of extra parameters and flag values.
+
+==== Reference a child component
+
+Currently everything works, but there are some issues we can iron out. One of them
+is the fact that when we filter out servers by city and then try and search by a
+filter, the previously selected city _stays marked as selected_. That type of feedback
+is confusing, so we'll try and fix that. **Also**, we should clear the search filter
+if we select a city.
+
+Since these states/behaviors belong to child components. We need a way to sort of
+grab hold of them and make them update their status. Luckily parents have a way
+of referencing child components and executing methods inside of them.
+
+And so, we need to modify two places:
+
+[source, razor]
+.CityListComponent.razor
+----
+public void ClearSelection()
+{
+    SelectedCity = string.Empty;
+}
+----
+A simple method that will be added to the component so that we can clear the
+selected city and the border disappears as a result.
+
+And in the grandparent:
+
+[source, razor]
+.Servers.razor
+----
+<CityListComponent @ref="CityListComponent" SelectCityCallback="HandleSelectedCity"></CityListComponent> <.>
+
+@code {
+    private CityListComponent CityListComponent = null!; <.>
+
+    private void HandleSearch(string searchName)
+    {
+        CityListComponent.ClearSelection(); <.>
+        CityName = string.Empty;
+        SearchName = searchName;
+    }
+}
+----
+<.> The way to tie a component to a reference is with `@ref`.
+<.> Of course, the reference needs to be stored in a reference variable/state
+variable, hence this will be of the respective type (don't forget these components
+are in the end classes). And we apply this specific syntax so that we state that the
+component will not be null, the reference will be attached once the child component
+gets rendered correctly.
+<.> And as a simple class method call we can invoke the method we created at the
+child component so that we trigger the desired logic.
+
+And with this, the selected border will disappear since we are now sending a signal
+from the parent to the child so that it updates its own state (and in turn its own
+visuals).
+
+As a mini-assignment we can now apply this same concept but now to clear the
+search bar filter based on a city selection:
+
+````
+<SearchBarComponent @ref="SearchBarComponent" OnSearchCallback="HandleSearch"></SearchBarComponent>
+
+@code {
+    private SearchBarComponent SearchBarComponent = null!;
+
+    private void HandleSelectedCity(string cityName)
+    {
+        SearchBarComponent.ClearSearchFilter();
+        SearchName = string.Empty;
+        CityName = cityName;
+    }
+}
+````
+As you can see, this is the same principle, yet with the `SearchBarComponent`
+now being referenced and then having a method called from its parent.
+
+This is yet **another way to communicate with your child component from a
+parent's perspective**.
+
+==== Reuse routable component as non-routable component
+
+Let's learn about re-usage of components (pages).
+
+Our requirement is pretty straightforward:
+
+At the `ServerComponent.razor` level, we have a button that triggers a navigation
+to an edit page, but we want to actually render that very same page on the same
+screen of this component. You can do something like this:
+
+[source, razor]
+.Servers.razor
+----
+<button type="button" @onclick="@(() => EditingServer = !EditingServer)" class="btn btn-link">Edit</button> <.>
+
+@if (EditingServer)
+{
+    <br/>
+    <ServerManagement.Components.Pages.EditServer Id="@Server.Id"></ServerManagement.Components.Pages.EditServer> <.>
+}
+
+@code {
+    private bool EditingServer { get; set; }
+}
+----
+<.> And so we can change the button that previously just did a full routing emission
+to a simply `@onclick` handler.
+<.> Based on a state variable we can then choose to render a specific component,
+and this as you can see is a fully qualified name, and also receives and is consumed
+as any regular component.
+
+[NOTE]
+====
+The course makes a highlight here stating that this code won't be used, it was simply
+to demonstrate how we can put routable components inside simple components. I should
+add my own take here as well, _I don't think this is recommended nor clean_, specially
+the visual clutter that is added by having to fully qualify the component.
+====
