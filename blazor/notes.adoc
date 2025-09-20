@@ -3602,3 +3602,154 @@ to demonstrate how we can put routable components inside simple components. I sh
 add my own take here as well, _I don't think this is recommended nor clean_, specially
 the visual clutter that is added by having to fully qualify the component.
 ====
+
+==== Use if statement to output data conditionally
+
+Currently the code that we implemented already has `@if`. However, let's take a
+more in-depth look at it in order to really understand the potential it holds.
+
+_Requirement_: We want a button to turn on/off the online status of a server on
+the lits.
+
+The course applies an `@if` so that we can render a button that's green or red
+in essence depending on the status. And it then takes care of turning it off or
+on with a callback. Code is a bit like this:
+
+````
+<span class="me-2" style="color: @(Server.IsOnline ? "green" : "red")">
+        @(Server.IsOnline ? "online" : "offline")
+</span>
+@if (Server.IsOnline)
+{
+    <button class="btn btn-outline-danger">
+        Turn Off
+    </button>
+}
+else
+{
+    <button class="btn btn-outline-success">
+        Turn On
+    </button>
+}
+````
+My issue with this code is that it's too verbose, we can definitely abstract away
+so that we don't repeat so much.
+
+[source, razor]
+====
+<button class="@($"btn btn-outline-{CalculateButtonType(Server.IsOnline)}")" @onclick="UpdateServerStatus"> <.>
+    @(CalculateButtonText(Server.IsOnline))
+</button>
+
+@code {
+    private static string CalculateButtonType(bool isOnline) => isOnline <.>
+        ? "success"
+        : "danger";
+
+    private static string CalculateButtonText(bool isOnline) => isOnline <.>
+        ? "Turn Off"
+        : "Turn On";
+
+    private void UpdateServerStatus()
+    {
+        if (Server is null)
+        {
+            return;
+        }
+
+        Server.IsOnline = !Server.IsOnline;
+        ServersRepository.UpdateServer(Server.Id, Server); <.>
+        NavigationManager.Refresh(forceReload: true);
+    }
+}
+====
+<.> As you can see we have one method to which we feed the `isOnline` data and
+based on that we calculate a part of a string that will dictate if the button looks
+green or red.
+<.> This method follows the same principle as the previous method, but this calculates
+the label text instead of a the class name.
+<.> Lastly, we have a callback on the button that due to the binary nature of booleans
+can respond to the same workflow (making the code more concise). In this we just
+update the component's object state, and then send that to the actual _Repository_
+and trigger a manual page reload (we are going to solve this later this is bad and
+can lead to bugs since we are moving away from the SPA approach).
+
+[IMPORTANT]
+====
+By playing around a bit with the code and stuffs came across an interesting behavior that
+I should highlight. The code with `UpdateServer(Server.Id, Server)` and `NavigationManager.Refresh`, 
+**is not necessary**. The reason being that we are working with a static list that
+lives in memory. All the objects that are returned to the parent and then cascaded
+to the children pass those same objects by reference. If a child modifies that same
+object, then the state gets replicated automatically for all the application (since
+everyone is looking at the same object). So that's cool, but the moment we switch
+to a database this behavior will completely break and will result in tons of bugs.
+This also leads me to the hypothesis that our "edit" is actually not necessary to
+have a repo method called since the screen will be manipulating the same object
+by reference.
+====
+
+==== Assignment 7: Display people online
+
+Requirement: _Display the number of people online_
+
+We should display a random number (only if the server is online), this number
+should represent the amount of people that are currently being served by the
+n-th server.
+
+Solution is again, trying to write really senior code:
+
+[source, razor]
+====
+@if (Server.IsOnline)
+{
+    <text>@(GetRandomPeopleNumber())</text> <.>
+}
+
+@code {
+    private static string GetRandomPeopleNumber()
+    {
+        var randomInt = new Random().Next(minValue: 1, maxValue: 15); <.>
+
+        return $" ({randomInt})"; <.>
+    }
+}
+====
+<.> Since the assignment says that we don't care about this number at all, then
+the responsibility will be offloaded to a _ephemereal_ value that is calculated on
+the fly.
+<.> I don't really like this because we are creating a new object with every method
+call, so performance wise this could tank. For demo, and test purposes though,
+that's whatever. Also, adding limits so that the numbers are somewhat "realistic".
+<.> And lastly we are just calculating the text to display based on the random number
+and with a space so that the UI looks _"good"_.
+
+It's also worth of note how I chose to put all the calculation logic behind a method
+so that we keep the "html" side clean/abstract, and for further analysis we can
+head down to the `@code` section in order to really drill down into what we might
+care, and it also helps with edition being way faster and less cumbersome since we
+aren't mixing in logic and render sides of the component.
+
+It's with this that everytime a server is "Online" we will see a number between
+parenthesis that is number, yet it gives the feedback to the user of the amount
+of people that are currently using it.
+
+==== Assignment 7: Answer
+
+Okay course put the number next to the Turn On/Off button. It also used its weird
+`;nbsp` weird space. It also applied something that's "possible", and I guess it's
+good to know that, this is possible so that If I find code that does this I don't
+get surprised:
+
+````
+@if (Server.IsOnline)
+{
+    var random = new Random();
+    var randomInt = random.Next();
+    <text>randomInt</text>
+}
+````
+So you can literally just write C# code right there on the template. (But I would
+advise against it).
+
+
