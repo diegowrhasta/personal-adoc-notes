@@ -3752,4 +3752,229 @@ get surprised:
 So you can literally just write C# code right there on the template. (But I would
 advise against it).
 
+==== CSS Isolation
 
+We are going to take this requirement:
+
+- The search bar and input fields on the "Edit Page" are too long, we want to
+control that.
+
+If we take a traditional approach, we would literally go to `wwwroot > app.css`.
+And we would start styling things there.
+
+[NOTE]
+====
+By the way, this `app.css` file gets imported in the `App.razor` hence all the styles
+that are available can be consumed by the components.
+====
+
+If we add a class in `app.css`:
+
+````
+.input-width {
+    width: 60%;
+}
+````
+
+We can easily consume the class in any of our app components:
+
+[source, razor]
+.SearchBarComponent.razor
+----
+<div class="input-group mb-3 input-width"> <.>
+    <input
+        type="text" class="form-control"
+        placeholder="Search Servers"
+        @bind-value="SearchFilter"
+        @bind-value:event="oninput">
+    <button class="btn btn-outline-secondary" type="button" id="search-button" @onclick="HandleSearchAsync">Search</button>
+</div>
+----
+<.> In here, the parent container the _input-group_ can have this other class
+applied to it and if we head down to the website, we will see how we controlled
+the width of the input.
+
+We can go and do the same for the `EditServer.razor` component.
+
+````
+<div class="col-6 input-width">
+    <InputText class="form-control" @bind-Value="_server.City"></InputText>
+</div>
+````
+As you can see we apply the class to the outer container, not the component itself.
+**REMEMBER THIS TRICK**.
+
+So, we do all of this and we effectively have things working. We fulfill the
+requirement. _HOWEVER_.
+
+In real life applications, you tend to work in teams, and many people take care
+of maintaining the application and adding changes. If you use the `app.css` together,
+you might run into problems in which people will perhaps repeat classes, or some
+class will override what you did or just plain merge conflicts plaguing you.
+There are tons of ways in which keeping styles in this global `app.css` file, will
+make things harder for the whole team in the long run.
+
+The best way to solve this problem is `CSS Isolation`. If we can isolate the scope
+of the CSS class we will never have problems, we will simply have a css for the
+component itself, and all class names will be specific to a component, we won't
+clash or bleed styles from other places without knowing.
+
+_How To:_ Simply create a file that has the name of the component + `css`. Example:
+
+- GoodComponent.razor > GoodComponent.razor.css
+
+If you applied the naming convention correctly, you should see in the IDE how
+the css file gets somewhat "grouped" under the component it will hold styles for.
+
+Inside of these files you can have any style that you want.
+
+So we will create two new files for css:
+
+- `EditServer.razor.css`
+- `SearchBarComponent.razor.css`
+
+And we will add specific styles there (width: 50%, width: 30% respectively). And
+if we reload the website, be sure to check that they get applied correctly. _Note: _
+Since hot reload is bad, you might have to start the application again so that the
+styles get loaded and applied correctly.
+
+Once you have the isolated css file, you can use it all across the component.
+**YOU CANNOT USE IT IN OTHER PARTS OF THE APP EVEN IF YOU WANT TO**. This is a
+protection against name clashes.
+
+[IMPORTANT]
+====
+I'm not sure if this will work in prod (published mode). **BUT**. Something cool
+to keep in mind is that you can hit the "Inspect" of the browser's Dev Tools, take
+a look at the `<head>` of the HTML and extract the name of the css stylesheet,
+in the case of this project I got: `ServerManagement.je9262pioh.styles.css`. You
+can take the server's URL, and then append as the second level this stylesheet,
+and in the browser you should get the whole stylesheet that the app has in plain
+text for you to see, e.g., `http://localhost:5116/ServerManagement.je9262pioh.styles.css`.
+====
+
+If we were to analyze the css stylesheet, we will immediately notice how our respective
+component names are on comments and then their respective styles are also in there.
+If you look up for `input-width`, you will notice there are two ocurrences of it.
+However they have some extra values added to it, e.g:
+
+- .input-width[b-yj1s9dz156]
+- .input-width[b-w7uhgcqi6g]
+
+These are hashed class names (scope identifier/limiter). This is the mechanism that Blazor applies under the
+hood so that we don't clash between names across the different components and their
+styles, making it easy for us to simply have same class names yet not running into
+issues.
+
+If we analyze each of the respective components (with the Inspect tool), we will
+easily be able to see on their rendered HTML how they will reference the identifier
+and these identifiers should match respectively to the ones we see on the stylesheet.
+That's how isolation works.
+
+[IMPORTANT]
+====
+Why didn't we apply the class names directly on the input components themselves?
+Because the identifier doesn't get applied correctly. Hence the _best practice_ is
+to have a container, and then put the class name there, that way the identifier
+gets applied to it, and the style takes care of re-shaping an input's width or
+other things which is inside of the container.
+====
+
+==== Cascading Parameter theory
+
+We have learned about parent components and then how we can nest components, and
+how to pass info between them. Parameters, EventCallback. But what if we have
+multiple levels? Deep structures (3 levels or more deep).
+
+It would be a hassle to make these webs and webs of Parameter passed down to the
+next, and then the next passing down to the next. A solution to avoid writing so
+much boilerplate is: **Cascading Parameters**.
+
+As long as you define it in a Parent Component, then any child will be able to
+access it.
+
+There are two ways of consuming these cascading parameters:
+
+- CascadingValue (This is a component that should be declared on the template part
+of the parent).
+- CascadingParameter (This is used inside of the child in order to receive the value
+that is being cascaded)
+
+==== Use cascading parameter to pass values down the component tree
+
+Let's put a requirement up and then use a cascading parameter to get to it:
+
+- With each city that we hit to filter the list of servers, we want different
+background colors.
+
+We have our base page component, the orchestrator. And we have applied before double
+bubble up of event callbacks to get from the city component to the orchestrator.
+Since that component knows which is the selected city and hence runs logic to change
+the list of servers, we want to now also have him affect the look of each of the
+server line items. We have **3 levels** of components, but we don't want to write
+a lot of code. Hence we will use `CascadingParameters`.
+
+The first part of this setup is to leverage at the parent level the `<CascadingValue>`
+component:
+
+[source, razor]
+.Servers.razor
+----
+<CascadingValue Name="SelectedCity" Value="@CityName"> <.>
+    <ServerListComponent CityName="@CityName" SearchCity="@SearchName"></ServerListComponent>
+</CascadingValue>
+----
+<.> As you can see we have the ability to choose what child component(s) will get
+the cascading value by leveraging this specific Blazor component. All it requires
+is for the name to identify the parameter at the child level, and the actual value
+to bind to it.
+
+In order to receive the cascading value, we can head down to the child component
+that **needs to receive it**, we don't have to declare it in other components that
+might not have any use for it.
+
+[source, razor]
+.ServerComponent.razor
+----
+<li style="background-color: @GetBackgroundColor()" @key="Server.Id"> <.>
+
+@code {
+    [CascadingParameter(Name = "SelectedCity")] <.>
+    public string? SelectedCity { get; set; }
+
+    private string GetBackgroundColor() <.>
+    {
+        return SelectedCity switch
+        {
+            "Toronto" => "powderblue",
+            "Montreal" => "lightgray",
+            "Ottawa" => "palegreen",
+            "Calgary" => "pink",
+            _ => "white"
+        };
+    }
+}
+----
+<.> The course now applies running a method in order to calculate things, this
+is of course a much _cleaner approach_.
+<.> Cascading Parameters can be multiple, not just one, meaning that we should
+make it a habit to identify them and retrieve them by said identifier.
+<.> This function is a simple calculation function that will take in whatever
+the selected city is and then spit out a specific color to style the background
+of the server component.
+
+Lastly, we also want to get rid of the default list styles, luckily bootstrap
+comes with a pre-built class to override this:
+
+````
+<ul class="list-unstyled">
+````
+
+This effectively gets rid of the bullet points of the list that we had rendering
+at the `ServerListComponent.razor` component.
+
+==== Cascading parameter crossing render mode boundary
+
+==== Use templated components to create generic components
+
+==== Typed Templated Component
