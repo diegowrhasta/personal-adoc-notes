@@ -3975,6 +3975,296 @@ at the `ServerListComponent.razor` component.
 
 ==== Cascading parameter crossing render mode boundary
 
+**Render Mode Boundary:** Depending on the component and application, you can extrapolate
+render boundaries (SSR Boundary - Outer Boundary), (Interactive Boundary - Inner Boundary).
+
+SSR = Pages are rendered statically (no interactivity). But we have the option
+to render components with interactivity switch on. (You can leverage both approaches
+depending on your use case). **BUT,** if you want to cascade a parameter from an
+SSR context into an interactive component, **you cannot**.
+
+Once you have set a specific render boundary, any other component inside of it
+(e.g., A parent that has `InteractiveServer` and then nests children inside),
+will inherit this same render mode.
+
+If you want to cascade from the outside to the inside, this means that you want
+to _cascade values across render mode boundaries_. And this won't work.
+
+_IMPORTANT:_ We have setup the app to have InteractiveServer mode globally, the
+course assumes we are with SSR and then opening up specific components to this
+render mode. So replicating the lesson's demo is going to be hard but the takeaway
+is as follows.
+
+- We have `App.razor` and inside of there we have `<Routes>`, this component takes
+care of rendering all the pages that are shown to the user based on URL. If we
+were to wrap a `<CascadingValue>` around the whole content, and try to retrieve
+it in say `Servers.razor` we won't be able to get it, since at that level we are
+simply with `SSR`.
+
+So, how can we "solve" this? Just make the whole application `InteractiveServer`.
+The inner boundary will no longer exist, and we will be cascading across a whole
+interactive render mode boundary.
+
+[IMPORTANT]
+====
+There is however another way of cascading a value regardless of boundaries, and
+that is by going to `Program.cs` and using the DI Container to then register the
+cascading value like so: `builder.Services.AddCascadingValue("SelectedCity", sp => "Toronto")`.
+====
+
+You can however see how this limits our options for leveraging the component's state,
+this would be a hard-coded value in essence. But, I guess we can make it work with
+services, or some static state object, yet depending on the use case, it could be
+a good option or a really bad and risky take.
+
 ==== Use templated components to create generic components
 
+We have created a lot of reusable components. And we are in the right track, but
+we are still coupling together implementations almost too much. The `CityListComponent.razor`
+and `ServerListComponent.razor` only renders a list of `CityComponent.razor` and
+`ServerComponent.razor` respectively. It's kinda reusable yet at the same time
+we have coupled these components together.
+
+**Templated Component:** This is a higher level component, that expands on that
+"reusability" concept. If we analyze our list components, at their core, they
+are solely in charge of repeating an HTML plus a bit of logic. What if we created
+an abstraction that can take any sort of data and repeat it? (A _repeater component_).
+
+With such a repeater component, we can simplify our code base. These higher level
+components are referred as `Templated Components`. An in nature are way more re-usable.
+
+- When we look at the CityList component we see how it only requires for the data
+in order to run its rendering logic.
+- But a templated component will need both the dataset, **and** the UI element.
+(e.g., We need to know what is going to be rendered).
+- The "repeater" component will need for the UI to be provided to him so that
+he repeats it and stays abstract, that UI element is called **Template**, or _Placeholder_.
+
+Let's practice this new concept with the `EditServer.razor`. If we look at the code
+of the input fields:
+
+````
+<div class="row mb-3">
+     <InputNumber hidden="true" @bind-Value="@_server.Id"></InputNumber>
+     <div class="col-2">
+         <label class="col-form-label">
+             Name
+         </label>
+     </div>
+     <div class="col-6 input-width">
+         <InputText class="form-control" @bind-Value="_server.Name"></InputText>
+     </div>
+     <div class="col">
+         <ValidationMessage For="() => _server.Name"></ValidationMessage>
+     </div>
+ </div>
+````
+We can see how this structure is repeated all across the component. It has the
+potential to be abstracted since the code is verbose and can be generalized with
+the help of a Templated Component.
+
+So, how about creating a `FieldComponent.razor` templated component? It would take
+a label name and then two specific regions (UI) to render the specific control and
+validation control: (We are creating this under `ServerManagement.Components.Controls.Generic`)
+
+[source, razor]
+.FieldComponent.razor
+----
+<div class="row mb-3">
+    <div class="col-2">
+        <label class="col-form-label">
+            @Label <.>
+        </label>
+    </div>
+    <div class="col-6 input-width">
+        @Control <.>
+    </div>
+    <div class="col">
+        @ValidationControl
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public RenderFragment? Control { get; set; } <.>
+    [Parameter] public RenderFragment? ValidationControl { get; set; }
+}
+----
+<.> As you can see we will receive dynamically a parameter from upstream and that
+wil lbe rendered on this specific region.
+<.> As you can see we are simply placing a state variable where the upstream UI
+content should be fed onto.
+<.> We will then receive as `Parameter` a `RenderFragment` which is the specific
+type for a template that we will later see how it's consumed.
+
+_NOTE:_ We have to add to the `_Imports.razor` our new namespace since we created
+a new folder to hold these more _Generic_ components. `@using ServerManagement.Components.Controls.Generic`.
+
+And if we were to go to `EditServer.razor`:
+
+[source, razor]
+====
+<FieldComponent Label="Name"> <.>
+    <Control> <.>
+        <InputText class="form-control" @bind-Value="_server.Name"></InputText>
+    </Control>
+    <ValidationControl> <.>
+        <ValidationMessage For="() => _server.Name"></ValidationMessage> <.>
+    </ValidationControl>
+</FieldComponent>
+====
+<.> As you can see we are using the previously created component and feeding the
+parameter for `Label`.
+<.> And this is were things change a bit, for the `RenderFragment` parameters we
+have to declare them as components themselves, so the name will correspond to the
+RenderFragment's name.
+<.> You can see how we feed the first and second render fragments respectively.
+<.> And inside of the render fragment, the template code is the UI that will be
+passed down to the _templated component_. It's worth noting that all state, all
+the wired up things that worked before, _STILL WORK_. State is shared, the
+templated component simply takes what's being passed down by reference.
+
+The code in the `EditServer.razor` component will end up looking like this:
+
+````
+<EditForm Model="_server" FormName="formServer" OnValidSubmit="Submit">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+
+    <InputNumber hidden="true" @bind-Value="@_server.Id"></InputNumber>
+    <FieldComponent Label="Name">
+        <Control>
+            <InputText class="form-control" @bind-Value="_server.Name"></InputText>
+        </Control>
+        <ValidationControl>
+            <ValidationMessage For="() => _server.Name"></ValidationMessage>
+        </ValidationControl>
+    </FieldComponent>
+
+    <FieldComponent Label="City">
+        <Control>
+            <InputText class="form-control" @bind-Value="_server.City"></InputText>
+        </Control>
+        <ValidationControl>
+            <ValidationMessage For="() => _server.City"></ValidationMessage>
+        </ValidationControl>
+    </FieldComponent>
+
+    <FieldComponent Label="Online">
+        <Control>
+            <InputCheckbox class="form-check-input" @bind-Value="_server.IsOnline"></InputCheckbox>
+        </Control>
+    </FieldComponent>
+
+    <br/>
+    <button class="btn btn-primary" type="submit">Update</button>
+    <a href="/servers" class="btn btn-primary ">Go Back</a>
+</EditForm>
+````
+As you can see instead of all the repeated HTML code we abstract it behind the
+templated component, and simply consume it and feed some bit of parameters on
+top of specific HTML content to render that responds to the specific use case.
+This is cleaner, and more maintainable.
+
+The web page should work the same as before, we simply refactored.
+
 ==== Typed Templated Component
+
+At the theory section we explained how templated components require for UI
+**AND** data. But if we analyze `FieldComponent` we can easily see how we have
+no actual _data_ fed onto it. So we will now code an actual _full-on templated
+component_. This requires for the component to take a **type** and also some
+sort of **dataset**.
+
+[IMPORTANT]
+====
+This doesn't mean that the previously coded templated component is _wrong_ or
+doesn't adhere to what the _best practice_ says. It's simply an intermediate type
+of templated component useful to fulfill the specific requirement.
+====
+
+The example we will implement is the `Repeater`.
+
+Under the same `Generic` folder we will create:
+
+[source, razor]
+.RepeaterComponent.razor
+====
+@typeparam TItem <.>
+
+@if (Items is null || !Items.Any() || Row is null)
+{
+    return;
+}
+
+@Header
+<Virtualize Items="Items" Context="item"> <.>
+    @Row(item) <.>
+</Virtualize>
+@Footer
+
+@code {
+    [Parameter] public List<TItem>? Items { get; set; } <.>
+    [Parameter] public RenderFragment<TItem>? Row { get; set; } <.>
+    [Parameter] public RenderFragment? Header { get; set; } <.>
+    [Parameter] public RenderFragment? Footer { get; set; }
+}
+====
+<.> In order for a templated component to take some sort of type, we need to declare
+it like this. At the top, and marked as generic, we want it as reusable as possible,
+not tied into a specific type.
+<.> As you can see we are leveraging `Virtualize` again, but we are feeding into
+it the dataset.
+<.> This is a specific syntax when working with typed RenderFragments, if you need
+to feed into it some sort of argument, you can call it as if it where a **method**.
+<.> As you can see this is a list of items (dataset) but that's also generic, (paired
+up with the same type param we had at <1>).
+<.> This is a specific type of `RenderFragment` it's also tied with the <1> type
+parameter.
+<.> And we are then adding two extra render fragments that will render a static
+content as a header and footer from upstream.
+
+Lastly, the way to consume this component will be as follows:
+
+[source, razor]
+.ServerListComponent.razor
+====
+<ul class="list-unstyled"> <.>
+    <RepeaterComponent Items="servers"> <.>
+        <Row Context="server"> <.>
+            <ServerComponent Server="server"></ServerComponent> <.>
+        </Row>
+    </RepeaterComponent>
+</ul>
+====
+<.> We have to wrap our `Repeater` since the `ServerComponent` is actually a list
+element `<li>` and if we don't have that inside of an `<ul>` the rendered content
+will break.
+<.> As you can see, we are feeding the list of items through the `Items` parameter,
+and because we typed the templated component it will infer the type automatically
+because of this.
+<.> The special typed `RenderFragment` has will receive a specific iteration value
+when being rendered at the templated component level, however, because we are working
+with the render fragment itself, we have to feed it the actual UI to render inside.
+The UI that will render the line item that will be repeated (really confusing at
+first I know). In here we are basically stating that the `Context`, which is indeed
+what the Repeater will feed as each line item renders, will be under a `server`
+variable name, and we then take that reference to feed onto `<ServerComponent>`
+to its `Server` parameter the specific object so that it renders accordingly.
+
+This concept is pretty abstract and high level, but in short, we are allowing for
+the upstream to control what gets rendered downstream, and through clever usage
+of syntax and specific structuring of the components, we are managing to achieve
+an extremely abstract-generic component, that takes care of a specific function,
+and leaves other components to shape whatever he's going to render within certain
+parameters (always a contract in between two interacting modules).
+
+After applying all of this, the web page should still work the same _we have only
+applied refactoring_.
+
+==== Use html table in our RepeaterComponent
+
+==== Using QuickGrid to display our servers
+
+==== QuickGrid Sorting and Pagination
