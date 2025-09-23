@@ -4265,6 +4265,310 @@ applied refactoring_.
 
 ==== Use html table in our RepeaterComponent
 
+The current server list is rendered with a list (<ul>), however we should aim
+at using a **table**, for better styling and support. This also lets us change to
+`QuickGrid` which is a feature that comes bundled with .NET 8.
+
+Code will have to change in two places:
+
+[source, razor]
+.ServerListComponent.razor
+====
+<table class="table table-striped"> <.>
+    <RepeaterComponent Items="servers">
+        <Header> <.>
+            <thead>
+            <tr>
+                <th>
+                    Name
+                </th>
+                <th>
+                    City
+                </th>
+                <th>
+                    Status
+                </th>
+                <th>
+                    People Online
+                </th>
+                <th></th> <.>
+                <th></th>
+            </tr>
+            </thead>
+        </Header>
+        <Row Context="server"> <.>
+            <ServerComponent Server="server"></ServerComponent>
+        </Row>
+    </RepeaterComponent>
+</table>
+====
+<.> In order to style the table with Bootstrap's "nice-looking" defaults, you can
+apply these two classes.
+<.> We added the specific `@Header` RenderFragment previously and in here it integrates
+seamlessly into an HTML table structure.
+<.> This is just HTML table syntax, if we want a header with labels we would add
+that info under a `<thead>, and then under one sole row `<tr>`, we would then add
+all the entries we want with `<th>`. The last two _"empty"_ columns are to house
+the buttons of the line items.
+<.> And under the `Row` RenderFragment we are sending in the code that will repeat
+per line item the rendered `ServerComponent`
+
+[source, razor]
+.ServerComponent.razor
+====
+<tr style="background-color: @GetBackgroundColor()" @key="Server.Id"> <.>
+    <td> <.>
+        @Server.Name
+    </td>
+    <td>
+        @Server.City
+    </td>
+    <td style="color: @(Server.IsOnline ? "green" : "red")"> <.>
+        @(Server.IsOnline ? "online" : "offline")
+    </td>
+    <td>
+        @if (Server.IsOnline)
+        {
+            <text>@(GetRandomPeopleNumber())</text>
+        }
+        else
+        {
+            <text>N/A</text> <.>
+        }
+    </td>
+    <td>
+        <button class="@($"ms-2 btn btn-outline-{CalculateButtonType(Server.IsOnline)}")" @onclick="UpdateServerStatus"> <.>
+            @(CalculateButtonText(Server.IsOnline))
+        </button>
+        <a href="/Servers/edit/@Server.Id" class="btn btn-outline-primary">Edit</a>
+    </td>
+    <td>
+        <EditForm
+            style="@($"background-color: {GetBackgroundColor()}")" <.>
+            Model="Server"
+            FormName="@($"Server-{Server.Id}-form")"
+            OnValidSubmit="@(() => DeleteServer(Server))">
+            <button type="submit" class="btn btn-primary">
+                Delete
+            </button>
+        </EditForm>
+    </td>
+</tr>
+====
+<.> Since we are switching to an HTML table, our `ServerComponent.razor` will now
+in essence will render a full HTML table row. Hence we are now under a containing
+`<tr>`
+<.> If we want to add the differen columns for this row, we use `<td>` (HTML basics)
+<.> Each column can be styled as you see fit (just use `style=`)
+<.> Due to the nature of our table structure, we had to add this fallback piece of
+logic. Otherwise we wouldn't get anything rendered into this column that will
+become static.
+<.> We are housing these buttons on their own columns, notice how we can simply
+wrap them and they will be on the same row and fit in automatically.
+<.> This is really **IMPORTANT**. The course doesn't seem to show a problem here,
+but on this end the form messed up with styling, the background didn't seem to get
+applied, and so we had to manually pass onto the component the style to align with
+the table's background color. This syntax also is very important, if you don't pass
+a explicit syntax here to render this whole string, Blazor will not compile.
+
+[NOTE]
+====
+When it comes to marrying both HTML and the Blazor render mechanism, I think it's
+key understanding how these things work at a base level. As base concepts. Otherwise
+you will never truly understand what's going on. In the end, the framework is a just
+a mechanism to auto-generate HTML, since that's what the browser understands. So
+all the syntax is simply clever engineering to make the framework generate code
+on the other end (repeated line items, tables, etc).
+====
+
+After all these changes, then everything should be working as before, but looking
+even better since we refactored it to use a table.
+
 ==== Using QuickGrid to display our servers
 
+This is a component that Microsoft offers developers to quickly and efficiently
+display data in a tabular format.
+
+Let's learn some basics of how to use it.
+
+- _Install a NuGet package_
+- Search for the package that's made by Microsoft (Microsoft.AspNetCore.Components.QuickGrid)
+    - You can even integrate QuickGrid with EF Core, but we won't go there for now
+- Install the package
+
+In order to use it, we won't modify our `ServerListComponent.razor` file, but create
+a separate `QuickGridDemo.razor`. This will be under `Controls`.
+
+[IMPORTANT]
+====
+Be careful about the version of the Nuget that you install. I installed the "latest"
+but this was a preview for .NET 10. I was in a .NET 9 project, with the previous installed
+package the import of `QuickGrid` won't work at all. So be sure to line up the versions
+correctly.
+====
+
+This is how we would initially attempt to use it:
+
+[source, razor]
+====
+@page "/quickgrid"
+@using Microsoft.AspNetCore.Components.QuickGrid
+
+<h3>QuickGrid Demo</h3>
+<br/>
+
+@if (_servers is null)
+{
+    return;
+}
+
+<QuickGrid Items="_servers.AsQueryable()"></QuickGrid> <.>
+
+@code {
+    private List<Server>? _servers = ServersRepository.GetServers();
+}
+====
+<.> A small comment here, we need our dataset to bet of `IQueryable` type.
+
+This isn't as simple though, nothing will render like this. In addition to specifying
+the component we need to specify each of the columns. The easiest way to render
+them is by using the `<PropertyColumn>` render fragment and `<PropertyTemplate>`.
+
+This is how the final template would look like:
+
+[source, razor]
+----
+<QuickGrid Items="_servers.AsQueryable()">
+    <PropertyColumn Property="s => s.Name"></PropertyColumn> <.>
+    <PropertyColumn Property="s => s.City"></PropertyColumn>
+    <TemplateColumn Title="Status"> <.>
+        <div style="color: @(context.IsOnline ? "green" : "red")">
+            @(context.IsOnline ? "online" : "offline") <.>
+        </div>
+    </TemplateColumn>
+    <TemplateColumn Title="People Online">
+        @if (context.IsOnline)
+        {
+            <text>@(GetRandomPeopleNumber())</text>
+        }
+        else
+        {
+            <text>N/A</text>
+        }
+    </TemplateColumn>
+    <TemplateColumn>
+        <button class="@($"ms-2 btn btn-outline-{CalculateButtonType(context.IsOnline)}")"
+                @onclick="() => context.IsOnline = !context.IsOnline"> <.>
+            @(CalculateButtonText(context.IsOnline))
+        </button>
+    </TemplateColumn>
+    <TemplateColumn>
+        <a href="/Servers/edit/@context.Id" class="btn btn-outline-primary">Edit</a>
+    </TemplateColumn>
+    <TemplateColumn>
+        <ChildContent Context="server"> <.>
+            <EditForm
+                style="@("background-color: white")"
+                Model="server"
+                FormName="@($"Server-{server.Id}-form")"
+                OnValidSubmit="@(() => DeleteServer(server))">
+                <button type="submit" class="btn btn-primary">
+                    Delete
+                </button>
+            </EditForm>
+        </ChildContent>
+    </TemplateColumn>
+</QuickGrid>
+----
+<.> `PropertyColumn` is pretty straightforward, **_if you have to just display the
+specific property's content, just use this syntax and point towards the specific
+property you want rendered_**
+<.> In case this isn't just a simple display of a value, and you want to insert
+more complex content leverage `TemplateColumn`, in here you can insert any HTML
+that you want and have control of the cell.
+<.> By default, `QuickGrid` has a `context` property that implicitly is declared
+and we can access from any of the column child components, hence in here we can
+access the line item's `IsOnline` and use it for rendering logic.
+<.> In here I had to rewrite the function since in the `ServerComponent` use-case
+I simply sent a callback implicitly but that's because the setup accounts for a
+property called `Server`, in here we are leveraging the lambda in order to access
+the line item's object under the `context` name.
+<.> A really important thing here is that `EditForm` also loads automatically a
+`context` object, (but we can rename it with the `Context=Something` syntax). Still,
+for these cases in which variable names might clash, we have `ChildContent` as a
+component that can wrap the nested component with its own context, and in that
+wrapper we can rename the parent's context to something else. In this instance
+we renamed it to `server` and inside of the nested `EditForm` we can access the
+parent context just fine by calling said `server` renamed context. (Clever I should
+say).
+
+This is but an option, you can use it, or not. Up to you and the requirements really.
+
+Now, the course makes a note that Turn On/Off doesn't work, but that's because its
+setup is following the "SSR by default, component's override that" normal setup.
+We changed it to follow "everything is interactiveserver", hence for us the interactivity
+bit of behavior works out the box. So to fix it you simply add at the beginning
+`@rendermode InteractiveServer`.
+
 ==== QuickGrid Sorting and Pagination
+
+We will now leverage some other features that are ready for consumption on
+QuickGrid. If we want a column to be sortable, you can just add a property like
+so:
+
+````
+<PropertyColumn Property="s => s.City" Sortable="true"></PropertyColumn>
+````
+
+This is cool, since by simply adding this property/flag, we can now head down to
+the column's header, and click on it, and it will automatically sort the content
+ASC or DESC. Any other columns will not have the clickable header enabled, you
+have to mark them yourself.
+
+What if you want to also make a `TemplateColumn` sortable? If you add the same
+property by itself it won't work, Blazor will _try_ to sort it, but it won't really
+work. So how do you configure it to work?
+
+First of all, understand that a `TemplateColumn` doesn't even know what column you
+are trying to map to, it's a free canvas basically. However there's a different
+property `SortBy` it takes a specific type of object however:
+
+````
+<TemplateColumn Title="Status" SortBy="GridSort<Server>.ByAscending(s => s.IsOnline)">
+````
+As you can see you feed to the property this specific `GridSort` object, and you
+have to specify if by default it will start ASC or DESC, and inside of the method's
+parameter you feed a lambda to point to the actual property that will be taken into
+account for the sorting logic.
+
+What about Pagination? QuickGrid helps with us not having to implement pagination
+from zero.
+
+In order to leverage it you need first a `PaginationState` state variable:
+
+````
+private PaginationState _paginationState = new()
+{
+    ItemsPerPage = 5,
+};
+````
+
+And you can then feed it into both `<QuickGrid>` and also a `<Paginator>` component
+that comes bundled with the Nuget package we installed:
+
+````
+<QuickGrid Items="_servers.AsQueryable()" Pagination="_paginationState">
+
+<Paginator State="_paginationState"></Paginator>
+````
+
+And with this, based on the object configuration you will get controls and pagination
+logic straight out the box. (Pretty cool)
+
+==== Use arbitrary attributes to provide flexibility
+
+=== Course Project (Part 2): Componetize our To-Do List App
+
+==== Componetize the List of items
+
+==== Componetize the to do item
