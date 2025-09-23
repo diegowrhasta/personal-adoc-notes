@@ -4567,8 +4567,241 @@ logic straight out the box. (Pretty cool)
 
 ==== Use arbitrary attributes to provide flexibility
 
+Reusable components could be higher level components that we create for others
+to consume. In such scenarios, we might want to provide the consumers as much
+flexibility as possible.
+
+All the components we created in this section are reusable, yet they suffer from
+the same issue, styling is locked in a way, the user can't really style them as
+he would want.
+
+Let's take the `SearchBarComponent.razor` component as an example, it has specific
+styles locked into it. If the consumer where to try and add to the component something
+like `style="width: 1000px"`. Then nothing would happen, he won't be able to control
+the look and feel as much as he tries. (We wouldn't get a compilation error, however
+when trying to render it such syntax would break the application).
+
+This might prop us to just add a parameter with `style` as a name. But this is a
+bit short-sigthed. If the user wants to provide other extra attributes that might
+be "default" we can't be adding more and more parameters to cover all possible cases,
+that's verbose, and not maintainable. (width, height, data-my-attribute).
+
+Luckily, Blazor has a mechanism to sort of enable a component to take in **any**
+sort of attribute and not break the render. These type of parameters are called
+**arbitrary attributes**.
+
+This is how you enable them:
+
+````
+<div class="input-group mb-3 input-width" @attributes="OtherAttributes">
+
+@code {
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? OtherAttributes { get; set; }
+}
+````
+Basically, yes add another parameter but with the specific `CaptureUnmatchedValues`
+flag set to `true`. It should be a `Dictionary<string, object?>` type. And then
+you can consume it on any sort of HTML you want by attaching it to a `@attributes`
+directive.
+
+After setting the reusable component with this, any consumer of the component can
+now add default styles, data attributes without issue. This is **really powerful**,
+just as an example, if we were to go to `Servers.razor`:
+
+````
+<SearchBarComponent @ref="SearchBarComponent" OnSearchCallback="HandleSearch" style="width: 1000px"
+                    data-my-attribute="my data"></SearchBarComponent>
+````
+This code will work, and we will get to style the width of the searchbar as we
+see fit, and we will have attached custom attributes effectively.
+
+This pattern is useful and makes sense for really high level components, (i.e.,
+in our case that would be the _Generic_ components such as `FieldComponent.razor`,
+`RepeaterComponent.razor`)
+
+It will be up to the developer to architect a component and add this special dictionary
+in a place that makes sense to have it. (So be mindful of the requirements and how
+you are designing both the high and low level components, on top of consumers).
+
 === Course Project (Part 2): Componetize our To-Do List App
 
 ==== Componetize the List of items
 
+We will continue with the `To-do` list. Since we now learned how to break apart
+into components we want to apply the same to our "one component for all" approach.
+
+So my choice is as follows:
+
+- ToDoListComponent.razor = Will have the button to add an item inside of it.
+- ToDoListItemComponent.razor
+
+[IMPORTANT]
+====
+Course _lieeeeeeed_. `@key` is useful to put in `Virtualize` and when bugs show up,
+this might be the solution to them. As a rule of thumb: _If rows contain any
+interactive inputs or stateful components, add `@key`. If rows are purely static
+text, you can omit it for a bit more reuse/performance. Now the reason, our code
+might still be working with the smart DOM patch, is more than likely because our `<li>`
+elements have the actual `@key` attribute to them. It's not as if `Virtualize`
+magically figures out what is being repeated and attaches it automatically.
+====
+
+Sources:
+
+- https://learn.microsoft.com/en-us/aspnet/core/blazor/components/virtualization?view=aspnetcore-9.0[MS Docs]
+- https://learn.microsoft.com/en-us/aspnet/core/blazor/components/element-component-model-relationships?view=aspnetcore-9.0[MS Docs 2]
+- https://blazor-university.com/components/render-trees/optimising-using-key[Blazor University]
+- https://www.meziantou.net/optimizing-blazor-performance-using-the-key-directive.htm[Blog]
+- https://stackoverflow.com/questions/72581334/in-blazor-when-using-the-virtualize-component-with-multiple-items-per-row-is-th[Stack Overflow]
+
+This is how our components would end up:
+
+[source, razor]
+.TodoList.razor
+====
+@page "/to-do"
+
+@if (!_todoItems.Any())
+{
+    return;
+}
+
+<TodoListComponent TodoItems="_todoItems"></TodoListComponent> <.>
+
+@code {
+    private List<TodoItem> _todoItems = TodoItemsRepository.GetItems().ToList();
+}
+====
+<.> As you can see, cleaner code, all abstracted under a list component.
+
+[source, razor]
+.TodoListComponent.razor
+====
+@inject NavigationManager NavigationManager <.>
+
+<button @onclick="AddTodo" class="btn btn-primary mb-3">
+    Add Task
+</button>
+
+<ul class="list-unstyled"> <.>
+    <Virtualize Items="TodoItems" Context="todoItem">
+        <ItemContent> <.>
+            <TodoListItemComponent @key="todoItem.Id" Item="todoItem"></TodoListItemComponent> <.>
+        </ItemContent>
+    </Virtualize>
+</ul>
+
+@code {
+    [Parameter] public List<TodoItem>? TodoItems { get; set; }
+
+    private void AddTodo()
+    {
+        TodoItemsRepository.Add(new TodoItem
+        {
+            FreshAdd = true,
+        });
+        NavigationManager.Refresh(forceReload: true); <.>
+    }
+
+}
+====
+<.> We have to use the awful "reload the whole page to see the new UI with the
+new hydrated data". Still don't know how to get around that.
+<.> Instead of using a manual css class, using the bootstrap one.
+<.> Don't forget to put the content that will be _repeated_ behind an `<ItemContent>`
+tag.
+<.> And again, we make the code much cleaner by abstracting all the row info behind
+a second component.
+<.> And yeah, after we have updated the repository's state, in order to see the
+UI replicate this, we will have to trigger a manual webpage reload.
+
+[source, razor]
+.TodoListItemComponent.razor
+====
+@if (Item is null) <.>
+{
+    return;
+}
+
+<li @key="Item.Id"> <.>
+    <div class="input-group mb-3">
+        <div class="input-group-text">
+            <input @bind-value="Item.IsComplete" class="form-check-input mt-0" type="checkbox"
+                   aria-label="Checkbox for following text input">
+        </div>
+        <input @bind-value="Item.Text" disabled="@Item.IsComplete"
+               placeholder="@(CalculatePlaceholder(Item.FreshAdd))" type="text"
+               class="form-control" aria-label="Text input with checkbox">
+        @if (Item.IsComplete)
+        {
+            <div class="p-2">
+                <text>
+                    Completed Date: @($"{Item.CompletedDate:D}")
+                </text>
+            </div>
+        }
+    </div>
+</li>
+
+@code {
+    [Parameter] public TodoItem? Item { get; set; } <.>
+
+    private readonly string FRESH_ADD = "What do you want to do?";
+
+    private string CalculatePlaceholder(bool freshAdd) => freshAdd
+        ? FRESH_ADD
+        : string.Empty;
+
+}
+====
+<.> Always check for the "impossible", ALWAYS.
+<.> Nothing else changes in the component, it literally becomes a process of wiring
+things up just about good enough and transferring methods and state variables.
+
+And just like that, we have abstracted the previously monolithic code into two
+separate components, wired them up, and in essence kept the same behavior as before,
+yet on the backend gaining a lot in maintainability, extensibility and overall
+easier reading for developers.
+
+_Reconciling with course_
+
+_(Oh, I jumped the gun, already did everything, this is just for the list)_
+
+- Names are different. That's whatever.
+- I chose `Virtualize` course sticks to using `@foreach`
+- Course reminded me to **always check for the impossible**. So on the `TodoListComponent.razor`
+we should check if the provided dataset is not null or if it has items.
+
 ==== Componetize the to do item
+
+_Reconciling with course_
+
+- Course mentions how sometimes intellisense and color coding doesn't work on a
+Blazor component, closing the file and re-opening it might fix it.
+- The course doesn't use `NavigationManager` and apparently the view updates
+correctly with the new added element even if it goes all the way to the child
+triggering the dataset change (weird)
+
+The Add Button, is arguably someting that could go in the _Page_ or in the _List
+Component_. My reasoning is that the list should only care about rendering the list
+of elements, hence the Page is in charge of triggering the respective dataset
+change. However, because of the separation into components, re-renders of the UI
+based on dataset change gets iffy, _weird_. Hence we are doing the whole `forceReload()``,
+**WHICH IS BAD**. We need a better approach.
+
+[NOTE]
+====
+Found a mini-bug, and that's because on checkboxes, we should add another property:
+`checked="@Item.IsComplete"`, (this is at `TodoListItemComponent.razor`), otherwise
+once we reload the page, or navigate away and back, we will see the item marked
+as complete but the checkbox won't be checked.
+====
+
+=== Component Lifecycle Deep-Dive
+
+==== Component Lifecycle Overview
+
+==== Component Lifecycle events sequence Part 1
+
+==== Component Lifecycle events sequence Part 2
