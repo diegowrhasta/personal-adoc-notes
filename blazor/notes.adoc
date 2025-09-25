@@ -4802,6 +4802,372 @@ as complete but the checkbox won't be checked.
 
 ==== Component Lifecycle Overview
 
+We will start from basic concepts in order to explain Blazor.
+
+In a traditional web application the user interacts with the browser, that gets sent
+to the web app, the web app processes the request, responds and the user sees newly
+rendered content. (Traditional approach, we know this).
+
+The lifecycle of things in this type of app is simple:
+
+- We send a request
+- Wait for a response
+- When we get the response we then process it however we see fit, we perhaps transform
+the data, _react_ to the response.
+
+That's the extent of the events and lifecycle stages.
+
+However **Blazor**, whether it's `InteractiveServer` or `InteractiveWebAssembly`.
+All the page info an component info is held in the server, the browser respectively.
+
+Regardless of where the component's are living and breathing, there's a lifespan
+to all of them.
+
+No matter, what component, where or how it is used, **IT WILL ALWAYS GO THROUGH
+THESE STAGES:**
+
+. Construct = Component goes _into the memory_.
+. Initialize
+. Receive Parameter = Can receive from a URL, from a parent component.
+. Render = After the component has all the necessary inputs it will then start
+rendering.
+. Destruct = When the component is about to be put out of memory, then it will
+Descruct.
+
+Because we have these 5 stages, the developer might find useful to hook into each
+one of them depending on the requirement.
+
+Blazor offers us **event hooks**, in order to put ourselves in-between these stages:
+
+- Construct
+    - Instantiation = This is when the class is constructed.
+    - SetParameterAsync = Name might be confusing, but this hook runs **BEFORE
+    SETTING PARAMETERS**
+- Initialize
+    - OnInitialized(Async) = Initialize the component
+- Receive Parameter
+    - OnParametersSet(Async) = When we receive the parameter values, and we can
+    leverage them.
+- Render
+    - OnAfterRender(Async)
+    - Dispose = In here you might want to dispose of resources you created yourself.
+    (Watch out for memory leaks).
+- Destruct
+
+[NOTE]
+====
+A concept not widely talked about online is **Instantiation**. A good way to separate
+concepts for later use, is that whenever we declare a direct assignment of a value
+to a state value e.g., `private string LABEL = "Label 1";`. In a component, it's
+at **Instantiation** that the value gets hydrated.
+====
+
+**Note 2:** Instantiation and Dispose are not mentioned in the MS Docs, but they
+are still there, they exist and you can leverage them. **BELIEVE THAT**.
+
+A key concept to also keep in mind is that `Receive Parameter` and `Render` will
+be constantly be triggered. Each user interaction will inevitably lead to a change
+in a parameter, and after that change is detected the component will re-render.
+
+Because this _repeatability_ of these two lifecycle events is so often, another subset
+of hooks is also available to us:
+
+- ShouldRender = Hook that runs before parameters are set, it will simply control
+if the specific component should trigger a re-render or not.
+- SetParameterAsync
+-- Receive Parameter
+- OnParametersSetAsync
+-- Render
+- OnAfterRenderAsync
+
+This specific lifecycle is **further rendering**, whereas the first schema that
+we presented is the **first time rendering**. It makes sense, we wouldn't want
+to start building the component again from scratch, right? It will be allocated
+in memory once and it will then be re-rendered based on user actions.
+
+_Final thing:_ Most of the hooks have their `Sync` and `Async` versions. Depending
+on your use case you should leverage the one that makes more sense. _Note:_ If
+you tap into both versions, the **non-async version is triggered before**.
+
+[NOTE]
+====
+It's important to understand these events, hooks, and their order since you might
+easily run into issues when trying to consume data that might not be available **yet**.
+Or other things alike, hence, take time to learn, interiorize these concepts. Watch out
+specially with _async_ methods, they are sometimes unpredictable (order-wise).
+====
+
 ==== Component Lifecycle events sequence Part 1
 
+We are going to demo our `CityListComponent.razor` in order to put to the test all
+the theory we saw.
+
+We tried to cover all 6 main hooks:
+
+- Construct
+    - Instantiation = This is when the class is constructed.
+    - SetParameterAsync = Name might be confusing, but this hook runs **BEFORE
+    SETTING PARAMETERS**
+- Initialize
+    - OnInitialized(Async) = Initialize the component
+- Receive Parameter
+    - OnParametersSet(Async) = When we receive the parameter values, and we can
+    leverage them.
+- Render
+    - OnAfterRender(Async)
+    - Dispose = In here you might want to dispose of resources you created yourself.
+    (Watch out for memory leaks).
+- Destruct
+
+- `Instantiation` is not a hook that we can hook into **BUT IT STILL HAPPENS**.
+- We stated all the **sync** variations in the component
+- For `Dispose` we have to go into the top of the blazor component and state
+`@implements IDisposable`, so that we can later add a working method under
+`public void Dispose()`. We do this, since it's not a built-in lifecycle event hook.
+- `SetParametersAsync` is one hook that only has an async version, so you work
+with `Task` there.
+
+This is a model of how we are declaring the hooks and how we are going to print
+some message for debugging and demo purposes:
+
+````
+protected override void OnInitialized()
+{
+    var guid = Guid.NewGuid();
+    Console.WriteLine($"CityListComponent: {nameof(OnInitialized)} : {guid}");
+}
+````
+In the case of things such as `ShouldRender` we return `true` directly, and for
+`SetParametersAsync` we are actually returning a `Task.CompletedTask`.
+
+This part of the demo is a bit tricky to reproduce since we are working with a
+different setup, we have configured the server to be directly under InteractiveServer
+and so trying to put it back to SSR actually breaks the app. Even though we saw
+how we can mark places as just SSR with the `@attribute [ExcludeFromInteractiveRouting]`
+by trying to do it at `Servers.razor` (because we have to mark **pages** with this).
+Then the list no longer rendered, and what the course says is that in SSR we
+execute 4 hooks:
+
+- SetParametersSetAsync
+- OnInitialized
+- OnParametersSet
+- Dispose
+
+In practice, I only saw:
+
+- SetParametersAsync
+- Dispose
+
+[IMPORTANT]
+====
+COURSE LIEEEEEED AGAINNNN. The reason I wasn't seeing the other lifecycle hook
+messages is: `SetParametersAsync` is really important to call its **base implementation**
+====
+
+[source, razor]
+====
+public override async Task SetParametersAsync(ParameterView parameters)
+{
+    var guid = Guid.NewGuid();
+    Console.WriteLine($"CityListComponent: {nameof(SetParametersAsync)} : {guid}");
+
+    // Let the framework apply parameters and run the normal lifecycle
+    await base.SetParametersAsync(parameters); <.>
+}
+====
+<.> The base implementation applies the incoming parameters to the component and
+takes care of calling the other lifecycle hooks. Without this call, we won't be actually
+calling the other hooks correctly, hence we couldn't see _any of them_.
+
+[NOTE]
+====
+The course does have a point of not needing to call base implementations but this
+applies mostly to two hooks: `OnInitialized`, `OnParametersSet`. Any other hook
+should have its base implementation called just to be safe. Only these two have
+empty bases.
+====
+
+With this **_fix_**, we can now go back to explaining the course content:
+
+With Server Interactivity On:
+
+````
+CityListComponent: SetParametersAsync : e48fccbb-013b-4d2a-956c-bc1e8e7e6f45
+CityListComponent: OnInitialized : cf3cc6f8-37c0-431e-860d-c00be6663a2e
+CityListComponent: OnParametersSet : 59b868f3-154a-4366-beae-bc8339fe7d84
+CityListComponent: Dispose : e07a40eb-299f-43fe-9527-dd02dea9cb93
+CityListComponent: SetParametersAsync : 57ac1dda-9afe-4300-b916-86a11bb37046
+CityListComponent: OnInitialized : 82f012ac-2d29-4e77-95b2-a5bfd132baa6
+CityListComponent: OnParametersSet : 00969e4f-a583-4787-bad4-4c94b07e897e
+CityListComponent: OnAfterRender : 0dce5ed6-0913-4be2-ada9-0792a925a771
+````
+
+A lot of events will be triggered when interactivity is on. We have to separate
+these logs in two sets:
+
+````
+CityListComponent: SetParametersAsync : e48fccbb-013b-4d2a-956c-bc1e8e7e6f45
+CityListComponent: OnInitialized : cf3cc6f8-37c0-431e-860d-c00be6663a2e
+CityListComponent: OnParametersSet : 59b868f3-154a-4366-beae-bc8339fe7d84
+CityListComponent: Dispose : e07a40eb-299f-43fe-9527-dd02dea9cb93
+````
+
+````
+CityListComponent: SetParametersAsync : 57ac1dda-9afe-4300-b916-86a11bb37046
+CityListComponent: OnInitialized : 82f012ac-2d29-4e77-95b2-a5bfd132baa6
+CityListComponent: OnParametersSet : 00969e4f-a583-4787-bad4-4c94b07e897e
+CityListComponent: OnAfterRender : 0dce5ed6-0913-4be2-ada9-0792a925a771
+````
+
+Let's review the Server Interactivity workflow:
+
+The browser sends the first request to the server. The server receives that and
+tries to construct a page, it sends that page back to the browser, and **only after
+that**, the SignalR channel is established. All the way up until that point the
+events of the first _set_ are run. (These are the same events as if it were for
+SSR). Since the memory is disposed there, we have to reconstruct the component
+through the SignalR channel, hence we see how the _second set_ of hooks makes
+sense. We are _re-initializing_ the component, and now hydrating through SignalR.
+
+We don't see `Dispose` because the component is still held in memory, we haven't
+gotten rid of it just yet.
+
+If we were to move away from the page that renders the component, we will see
+how the `Dispose` hook is called. Meaning that the component was unmounted successfully.
+Since we are going to a new page (such as the weather page), and if this page is
+SSR, due to crossing render mode boundary then our Interactive components will
+go out of memory automatically. (But it also applies if we simply move away from
+the page that requires for the component to be alive).
+
+_Difference:_
+
+Because of our setup the course shows that going back to `Servers.razor` actually
+triggers all the lifecycles as if it was the first time. But in our case it will
+only trigger the `second set` of hooks. That is because we are by default with
+`InteractiveServer`, since the SignalR channel is already established we don't
+need for the initial handshake. And now we simply reconstruct components in memory
+and that's the second set of hook executions.
+
+[NOTE]
+====
+We don't have a hook to show how `Initialize` should run before all other hooks.
+But we can run the app with Debug and set a breakpoint in a state variable that
+is initialized directly. We can then add breakpoints for all other hooks and see
+how before any of the other hooks' breakpoint hits, the state variable line gets
+hit first.
+====
+
+_Small Note:_ But I also noticed how `SetParametersAsync` gets executed sometimes
+before. (Maybe async magic?). In any case, it's true, the state variable line
+does get called before any of the other hooks. **proving the theory**.
+
+[NOTE]
+====
+We haven't seen `ShouldRender()` getting called yet. This is easy to trigger,
+just select one of the cities from the city list, and then this hook will be
+triggered before any other (even before `SetParametersAsync`). We no longer see
+`OnInitialized`, and that's because **the component is already in memory**. At this
+point we are in the second stage of the lifecycle, the loop of `Receive Parameter >
+Render`. Endlessly, always following the same order.
+====
+
+This second stage will comprise of these hooks in this order (most of the time):
+
+````
+CityListComponent: ShouldRender : 40780d80-66d6-4330-b4fc-f393b5389129
+CityListComponent: SetParametersAsync : 6cdb5a0b-3fdf-4951-8b47-9901f3a44766
+CityListComponent: OnParametersSet : 94cf4ddf-b72a-44b8-b13d-a6161842f7de
+CityListComponent: OnAfterRender : 54b5d296-7f9d-44da-a206-9133444f59a4
+````
+
+Apparently (according to docs), `ShouldRender` should run before _EVERYTHING_, and
+then after `OnParametersSetAsync` but that's not the case in practice. Due to this
+fact **we have to be really careful on how we use the hook and understand if we are
+at a stage that makes sense to leverage it**. The course implies this might be a bug
+due to the contradiction with documentation and that it should be _fixed_. Well,
+it hasn't been fixed. So, just know that.
+
 ==== Component Lifecycle events sequence Part 2
+
+We have demonstrated the sequence of events but only for **one component**.
+What will be the event sequence if this component has children?
+
+First of all, let's apply all the hook logs that we had at `CityListComponent.razor` 
+but on `CityComponent.razor`. Secondly, let's comment out all citie names of the
+list of cities except `Toronto` that way we don't see as many logs. And lastly,
+at `CityComponent.razor`, we will comment out the invoking of the `SelectCityCallback`
+callback. This affects the hook lifecycle, and so under these conditions this is a
+trace we will see:
+
+````
+// <- First Set ->
+CityListComponent: SetParametersAsync : 990c2e95-7930-4ddc-baf7-1417783d389f
+CityListComponent: OnInitialized : f441975f-41ae-421c-a094-7b8b8052a020
+CityListComponent: OnParametersSet : e7ea7120-311a-446e-ab97-e5b03b035f32
+CityComponent: SetParametersAsync : 24a912ac-768d-4e97-afb7-73cc9f399123
+CityComponent: OnInitialized : fc81951b-c87d-4b78-a964-5d41f3c311c5
+CityComponent: OnParametersSet : af98858c-cceb-4542-82f7-4d776d659ef1
+CityListComponent: Dispose : e87685c6-f6b8-416c-b0e4-66ef2c4d5c84
+CityComponent: Dispose : 289a75ef-4042-4b60-b872-b75542d93838
+// <- Second Set ->
+CityListComponent: SetParametersAsync : 30e5b774-85c5-4580-b270-25598dd502ed
+CityListComponent: OnInitialized : 5bc993f0-00a7-4a7c-b1c0-d83ef896f8b0
+CityListComponent: OnParametersSet : 6bded79d-48bd-4ed9-b2fc-a11d870b02a6
+CityComponent: SetParametersAsync : d8e608b9-07c4-4d76-b453-7c9b2e366aa3
+CityComponent: OnInitialized : 9f1f69dd-e4be-4736-854b-766dc85d5d5f
+CityComponent: OnParametersSet : 82eca730-582f-45ba-8258-8f3326ef5f46
+CityListComponent: OnAfterRender : 3d6ba6fb-a053-4226-92e6-d20a4012035e
+CityComponent: OnAfterRender : fb7afe2f-8eb7-4c47-97f7-2ddcd1c26448
+````
+We also have the whole first set and second set of hook executions. We will ignore
+the first set since we **know** this is just the handshake for establishing the
+SignalR channel.
+
+Focusing on the second set: The parent component's hooks are triggered first,
+right after it the child component comes into play. The order will be usually
+the same. We will run all hooks in order of `parent > child`, and after they render,
+we will then trace back per hierarchy the `OnAfterRender`.
+
+If we click on the city name button, we will see two hooks that are executed:
+
+````
+CityComponent: ShouldRender : 2b5586ba-9334-498b-aa70-00c5dc4d58b0
+CityComponent: OnAfterRender : 92018463-be90-46d7-a948-788de583fcd4
+````
+
+The parent component did not re-render. Why? Because we have nothing interacting
+with the parent component, because we are just living at the child component and
+it's consuming that component's context, parent will not be told to re-render.
+
+What happens if we now uncomment the callback for the parent. If we do that,
+and now try to click on the city button:
+
+````
+CityListComponent: ShouldRender : dffd5154-a759-4190-ab64-ca48f8991f7f
+CityComponent: ShouldRender : 167e6a30-dcdc-4402-b6c2-74191eefef0c
+CityListComponent: SetParametersAsync : b939c628-bf44-4446-9200-947398da666b
+CityListComponent: OnParametersSet : 3a7cd79b-40d6-4d3d-8d14-bf8441920cee
+CityComponent: SetParametersAsync : 6ee205cb-0c01-48bc-95fb-bdb5bdd6c983
+CityComponent: OnParametersSet : 8a9c29d3-88cb-436a-852f-ccb5ba07d741
+CityListComponent: OnAfterRender : 7cdc7d9a-af59-4f6b-8f63-2ebc4361afd3
+CityComponent: OnAfterRender : 96d6a04f-3e94-4358-b5b3-be4c545e8902
+````
+As you can see, that if we have interactions with the parent, we will trigger a
+full re-render cycle, that is because parameters are marked as **changed**. With
+the added `ShouldRender` that comes in when these components are already in memory.
+As you can see we follow the usual order (and most of the time it's a rule we can
+rely on). But the main take away here is that `Parent > Child` is the order in which
+the component tree is rendered in Blazor. Interactions that bleed from children
+to parents and vice-versa will trigger a full re-render.
+
+- Parent component renders first
+- Child renders after
+
+_Note:_ With async methods, executions should follow the same idea, however the
+conclussion of the method's logic might be different. Also keep that in mind.
+
+==== The problem of component initialization
+
+==== Trouble with Pre-Rendering
+
+==== The problem with OnParameterSet
