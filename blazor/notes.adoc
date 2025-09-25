@@ -5168,6 +5168,196 @@ conclussion of the method's logic might be different. Also keep that in mind.
 
 ==== The problem of component initialization
 
+With SSR, the sequence of lifecycle events will always be predictable. However
+with Server Interactivity this is not the same. **By default**, pre-rendering
+is turned on. When a component is initially rendered, it is done so **twice**.
+We have a "pre-render" and a second render when the SignalR channel has been
+established. Most of the events are run twice, except the `OnAfterRender`, so
+it's on us to come up with a solution for Server Interactivity.
+
+The easiest solution is to just _turn off pre-rendering_. But the reason it's
+turned on by default is **because rendering is faster that way**. The server prepares
+the view and sends that to the client, you don't have to wait for a SignalR
+establishment and get the view as quickly as possible directly from the server.
+Hence we might not want to turn off pre-render.
+
+The problem we are trying to solve here is **_we don't want to run initialization
+code twice_**.
+
+The problem accentuates further if we analyze at the code we wrote for `CityListComponent.razor`.
+
+_Note:_ Okay, I don't technically have that problem, because I didn't code the
+city retrieval on a lifecylce hook, the course did, it populates the city list
+at `OnParametersSet`.
+
+Anyway, if you were to put population logic on one of the lifecycle hooks, we would
+be executing that logic twice, (and that's not a smart allocation of resources).
+
+The hook that will save our lifes here is `OnAfterRender`, it has a specific
+parameter called `firstRender`. This flag is key to us leveraging optimizations such
+as running population logic only once.
+
+[source, razor]
+.CityListComponent.razor
+----
+protected override void OnAfterRender(bool firstRender)
+{
+    base.OnAfterRender(firstRender);
+
+    if (firstRender) <.>
+    {
+        if (string.IsNullOrWhiteSpace(ServerFilter))
+        {
+            servers = ServersRepository.GetServersByCity(CityName ?? "Toronto")
+        }
+        else
+        {
+            servers = ServersRepository.SearchServers(SearchFilter)
+        }
+    }
+    
+    var guid = Guid.NewGuid();
+    Console.WriteLine($"CityListComponent: {nameof(OnAfterRender)} : {guid}");
+}
+----
+<.> So basically only if we are on the first render, is that we will attempt to run
+the population and initialization logic **once**.
+
+_Note:_ I just realized we simply offloaded the logic to `ServerListComponent.razor`,
+so this "solution" is still applicable, I'll work with that component's code.
+
+[source, razor]
+----
+protected override void OnAfterRender(bool firstRender)
+{
+    base.OnAfterRender(firstRender); <.>
+
+    if (!firstRender) <.>
+    {
+        return;
+    }
+
+    if (!string.IsNullOrWhiteSpace(SearchCity))
+    {
+        servers = ServersRepository.SearchServers(SearchCity!);
+        return;
+    }
+
+    servers = ServersRepository.GetServersByCity(CityName ?? FALLBACK_CITY);
+    StateHasChanged(); <.>
+}
+----
+<.> A good practice is to run the hook's base first.
+<.> In case this isn't the first render we don't want initialization logic, so
+in here we are simply returning early.
+<.> There's one issue that pops up if we don't call the built-in `StateHasChanged`
+method, and that is, on a first render we will be calling population logic, yet
+the component won't update its state, hence it won't render anything with the
+proper data that will map out to UI. So we manually execute this so that the
+UI reflects the state that was changed with the initialization/population logic.
+
+This is pretty eye-opening. Specially since I thought `StateHasChanged` had to
+somewhat be trickled down from a parent to a child. In here, the `ServerListComponent.razor`
+component is the only one in charge of populating based on parameters, and when
+applying this code, the workflow still works flawlessly. **With the added bonus of
+running population logic only once**.
+
+[IMPORTANT]
+====
+So the takeaway here is that with Interactive Server, **by default** _pre-rendering_
+is on, and lifecycle hooks run twice (initialization-wise). If we rely on these
+hooks for population-logic or initialization, depending on the use case we might
+be running really costly logic **twice**. To get around that we can safely rely
+on `OnAfterRender` and its `firstRender` parameter (plus `StateHasChanged()`).
+So that only on the **first render** we run the logic, and after state is updated,
+we notify the component to again re-render with the newly updated state. A simple,
+yet **key concept** that we have to remember.
+====
+
 ==== Trouble with Pre-Rendering
 
+_This is just some text content:_
+
+````
+The component initialization problem is caused by Pre-Rendering, which is enabled
+by default by Microsoft. That is for a reason.
+
+For deep understanding the reason behind it and solutions for resolving this
+problem, please don't forget to see the chapter/section: "Pre-Rendering in Blazor"
+which will be one of the last chapters/sections in the course.
+````
+
 ==== The problem with OnParameterSet
+
+There's a problem with this **hook**. This hook will only be triggered if a
+parameter has been changed. The component might have **multiple parameters**,
+say we have _3 parameters_. If we update the 3 of them, on each parameter change
+detection, the hook will run, meaning we can be running the hook **three times**.
+
+Even if we try and code "smartly" around this fact, it's really hard to keep track
+of "what parameter change triggered the specific execution instance of the hook".
+Any of the three parameters change could've triggered the hook.
+
+So a parameter that has nothing to do with search or city selection could change
+and trigger `OnParameterSet`, and potentially be executing an expensive database
+call, or expensive processing logic.
+
+How do we avoid that? We need to somehow code a mechanism that allows us to safely
+and reliably detect if a specific parameter has changed, and it makes sense to
+run code based on that change. Otherwise, avoid unnecesary code execution.
+
+[source, razor]
+.ServerListComponent.razor
+----
+public override Task SetParametersAsync(ParameterView parameters) <.>
+{
+    if (parameters.TryGetValue<string>("CityName", out var cityName)) <.>
+    {
+        if (cityName != CityName) <.>
+        {
+            base.SetParametersAsync(parameters); <.>
+        }
+    }
+    
+    if (parameters.TryGetValue<string>("SearchFilter", out var searchFilter))
+    {
+        if (searchFilter != SearchCity)
+        {
+            base.SetParametersAsync(parameters);
+        }
+    }
+    
+    return Task.CompletedTask; <.>
+}
+----
+<.> The `SetParametersAsync` hook, as we know by now, runs before everything, and
+it's its **base** method call that will execute all other hooks (such as `OnParametersSet`),
+it also has a _dictionary_ of the parameter values that will be introduced into
+the component (so on each parameter change this hook will be triggered).
+<.> We can leverage the dictionary this hook provides to check for a specific parameter
+we want to be tracking.
+<.> We can then check if the parameter we are evaluating differs from the current
+component's value. A simple operation of: "is this parameter after the state change
+detection different than what the component currently has as state?"
+<.> In the end we should just return an "empty" `Task.CompletedTask`, that way we
+don't get compilation errors but also we don't run unnecesarily the `OnParametersSet`
+if we don't want to run expensive logic there.
+
+And as you can see, this code can easily be boiler-plaity in nature, and for that,
+you can definitely come up with something that abstracts it, but this will do for
+now, specially since it's a course and deminishing returns are a risk here.
+
+[NOTE]
+====
+It's important to highlight here that depending on the use case we might leverage
+the `OnAfterRender` or this parameter control pattern, but it will really depend
+on what type of component, workflow, and component tree we are working with. We
+should be able to choose what is not good to run, and how to get around that
+with this new found knowledge with both hooks.
+====
+
+==== When does a component render
+
+==== The problem of ShouldRender
+
+==== Thread Safety & SynchronizationContext for Server Interactivity
