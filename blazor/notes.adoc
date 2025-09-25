@@ -5356,6 +5356,86 @@ should be able to choose what is not good to run, and how to get around that
 with this new found knowledge with both hooks.
 ====
 
+[IMPORTANT]
+====
+You have to be extremely careful of mixing these two concepts and solutions together
+though, because you can easily enter an endless cycle of one solution conflicting
+with the other and making the apparent "solution" actually just be running code
+**twice** or even more than that. This definitely has to be labbed and tested out
+way more than what the course entails, perhaps looking at how the components themselves
+are architected (my hunch is that we should always be retrieving data at the orchestrator
+component, he will receive signals from all children and then dispatch updates to
+them by updating their properties). That way we avoid these _catch-22_ scenarios.
+Besides, the parent is technically the guy that runs first and can potentially get
+the info first hand.
+====
+
+_Todo:_ Currently the only problem that is detected is:
+
+[source, razor]
+.ServerListComponent.razor
+----
+public override Task SetParametersAsync(ParameterView parameters)
+{
+    if (parameters.TryGetValue<string>("CityName", out var cityName)) <.>
+    {
+        if (cityName != CityName)
+        {
+            base.SetParametersAsync(parameters);
+        }
+    }
+
+    if (parameters.TryGetValue<string>("SearchFilter", out var searchFilter))
+    {
+        if (searchFilter != SearchCity)
+        {
+            base.SetParametersAsync(parameters);
+        }
+    }
+
+    return Task.CompletedTask;
+}
+
+protected override void OnAfterRender(bool firstRender)
+{
+    base.OnAfterRender(firstRender); <.>
+    if (!firstRender)
+    {
+        return;
+    }
+
+    PopulateCities();
+}
+
+protected override void OnParametersSet()
+{
+    PopulateCities();
+}
+
+private void PopulateCities()
+{
+    if (!string.IsNullOrWhiteSpace(SearchCity))
+    {
+        servers = ServersRepository.SearchServers(SearchCity!);
+        return;
+    }
+
+    servers = ServersRepository.GetServersByCity(CityName ?? FALLBACK_CITY);
+    StateHasChanged();
+}
+----
+<.> If we load the component for the first time, this hook gets triggered, and in
+turn will call the `PopulateCities` method since the parameters from "nothing"
+turn into "something".
+<.> The issue is that on the first render, this code path also evaluates to "populate
+the cities please". Meaning, that by combining the solutions we were provided, we
+are still running into the issue of "we are calling the population logic more than
+once". And that's the issue. Again, this might have to do with the awful approach
+that I implemented on a whim, I truly think we should adhere to the base principle
+of "Parent component is an **orchestrator**, he should be the one getting data,
+bringing together the children components, they are **dumb**, they should be
+**dumb components**, no complex stuff, just display logic".
+
 ==== When does a component render
 
 ==== The problem of ShouldRender
