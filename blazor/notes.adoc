@@ -5601,9 +5601,282 @@ _Blazor Web Assembly has no issue_ Why? Cuz everything is on the browser.
 
 ==== Static vs Interactive Routing
 
+Routing:: Navigation from one page to the next.
+
 We know this, we've seen it. You can put this to the test pretty easily. Every time
 you click (with SSR) on a routable component and you bring out the DevTools, you
 should be seeing a new entry with a whole new request there just so that the
 navigation can work.
 
-Routing:: Navigation from one page to the next.
+````
+<Routes @rendermode="InteractiveServer" />
+````
+
+Remember, our setup already has this set in `Program.cs` with `app.MapRazorComponents<App>().AddInteractiveServerRenderMode();`.
+
+I prefer this approach since through `Config Files` we can easily change the render
+mode if we want to. Adding this in the HTML and stuffs will require for way more
+overhead.
+
+Anyway, when we have interactivity on: **This becomes an SPA, we no longer will
+make static requests per navigation (except on the first handshake that we know
+is the standard)**. (No way around that).
+
+But yeah, all components get loaded through SignalR. No more static requests.
+We can however see the SignalR channel and then debug there information that gets
+passed around (as binary info). This SignalR info exchange powers the same UX
+but without having to re-load the whole page.
+
+You have to be careful about your assumptions however:
+
+- If there's static content to be retrieved (i.e., some images) we will go to the
+server to get them for a first time. Right after that they will be in memory and
+we no longer will make a request for them.
+- We have to look at the Pages themselves (routable components). If you have
+interactive components on a static page, it won't matter, we will still have to
+work with static routing. The **Router** has to be made interactive so that the
+**Routing becomes interactive**.
+
+==== Use NavigationLock to prevent navigation
+
+We'll use one specific requirement:
+
+- Say we have a really big form, it takes time to fill in and perhaps if we try
+to navigate away from it by mistake, it will be annoying to have all of that lost.
+
+For that use case we have something called `NavigationLock` this will allow us to
+intercept some routing event and stop it manually.
+
+[source, razor]
+----
+@page "/servers/edit/{id:int}"
+
+@inject NavigationManager NavigationManager
+
+@inject IJSRuntime JSRuntime <.>
+
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation"></NavigationLock> <.>
+
+<h3>Edit Server</h3>
+<br/>
+
+@if (_server is null)
+{
+    return;
+}
+
+<EditForm Model="_server" FormName="formServer" OnValidSubmit="Submit">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <ValidationSummary></ValidationSummary>
+
+    <InputNumber hidden="true" @bind-Value="@_server.Id"></InputNumber>
+    <FieldComponent Label="Name">
+        <Control>
+            <InputText class="form-control" @bind-Value="_server.Name"></InputText>
+        </Control>
+        <ValidationControl>
+            <ValidationMessage For="() => _server.Name"></ValidationMessage>
+        </ValidationControl>
+    </FieldComponent>
+
+    <FieldComponent Label="City">
+        <Control>
+            <InputText class="form-control" @bind-Value="_server.City"></InputText>
+        </Control>
+        <ValidationControl>
+            <ValidationMessage For="() => _server.City"></ValidationMessage>
+        </ValidationControl>
+    </FieldComponent>
+
+    <FieldComponent Label="Online">
+        <Control>
+            <InputCheckbox class="form-check-input" @bind-Value="_server.IsOnline"></InputCheckbox>
+        </Control>
+    </FieldComponent>
+
+    <br/>
+    <button class="btn btn-primary" type="submit">Update</button>
+    <a href="/servers" class="btn btn-primary ">Go Back</a>
+</EditForm>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [SupplyParameterFromForm(FormName = "formServer")]
+    private Server? _server { get; set; }
+
+    private void Submit()
+    {
+        if (_server is null)
+        {
+            return;
+        }
+
+        ServersRepository.UpdateServer(_server.Id, _server);
+        NavigationManager.NavigateTo("/servers");
+    }
+
+    protected override void OnParametersSet()
+    {
+        _server ??= ServersRepository.GetServerById(Id);
+    }
+
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context) <.>
+    {
+        var isConfirmed = await JSRuntime.InvokeAsync<bool>(identifier: "confirm", "Are you sure you want to leave this page?"); <.>
+        if (!isConfirmed)
+        {
+            context.PreventNavigation(); <.>
+        }
+    }
+
+}
+----
+<.> Really weird way to introduce this, but I remember this from way back. We have
+an interface that allows us to run Javascript directly from blazor, we have to inject
+this specific **interface** and then leverage the object.
+<.> This is a built in component to which we can then attach callbacks to, in here
+we are going to attach to a routing that happens only for application routes (you
+can also hook into navigations that cross the app domain and go somewhere entirely
+different).
+<.> We need this specific signature since we will get as a parameter an object that
+we can then leverage to manipulate the routing behavior.
+<.> This is how you can leverage the service to run javascript natively, you have
+to feed into it a name of a function, (in this case is the built-in function to show
+a modal with buttons of confirm and cancel). And (this approach is so generic, it
+relies on us making good docs, but basically based on the javascript function you
+want to run, you will feed here all the respective parameters. In this instance,
+we know that it takes as a first parameter the string for the message that will
+be show on the alert). We also need to know what type of response it will spit back
+out so that we type the result of the `InvokeAsync` correctly. This function is
+async so it's recommended to work on an async method as well.
+<.> We then based on the confirmation of the user prevent the routing or not do
+anything so that it routes to another page.
+
+The course denotes nuances here, how the page needs to be marked as `@rendermode
+InteractiveServer`, and how that's not enough, finally landing on the idea that
+the **Router** himself has to be marked as interactive so that the `NavigationLock`
+works correctly. With **static routing**, we cannot leverage the `NavigationLock` at
+all.
+
+(Again, we have set it on our end programatically, so this doesn't apply to us,
+but it's still GOOD TO KNOW ABOUT THIS SINCE SETUPS VARY IMMENSELY).
+
+**Big Note:** For the injection of the `JSRuntime` be sure to inject the interface
+`IJSRuntime` otherwise it won't be able to resolve it. Again, remember that C#
+always tries to adhere to best practices and recommended approaches so by default
+it will rely on an interface.
+
+Anyway, after the **Router** himself has been marked as interactive, then we can
+safely leverage the `NavigationLock`. We will get the confirmation window and
+based on OK or Cancel we will stay in the page, and/or move away.
+
+[IMPORTANT]
+====
+If we reload the page with the web browser, or try to go to another URL then
+the NavigationLock won't work, we won't be stopped.
+====
+
+There's another parameter we can leverage on the built-in `<NavigationLock>` and
+that's `ConfirmExternalNavigation="true"`. If we set that to true, and try to reload
+the page, or go to another website, we will indeed get a confirm window, although
+this doesn't have the message that we provided for the specific router navigation
+javascript function workflow. (But there must be a way of customizing it for sure).
+
+**AGAIN:** You need for the `Router` itself to be set to be Interactive. Otherwise
+this interception will not work.
+
+_Final Note:_ The course is just disabling this code we put, mainly because it was
+only for demo pursposes. Still good to know that this is a thing.
+
+==== Multiple Page Directives 
+
+So far in our application, we only have "one-page directive". But **routable components
+can take multiple routes actually**. Why would we need these type of components?
+
+From experience: We add these multiple page directive components so that we cover
+more ground with the component, we run different initialization/functionality
+to cover more uses without creating a whole new component that is bound to repeat
+code also.
+
+This is a requirement we are adding to put this to the test:
+
+- When we select a city (e.g., Ottawa), and go and Edit one server, once we come
+back we still want to see Ottawa selected, we don't want to get that state nuked.
+We want to provide good feedback to the user and leave traces of what he did.
+
+We will cover this requirement with multiple page directives:
+
+[source, razor]
+.Servers.razor
+----
+@page "/servers/back-from/{previousCityName}"
+
+[Parameter] public string? PreviousCityName { get; set; }
+
+protected override void OnAfterRender(bool firstRender)
+{
+    if (!firstRender) <.>
+    {
+        return;
+    }
+
+    if (!NavigationManager.Uri.Contains("back-from") || string.IsNullOrWhiteSpace(PreviousCityName)) <.>
+    {
+        return;
+    }
+    
+    CityName = PreviousCityName; <.>
+
+    StateHasChanged(); <.>
+}
+----
+<.> We want this as initialization logic, hence if this isn't the first render we will
+just short-circuit.
+<.> We are going to manually analyze the the URI and also check that we have received
+a "at least not empty" route parameter for that city that we will leverage to trigger
+a querying of a specific city.
+<.> And if all our controls (that are else-less/return early btw) pass, we then assign
+to the normal `CityName` state variable our route parameter valuable so that this
+trickles down to querying a city that came back from that trace in the Uri.
+<.> Lastly, remember that in `AfterRender` state won't be detected so a good recipe
+is that by the end we trigger this signal ourselves so that we get the content
+we want from initialization rendered correctly.
+
+**NOTE:** We are actually clashing because the code we implemented uses `cityName`
+already as a state variable, but we will get around it by simply changing the name
+of this route parameter.
+
+_Small bug:_ The server list is working just fine, but we don't get to see the
+flagged city marked as selected in the city list. And that is because we have
+disconnected the selected city state variable in the child with the parent, the
+course simply turns that into a `[Parameter]` so that we can pass from the parent
+in case we are at this second use-case to the child whatever they need to mark
+as selected.
+
+My take: This can be really bad, since we will start making a component way bigger
+by accounting for multiple scenarios, this is because we are leveraging what we
+know though. If I had introduced a store, we can leverage state there to then decide
+on what to do, store really is a nice clean solution to avoid polluting components
+with parameters, and noise overall. Still we would be adding tons of branches to
+components, more code that makes them less maintainable, so please bear that in mind
+and make wise choices.
+
+So in `CityListComponent.razor`:
+
+````
+[Parameter] public string SelectedCity { get; set; } = "Toronto";
+````
+
+And on the parent side we will simply feed our state variable so that they are
+intertwined and we trickle down state based on what the parent receives at its
+route level:
+
+````
+<CityListComponent SelectedCity="@CityName" @ref="CityListComponent"
+                   SelectCityCallback="HandleSelectedCity"></CityListComponent>
+````
+
+Testing out all the flows, we should be seeing how on edit, add, we are going
+back to a previously selected city and both the list of servers are from that
+city and also said city is marked as selected.
