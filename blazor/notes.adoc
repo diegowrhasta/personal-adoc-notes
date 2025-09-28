@@ -5438,6 +5438,172 @@ bringing together the children components, they are **dumb**, they should be
 
 ==== When does a component render
 
+Why should we care about this?
+
+With SSR (Static), the component renders once. But interactive components differ
+in the sense that the component tree will re-render many times depending on how the user
+interacts with the UI.
+
+When a component is presenting issues (doesnt render, renders wrong), we should be
+able to debug that behavior pretty easily by understanding the fundamentals.
+
+- Where to set a breakpoint
+- Where to write a `Console.WriteLine()`
+- Where to log
+
+. A component is rendered when it is created for the first time. (Obvious)
+. When events are triggered (it has to be UI events, including `EventCallback`),
+no timers, no deallocate. Only UI events will trigger re-renders. (Clicking on a
+button, selecting an item from a dropdown list, make a change in an input box).
+
+[NOTE]
+====
+But Blazor is intelligent, is not as simple as "ANYTHING" will trigger re-render,
+Blazor looks specifically at **state variables**. Remember that Blazor does the whole
+"reduce" operation from a previous component tree and a newly introduced component
+tree. It will only re-render the portion that changed. _Don't worry too much about
+performance since Blazor takes care of that_.
+====
+
+. When an event is triggered, and we have a parent-child structure. Say, we click
+on a button (on the parent component) we will trigger re-render on the parent,
+but the child will behave differently, why? Because of the reduce computation, if
+state didn't change whatsoever, child will not re-render. _What if the button is
+on the child?_ Only if we have an `EventCallback` tying them together to said
+event, then we will have the parent also re-rendering.
+. When component parameter value changes. Regardless of if the parent changed the
+state, or some cascading parameter triggered the change, the moment one parameter
+changes (state changes) and the reduce algorithm detects a difference, then re-render
+**will be triggered**.
+
+_Blazor will be able to determine if the parameter changed or not only if the parameter
+is a primitive type_.
+
+It is on the first re-render scenario that we can say it applies for SSR and interactive
+render. All other scenarios we presented are entirely for **server interactivity**
+
+**Class: Blazor won't be able to know if said parameter changed or not**.
+
+. When a developer manually calls `StateHasChanged()` this is a manual trigger
+of re-render on a component. _When do we call this method?_ On the case where we
+used `OnAfterRender`, we had to call it manually since state changed but the component
+didn't re-render so we had to tell it to re-render since then it would pick up
+on the new state on the UI build process. Another use case is **async calls**.
+If we know that after an async call state will be changed, we will have to go and
+manually call `StateHasChanged()`. This could also be used for `delegate` types,
+maybe we have a component providing a function and then another executing it
+and then having to signal a component to re-render since this result would be
+of a state change but UI not aware of that. **If a code execution is not a UI
+event we have to manually call `StateHasChanged()`**.
+
+E.g., If we have a timer, and everytime this timer finishes or sends signals,
+and we need that info to build the UI. We need to mark the component with
+`StateHasChanged()`.
+
+That's it, we need for state to change, hence SSR doesn't work with state then
+this method won't work at all.
+
 ==== The problem of ShouldRender
 
+This hook runs when the component first renders, but then on each sub-sequent
+render _before_ `OnParametersSet`.
+
+Okay, basically it's suggested in the lesson that _Microsoft has a bug and this
+should be fixed in the future_. But Lord and behold, the issue that I pointed out
+before is still there. So let's follow the course's advice:
+
+Use `SetParametersAsync` in order to control if the component should render or not.
+
 ==== Thread Safety & SynchronizationContext for Server Interactivity
+
+We have a web browser, and we have the server side. As mentioned before **the server
+keeps an _in-memory_ representation of a component through a `SignalR` channel**.
+
+The web browser and the server process are both running in different threads, they
+are technically not related, but somehow they still behave as if they were the
+same thread (at least to the user it feels that way).
+
+**Synchronization Context:** One of these exist per SignalR connection that
+is established. It's thanks to this mechanism, that two completely unlerated threads
+can collaborate to provide the SPA app experience to the user. This will take
+care of mitigation of risky state updates and thread synchronization. Everything is
+based around _UI Events_.
+
+Say we have a _timer_ or whatever resource at the server side, and we want to interact
+with a component, we won't get access to the component's state whatsoever, since all
+of its context lives in its own (main thread), which is just a session for a user
+the moment he loads the website. This is actualy a _thread safety_ issue, two
+separate threads not being able to share state.
+
+Let's introduce a requirement to then put us against the issue:
+
+. The user is asking for the list of servers to display periodically the data
+of users connected. So active polling and accessing the actual runtime. (Retrieve
+every 10 seconds).
+
+
+Let's try different ways of achieving the result.
+
+[source, razor]
+.ServerListComponent.razor
+====
+<button type="button" class="btn btn-primary" @onclick="@(() => { })">
+    Refresh
+</button>
+====
+A really important concept here, even if you don't attach an actual method to
+a callback, just putting a handler (like this empty one) will immediately configure
+the component to re-render based on this event.
+
+If we press the button, because of the nature of how we setup the list of users
+online, we generate randomly a number on each render. This button should then
+trigger this behavior (and it does). There's a lot going behind the scenes, this
+wouldn't be possible if there wasn't a Synchronization Context built-in, because the
+web browser thread and the server thread are different. But an interaction in the
+web browser still is kept together as if this was all but one thread, now
+**if we try and use a timer** that's just story.
+
+If we head to `ServerListComponent.razor`
+
+[source, razor]
+----
+protected override void OnAfterRender(bool firstRender)
+
+    base.OnAfterRender(firstRender);
+    if (!firstRender)
+    {
+        return;
+    }
+
+    Timer = new Timer(_ => { StateHasChanged(); }, state: null, dueTime: 2000, period: 2000);
+}
+----
+This code will break the application. There's problems reconnecting the circuit,
+trying to debug leads to tons of errors. But the answer is simple, you are creating
+an event on a separate thread. And then trying to patch back its logic to another
+thread's runtime. This causes all sorts of issues internally, the app can't figure
+out what thread holds the state it will update. The backend and UI literally
+go out of sync a, hence we see all these cryptic error messages.
+
+Luckily Blazor comes with its own solution to this:
+
+[source, razor]
+----
+Timer = new Timer(_ => { base.InvokeAsync(StateHasChanged); }, state: null, dueTime: 2000, period: 2000);
+----
+
+This takes care of taking whatever "separate-thread process" and putting back
+under the same context for execution. Hence it shouldn't break anymore.
+
+_Blazor Web Assembly has no issue_ Why? Cuz everything is on the browser.
+
+=== Routing and Navigation Deep-Dive
+
+==== Static vs Interactive Routing
+
+We know this, we've seen it. You can put this to the test pretty easily. Every time
+you click (with SSR) on a routable component and you bring out the DevTools, you
+should be seeing a new entry with a whole new request there just so that the
+navigation can work.
+
+Routing:: Navigation from one page to the next.
