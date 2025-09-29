@@ -5880,3 +5880,281 @@ route level:
 Testing out all the flows, we should be seeing how on edit, add, we are going
 back to a previously selected city and both the list of servers are from that
 city and also said city is marked as selected.
+
+==== Optional Parameters
+
+So, in order to test out how the parameters we have been using up until now are
+**mandatory** we can play around with `Weather.razor`.
+
+If we provide a route parameter that maps to a `[Parameter]` decorated state
+variable:
+
+URI:
+`localhost:1234/weather/toronto`
+
+`@page "/weather/{name}"`
+
+The page will work normally, but if we omit the last resource (so no `toronto`),
+we would end up with a _404_. And that proves that these types of parameters are
+required (with this syntax). However, the easiest way to make them optional is
+to add a question mark:
+
+`localhost:1234/weather`
+
+`@page "/weather/{name?}"`
+
+The page would still render here, JUST FINE.
+
+[NOTE]
+====
+Why would we want to mark a parameter as optional then? Well, there are many
+scenarios you can take into account. E.g., For multiple scenario pages, just like
+the multiple page directive pages we analyzed some time back.
+====
+
+However, one really common use case is to mix Add and Edit pages into an `Upsert`
+type of component. So that we can do additions and editions on the same component
+but based on specific parameters the code in charge of the flow will change at
+runtime.
+
+And so, by deleting the `AddServer.razor` and `EditServer.razor` pages, and adding a
+brand new `AddEditServer.razor` page we would be effectively replacing them both
+with **one page**.
+
+[source, razor]
+.AddEditServer.razor
+----
+@page "/server/{id:int?}" <.>
+
+@inject NavigationManager NavigationManager
+
+@if (Id is not null) <.>
+{
+    <h3>Edit Server</h3>
+}
+else
+{
+    <h3>Add Server</h3>
+}
+
+@if (Server is not null)
+{
+    <EditForm Model="Server" FormName="formServer" OnValidSubmit="Submit">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <ValidationSummary></ValidationSummary>
+
+        @if (Server.Id > 0) <.>
+        {
+            <InputNumber hidden="true" @bind-Value="@Server.Id"></InputNumber>
+        }
+        <FieldComponent Label="Name">
+            <Control>
+                <InputText class="form-control" @bind-Value="Server.Name"></InputText>
+            </Control>
+            <ValidationControl>
+                <ValidationMessage For="() => Server.Name"></ValidationMessage>
+            </ValidationControl>
+        </FieldComponent>
+
+        <FieldComponent Label="City">
+            <Control>
+                <InputText class="form-control" @bind-Value="Server.City"></InputText>
+            </Control>
+            <ValidationControl>
+                <ValidationMessage For="() => Server.City"></ValidationMessage>
+            </ValidationControl>
+        </FieldComponent>
+
+        <FieldComponent Label="Online">
+            <Control>
+                <InputCheckbox class="form-check-input" @bind-Value="Server.IsOnline"></InputCheckbox>
+            </Control>
+        </FieldComponent>
+
+        <br/>
+        <button class="btn btn-primary" type="submit">@(CalculateButtonLabel(Server.Id))</button> <.>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public int? Id { get; set; } <.>
+
+    [SupplyParameterFromForm] public Server? Server { get; set; }
+
+    private static string CalculateButtonLabel(int id) => id > 0
+        ? "Update"
+        : "Add";
+
+    protected override void OnParametersSet()
+    {
+        if (Id.HasValue) <.>
+        {
+            Server ??= ServersRepository.GetServerById(Id.Value);
+        }
+        else
+        {
+            Server ??= new Server { IsOnline = false };
+        }
+    }
+
+    private void Submit()
+    {
+        if (Server is null)
+        {
+            return;
+        }
+
+        if (Server.Id > 0) <.>
+        {
+            ServersRepository.UpdateServer(Server.Id, Server);
+        }
+        else
+        {
+            ServersRepository.AddServer(Server);
+        }
+
+        NavigationManager.NavigateTo($"/servers/back-from/{Server?.City}");
+    }
+
+}
+----
+<.> In here we are introducing the `?` to mark this as an optional parameter.
+But something **REALLY IMPORTANT** is that we have to use the constraint for integer
+here, otherwise when trying to access the edit use case e.g., `/server/1` then the
+component will blow up because it will try to map a string to an `int?` and Blazor
+doesn't want to do that (he's a little confused).
+<.> Based on the optional parameter we can apply conditional rendering for a title
+(as an example).
+<.> The logic that was chosen here is to retrieve an actual server from the repository,
+but in case it's an addition we create a base object that will have by default an
+Id of `0`. Hence we can use this flag value to determine whether we are at the
+Add or the Edit workflow.
+<.> And in here, remember to use a `[Parameter]`. Also this should be nullable since
+we could not be sending anything to map through a route parameter.
+<.> Nullable types by default wrap the value, hence we get access to this properties,
+and we can leverage to detect specific values in order to decide on the respective
+workflow.
+
+Besides, since we are nuking the original pages and swapping them with this new
+Upsert page, we will have to update the respective places to match the route, and
+the new format (so be sure to check any instances that had the previous route):
+
+.Servers.razor
+````
+<a href="/server" class="btn btn-primary">Add Server</a>
+````
+
+.QuickGridDemo.razor
+````
+<a href="/server/@context.Id" class="btn btn-outline-primary">Edit</a>
+````
+
+.ServerComponent.razor
+````
+<a href="/server/@Server.Id" class="btn btn-outline-primary">Edit</a>
+````
+
+All these places had a different naming convention even (it didn't adhere to best
+REST, HTTP practices even), but now with the Upsert page introduction we align
+to best practices and the new format.
+
+So we consume the same component, however, based on a route parameter that is
+optional we load the page through different workflows.
+
+After making the swap we should test the workflows and behaviors, they should
+be behaving the same. If not, **FIX IT**.
+
+The course argues that by leveraging optional parameters and merging two components
+we reduce the maintain effort. Which is, _debatable_. Since you can easily argue that
+by getting this component _closer to a god component_ then effort actually increases,
+since code is less about "Single Responsibility" now.
+
+But yeah, it's still _useful_ to know this is possible, and how to get around
+it. (DRY => This is the principle argued as being applied).
+
+==== Query Strings
+
+In addition to route parameters (course calls them "route templates"), we can add
+data to a URL with Query Strings. (This is basic Web knowledge).
+
+Say, we would want to encode a city name in the url: `/server/1?city=Toronto`.
+
+Blazor can easily retrieve these types of variables:
+
+````
+[SupplyParameterFromQuery] public string? City { get; set; }
+````
+
+Two notes here:
+
+- A query string is **always optional**. So be sure to map all the possible
+parameters to nullable types.
+- The course is on SSR code, and in this instance using `OnParametersSet` for
+init code is fine, with interactivity we should retrieve back to what we said
+with `SetParametersSync`, this is more in order to avoid double execution of
+code and stuffs.
+
+[source, razor]
+.AddEditServer.razor
+----
+protected override void OnParametersSet()
+{
+    if (Id.HasValue)
+    {
+        Server ??= ServersRepository.GetServerById(Id.Value);
+    }
+    else
+    {
+        Server ??= new Server { IsOnline = false };
+    }
+
+    // if (Server is not null && !string.IsNullOrWhiteSpace(City))
+    // {
+    //     Server.City = City;
+    // }
+}
+----
+The code is commented because the required we set here is just for demo purposes.
+We would provide through a query parameter (city) a value that in our init logic
+we can leverage so that the Server state variable has its `City` property set to
+this query parameter. In the right place, at the right moment, this can be extremely
+useful, I know that. And it's easy as just decorating a state variable, the name
+is even mapped out with MS magic that abstracts even the obscurest of requirements
+and scenarios.
+
+=== State Management Deep-Dive
+
+==== State Management Overview
+
+Like we mentioned before, traditional web apps. **Don't deal with STATES**. With
+SPAs however, (and in Blazor's case, regardless of Server or WebAssembly interactivity),
+we need to now worry about state management.
+
+We can easily come across challenges as we develop web applications:
+
+_Scenario 1:_ What if we have different pages, and for _whatever reason_ we need
+for a page 2, to know about state in page 1. The moment page 1 gets unmounted all
+of that state will get lost.
+
+_Scenario 2:_ Let's say we have a routable component, and it has an extremely
+complex component tree. Perhaps branches that go waaays deep. And from the last
+component of one branch we want to get state across to another component that's
+at the deep end of another branch. (We have two subtrees), and we want to share
+state between these children components.
+
+We learned so far two techniques:
+
+- Bubble Up. All the way from low levels to top levels.
+- Cascade a parameter.
+
+However, this can easily turn ugly, a callback hell and tons of repeated code
+on top of complex logic without good reason.
+
+These are the challenges we are attempting at solving in this section, and this
+will work for WASM and Server interactivity without issue.
+
+==== Use URL to pass info across routable components
+
+==== Use browser storage to maintain states
+
+==== Use DI container to maintain states
