@@ -6155,6 +6155,279 @@ will work for WASM and Server interactivity without issue.
 
 ==== Use URL to pass info across routable components
 
+The first approach for state management is to keep state across routable components.
+
+We will use the URL to retain and pass state across **Pages**.
+
+A common problem to solve with this technique is a **Wizard**. So a screen that follows
+a series of steps. (E.g., Step 1 > Step 2 > Step 3). All the steps would be routable
+components that are built around a workflow, the idea is to pass all the info collected
+on a previous step to the next step.
+
+The idea is to use query strings to pass variable info.
+
+I probably won't implement this in the actual course repo, it's redundant and it's
+just for demo. So we'll keep this "theoretical", but let's still extract the good
+out of the lesson.
+
+Three pages are created under a `Wizards` folder:
+
+- SetCityName.razor
+- SetServerName.razor
+- SetStatus.razor
+
+The `Add Button` that we have in the server list screen will redirect to **Step 1**
+which is actually `SetServerName.razor`.
+
+The code of this first step is just one field from the `AddEditServer.razor`,
+we are separating each field onto a step. And the biggest takeaway is that on the
+previous step we are navigating and adding the state the current page captured
+as a query param:
+
+````
+NavigationManager.NavigateTo($"/cityname?servername={serverName}");
+````
+
+_Note 1:_ Another bootstrap class that might come in handy:
+
+````
+<div class="alert alert-danger">
+    @errorMessage
+</div>
+````
+
+This displays something "static", but it's a nice looking window with a color and
+message inside of it. In this instance this is an error message in case the field
+validation fails on the First Step.
+
+Now going to the **next step**, we have to receive the query param information now,
+the code for that uses what we already know:
+
+.SetCityName.razor
+````
+@code {
+    [SupplyParameterFromQuery]
+    public string? ServerName { get; set; }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(ServerName))
+        {
+            return;
+        }
+
+        ErrorMessage = "Server Name wasn't provided";
+        StateHasChanged();
+    }
+}
+````
+This is just a double check (defensive code), in case we somehow accessed the
+second step without a previous workflow setting the parameter, (notice how we
+are leveraging `OnAfterRender`). And as you know, when we use this pattern, by the
+end we have to trigger a re-render so that UI reflects the change in state we might
+have applied. We populate the new screen's state variable with the query param,
+and we then do our own bit of capturing info on another state variable.
+
+_Note:_ I would actually just send the user back, or avoid entering this altogether,
+specially if the workflow is important, so I would just stop navigation and kick
+the user back to the first screen.
+
+And then on the code to go to the next step and control that the two required state
+variables to put as query params aren't invalid:
+
+````
+NavigationManager.NavigateTo($"/cityname?servername={serverName}&cityname={cityName}");
+````
+
+And I think you get the idea, on the next step we would add now two state variables
+to capture each respective query parameter, control on `OnAfterRender` for possible
+wrong inputs, and then when trying to trigger the next step/save of server we would
+again check for invalid inputs, and then run the respective logic.
+
+Pretty straightforward, and easy to grasp. But it can be a risk for maintainability
+if the list of steps is too long, and you are by the end with 10+ query params and
+its respective state variables. So be wise when using this approach.
+
+[IMPORTANT]
+====
+Okay so to understand this correctly and we don't get stuck later because "it's not
+re-rendering uhhhh....". The parent, when calling a `StateHasChanged()`, will attempt
+to re-render children. But that's only if the parameters provided to them will
+result in a `diff` detected by the **reduce** action. If nothing is different children
+will skip re-render. _Hence we can sometimes have the `StateHasChanged()` execution
+at the parent level and then child components reflect state change and behave
+accordingly_. But as we implemented in `CityListComponent.razor` we can also manually
+be scanning on the child component side for changes in parameters, and when they
+are detected we can trigger **AT THE CHILD LEVEL** as `StateHasChanged()` and the
+UI displaying correct behaviors. This will depend entirely on our preferences, and
+of course, _if this is easier to edit later_.
+====
+
+**NOTE:** For Children, the place to be checking is `SetParametersAsync` and for
+Parents, it could be `OnAfterRender`. Or the aforementioned `SetParametersAsync`.
+But again, this depends on use case, however, this is the most preferred hook,
+since it can also be extended for costly operations (database queries, network calls).
+But you have to make sure that you aren't making double the calls. **PLEASE**.
+
 ==== Use browser storage to maintain states
 
+Passing state with query params works, and it can be useful in some use cases. But
+there's only so much you can pass through URL, it's not really convenient if that
+info is too much. Secondly = The URL is preserved in the browser history, so people
+will be able to see exactly what info you have passed around pages.
+
+We can use the `Session Storage` or `Local Storage`.
+
+Most modern browsers have implemented these two storages, and it organizes info
+based on the domain e.g., `localhost:3234`, `google.com`, etc. It's a literal
+key-value pair.
+
+_What's the difference?_ Local Storage = Survives window closes, it will be kept
+in browser virtually forever unless you manually clean the value. Session Storage
+doesn't survive closing the browser. State is accessed per domain.
+
+_Session Storage:_ Its scope is only for the **current tab and current domain**, you can't open another
+tab and try to access another tab's session storage. _Doesn't matter if you are on
+the same domain/app_.
+
+If we save info in `Session Storage`, we can save in a cleaner, more secure way
+data that can be passed across different components. Its limit is around 5 MBs also,
+which is way more than what query parameters will allow us.
+
+Local Storage will still be visible if the user goes to see it with the Dev Tools,
+and also even if the browser is closed. However **Session Storage** is more volatile,
+and the moment the browser and/or tab is closed all that info will be wiped.
+
+_With this info in mind, you can make assumptions and build your code and what
+storage you leverage based on security concerns, practicity, applicability,
+requirements_.
+
+[IMPORTANT]
+====
+For the specific use case of passing state across pages/components with storages,
+prefer **Session Storage**, only stick to **Local Storage** for really nieche
+things.
+====
+
+How do you access the browser storage?
+
+
+Automatically Blazor loads into the DI container two instances that we can
+inject into classes (and components)
+````
+public SessionStorage(ProtectedSessionStorage protectedSessionStorage, ProtectedLocalStorage protectedLocalStorage)
+{
+    // Run logic with this...
+}
+````
+A note here, the course recommends wrapping these things behind our own class,
+so it created a wrapper called `SessionStorage`, and on its constructor it resolves
+the local and session storage DI injected instances, that it can then save on its
+own properties.
+
+And another thing to be aware of, we have to leverage async methods:
+````
+await protectedSessionStorage.GetAsync<Server>("server");
+
+await protectedSessionStorage.SetAsync("server", server);
+````
+We can send direct objects, and serialization/de-serialization will take place
+automatically under the hood. (You can see how we add a type argument for a class
+we want to be used as the model for deserialization of the `server` key). And
+how we don't need that when saving an object to a respective key. _Note:_ Another
+thing worthy of note here is that the wrapper class is also acting as a Facade
+so that any consumer calls its methods in order to save things into the storage
+and not worrying about the inner logic. So it's a great abstraction interface
+as well. Any other key-value pair that should be contemplated can be abstracted
+into more getter-setters here. (I would abstract this further, and the course also
+follows that same idea, so that we don't fall into boilerplate).
+
+How would we use our wrapper?
+
+.Program.cs
+````
+builder.Services.AddTransient<SessionStorage>();
+````
+Transient is a type of lifetime that every-time someone requests for this object,
+it will create it right there and then. Simple, and not much to think about it,
+this is a simple wrapper in the end. No longer lifetime for such a "trivial"
+service.
+
+So on a component:
+
+````
+@inject SessionStorage SessionStorage
+````
+
+And then just start querying and setting the respective data wherever you need it.
+
+[IMPORTANT]
+====
+There's a reason the DI instance has the `Protected` suffix added to it. And that
+is because this doesn't save the data in plain text. If you try and see the saved
+key-value pair, you will immediately pick up on the fact that the value is a HASH/
+ENCRYPTED value. _Another great benefit of using the built-in object from Blazor_.
+====
+
+And again the takeaway:
+
+- If you save things in the Session Storage and you close the browser and navigate
+to the same domain. You will notice how it will be empty.
+- If you save things in the Session Storage and navigate to the same domain but on
+a different tab, you will also notice how it will be empty.
+
 ==== Use DI container to maintain states
+
+Whether we are with WASM or Server interactivity, we will always have **The DI
+Container**. Count on it.
+
+The only small nuance is that on WASM the DI Container is maintained on the browser,
+whilst on Server, it will be on the Server itself.
+
+We can create another service to hold the state, e.g., `ContainerStorage`. This
+is a simple class, that we will add properties to, in order to save in its instance.
+
+Now, for registering the instance we have to make the distinction between WASM
+and Server interactivity:
+
+````
+builder.Services.AddScoped<ContainerStorage>();
+````
+
+For Server Interactivity, we should only expose our state object to the specific
+SignalR channel for the respective user. It would be a security concern if we shared
+the info with all the users. Hence `AddScoped` is the best practice to use here.
+The lifespan of the DI Container Storage will end with the SignalR lifetime. Hence
+it's a self-destruct mechanism. (Emulating the Session Storage state management
+pattern).
+
+Depending on the use case, you might leverage async or non-async methods, the
+protected DI container session and local storage services by default us put us
+to use async, but on our own self-implemented service we make that decision.
+Async, for thread-blocking operations, and if not, keep it simple.
+
+The idea is to use the same wizard UI implementation but then swapping out the
+state management implementation, the workflow should still be the same, since
+we are just leveraging different approaches, but in essence they are refactors and
+are based on other requirements that are not functional.
+
+Lastly, if you were to be with **WASM Interactivity**, you would DI the service
+as `Singleton`. Beside that, nothing else changes. _Why?_ Because all the code is
+downloaded into the browser, the sesion lives and dies there, we have no common point
+from which other users could go into other user's sessions or data. So that "extra
+security" measure is unnecessary.
+
+````
+builde.Services.AddSingleton<ContainerStorage>();
+````
+
+==== Use Observer Pattern to access state across component trees
+
+==== Implement state store with Observer pattern
+
+==== Dispose Subscribers
