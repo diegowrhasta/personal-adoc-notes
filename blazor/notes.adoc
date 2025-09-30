@@ -6428,6 +6428,306 @@ builde.Services.AddSingleton<ContainerStorage>();
 
 ==== Use Observer Pattern to access state across component trees
 
+We will talk about solutions for the second challenge:
+
+_How would we pass state across components that are scattered across the component
+tree?_
+
+The observer pattern is a simple design pattern in which we introduce concepts
+such as:
+
+- Based on a specific value that lives at runtime, a class/service/module puts
+himself in charge of listening to it and its changes (he's the Observer).
+- Any other module that wants to know about these changes, should simply subscribe
+to the Observer.
+    - Any time a change in the value is detected, the Observer broadcasts about the
+    change to all subscribers.
+    - Subscribers then choose what to do with these notifications.
+
+How do we leverage this pattern in Blazor?
+
+We would have our **Observer**, that attaches itself to some specific component's
+state. And every change should then be broadcasted by this Observer. Other component's
+should subscribe to this _"channel"_ in order to receive the state update.
+
+Let's introduce a new requirement to practice the pattern:
+
+- We want to see the number of servers that are online for each city.
+
+Everytime we click on "Turn On/Off" we should be getting the list of cities updated
+(in the form of a number).
+
+With this requirement, we introduce a sharing of state between the `CityComponent.razor`
+and the `ServerListComponent.razor` components. Let's implement the pattern to
+solve this current problem.
+
 ==== Implement state store with Observer pattern
 
+. It is recommended to implement a generic class for the observer so that it's
+flexible enough for multiple cases.
+
+[source, razor]
+.StateStore/Observer.cs
+----
+namespace ServerManagement.StateStore;
+
+public class Observer
+{
+    protected Action? _listeners { get; set; } <.>
+
+    public void AddStateChangeListeners(Action? listener) <.>
+    {
+        _listeners += listener;
+    }
+
+    public void RemoveStateChangeListeners(Action? listener) <.>
+    {
+        if (listener is not null)
+        {
+            _listeners -= listener; <.>
+        }
+    }
+
+    public void BroadcastStateChange()
+    {
+        _listeners?.Invoke(); <.>
+    }
+}
+----
+<.> We will leverage delegates to hold a list of the subscribers callback.
+(This is because a delegate in theory is also a collection of sorts). We make
+it `protected` because we will derive from this class children observers for
+different use cases and we want only those types of classes with access to this
+property.
+<.> Everytime a new subscriber wants to be on the channel we add its callback
+to our internal "list" of callbacks.
+<.> If a subscriber wants to get off the channel (and we have to cleanup references
+to avoid memory leaks), this takes care of removing it from our "list".
+<.> Lastly, in order to broadcast about the change, we would simply call this
+`Invoke()` method so that all callbacks are executed at once in their respective
+contexts and the subscribers react based on that execution.
+
+The course takes a specific design decision:
+
+"We will create multiple stores for each city, mostly to show for demo purposes".
+But in theory you could create one store that holds state about each city's number
+of servers. It will depend on the scope of the cities, and of course "is this
+easier to maintain later?". So choose wisely what approach to take base on your
+specific use case.
+
+_It has to be recognized though that "one single store", goes a bit more into the
+complex logic realm._
+
+So, let's now make a store for Toronto:
+
+[source, razor]
+.TorontoOnlineServerStore.cs
+----
+namespace ServerManagement.StateStore;
+
+public class TorontoOnlineServersStore : Observer
+{
+    private int _numberOfOnlineServers;
+
+    public int GetNumberOfOnlineServers() => _numberOfOnlineServers;
+
+    public void SetNumberOfOnlineServers(int number)
+    {
+        _numberOfOnlineServers = number;
+        base.BroadcastStateChange();
+    }
+}
+----
+This is pretty straightforward, it's at the implementation class level that we
+introduce the state property, and we then keep it locked as `private`, we establish
+a getter and setter, and it's on the setter that we then call the base class'
+`BroadcastStateChange()`.
+
+When it comes to registering this store, we will add it to runtime with the DI
+container:
+
+````
+builder.Services.AddScoped<TorontoOnlineServersStore>();
+````
+
+This is at `Program.cs`, `Scoped` because we are with Server Interactivity.
+
+_Note:_ And a small note here, so that our `Program.cs` is clean, we can add a
+`GlobalUsings.cs` file next to it, and then add all the namespaces we would like
+to have imported implicitly:
+
+````
+global using ServerManagement.Components;
+global using ServerManagement.StateStore;
+````
+
+Okay, the following code, I do not like whatsoever, it couples things to the
+extreme, adding more cities is not maintainable at all, and we are adding extra
+workaround logic with each new store. Open/Closed principle is completely destroyed
+here:
+
+.ServerComponent.razor
+````
+private void UpdateServerStatus()
+{
+    if (Server is null)
+    {
+        return;
+    }
+
+    var status = Server.IsOnline = !Server.IsOnline; <.>
+
+    if ((Server.City ?? string.Empty).Equals("Toronto", StringComparison.OrdinalIgnoreCase)) <.>
+    {
+        var torontoServerNumber = TorontoOnlineServersStore.GetNumberOfOnlineServers(); <.>
+
+        if (status)
+        {
+            TorontoOnlineServersStore.SetNumberOfOnlineServers(++torontoServerNumber); <.>
+        }
+        else if (torontoServerNumber > 1)
+        {
+            TorontoOnlineServersStore.SetNumberOfOnlineServers(--torontoServerNumber); <.>
+        }
+    }
+}
+````
+<.> Using specific syntax here to basically assign the status change and also
+saving that mutated value under a variable so that it's easier to reference later.
+<.> In here we introduce this coupling code that checks if the city is "Toronto",
+if it is we run the Toronto server store logic. (This has been previously dependency
+injected).
+<.> We get the current number of online servers from the store (more coupled since
+this is _global state_).
+<.> If the online status is `true` we then add a +1 in the store.
+<.> If not, we make another check so that we are sure that the store has at least
+**one** online server, otherwise we would introduce negative values.
+
+Once this is done, the child component will now be wired to start updating the store
+on his own. But we are still missing one component to make the flow work, where
+do we initialize the store?
+
+.Servers.razor
+````
+var torontoServers = ServersRepository.GetServersByCity("Toronto");
+
+TorontoOnlineServersStore.SetNumberOfOnlineServers(torontoServers.Count(x => x.IsOnline));
+````
+It would be best at the parent that takes care of rendering the servers to initialize
+the stores' values, in this instance we would simply query for all the toronto servers
+and then update the stored based on a simple computation that counts how many are
+online.
+
+[IMPORTANT]
+====
+Blazor components also get access to `GlobalUsings.cs` imports. So besides its
+`_Imports.razor`, if we introduce this other type of file, they will also have
+access to these implicit imports. Remember that.
+====
+
+Lastly, on the subscriber side, we want to retrieve the store value:
+
+.CityComponent.razor
+````
+<div>
+    @if (City.Equals("Toronto", StringComparison.OrdinalIgnoreCase)) <.>
+    {
+        <text>@NumberOfOnlineTorontoServers</text> <.>
+    }
+</div>
+
+@code {
+    private int NumberOfOnlineTorontoServers; <.>
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        NumberOfOnlineTorontoServers = TorontoOnlineServersStore.GetNumberOfOnlineServers(); <.>
+        TorontoOnlineServersStore.AddStateChangeListeners(OnServerStatusChange); <.>
+        StateHasChanged();
+    }
+
+    private void OnServerStatusChange()
+    {
+        NumberOfOnlineTorontoServers = TorontoOnlineServersStore.GetNumberOfOnlineServers(); <.>
+        StateHasChanged(); <.>
+    }
+}
+````
+<.> Only for the component that is for Toronto, we want to be displaying the Toronto's
+Store value.
+<.> We will simply display a raw value for now, later we can style it.
+<.> We need a state variable to keep track of the store's value.
+<.> At init, we want to retrieve the store's current value to initialize correctly
+our component state variable.
+<.> And we also add a component's local callback to the store so that we start
+getting notifications.
+<.> When the callback gets trigger we will update the local state variable.
+<.> Remember, (specially on `OnAfterRender`) that once we change state, the component
+will not re-render automatically, in this instance we are getting a notification from
+the store, and we are updating our internal state variable, however, we need the
+UI to trigger manually a re-render with this updated value, hence we call this here,
+otherwise the UI will not reflect the updated change.
+
+**NOTE:** Course bug, we would never get to 0 in the server count, and that is
+because this condition is not letting the value go down to 0:
+
+.ServerComponent.razor
+````
+else if (torontoServerNumber > 1)
+
+// It should be >= 1
+````
+
+And that's it, we should get the accurate number of online servers from all workflows
+we trigger.
+
+_Again: This is just demo code, production requires a way better approach_.
+
+And so you can go and implement another store if you want for another city.
+
 ==== Dispose Subscribers
+
+We have implemented the Observer pattern, and it's working just fine. However we
+have one misisng piece of the puzzle, and that is. **Avoiding memory leaks**. Once
+a listener is attached, you have to manually remove it as well.
+
+_Note:_ Course is sneaky, it implemented all stores behind the scenes.
+
+The best "hook" at which we can unsubscribe, is when the component goes out of
+memory, so add `@implements IDisposable`, and on code:
+
+.CityComponent.razor
+````
+public void Dispose()
+{
+    TorontoOnlineServersStore.RemoveStateChangeListeners(OnServerStatusChange);
+}
+````
+We added previously the callback to the store's list of subscriptions and now
+before the component gets unmounted we'll make sure we unsubscribe.
+
+Another note here, because there's code for all 5 stores (all 5 cities) a `switch`
+statement is used to allocate and deallocate "smartly". And yeah, this is brittle.
+
+[NOTE]
+====
+One big reason as to why this approach is not good for production, is that we
+are allocating more memory without good reason. For each city component, we are
+registering 5 stores to listen to and to compute what value to display. Not good,
+at all. Hence one store, that is dynamic, that extends and expands based on multiple
+events is the best way to go about it. (More complex yes, but easier to change later,
+without unnecessary memory allocations and so on)
+====
+
+=== WebAssembly Interactivity
+
+==== WebAssembly Interactivity Locations
+
+==== Create a new project with WebAssembly Interactivity
+
+==== Mix Render Models
