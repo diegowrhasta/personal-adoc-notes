@@ -6728,6 +6728,238 @@ without unnecessary memory allocations and so on)
 
 ==== WebAssembly Interactivity Locations
 
+In short, we know about interactivity locations. You can set it Globally, or set
+specific components to use interactivity. All of these concepts apply equally to
+WebAssembly, there isn't anything to change there.
+
+Due to the nature of everything working on the browser, that's where the implementation
+might differ in its details, but virtually, and practically it all works exactly
+the same.
+
+Going a bit into the differences, is that whenever interactivity is marked for a
+component then all of that component's info will be downloaded and handled  by
+the browser instead of a server from which we initially get a response.
+
+And don't worry, Blazor has been designed, optimize and iterated over so that it's
+as smooth and performant as possible even with those constraints.
+
 ==== Create a new project with WebAssembly Interactivity
 
+We will create a new project with WebAssemly Interactivity.
+
+[NOTE]
+====
+We will simply create on the same repo a new project and then make that new project
+the startup project. No need to create a whole new repo for this.
+====
+
+We will create it with some settings in mind:
+
+- Use the recommended Blazor Web App Template
+- Interactive Render Mode: WebAssembly
+- Interactivity Location: Per page/component (For deep dive purposes, with global
+we wouldn't get to see how things work under the hood since this would already
+abstract everything for us.
+
+[NOTE]
+====
+When creating a new project for a solution. Be sure to stop any running of the
+solution's projects. It sometimes interfers with the creation process and we
+run into weird states.
+====
+
+The moment we create the project, we will notice it will actually scaffold **two
+projects**. One with the name we configured, and another one with a `.Demo` suffix.
+
+If we go back a bit on how the architecture works, we know that we have to make
+at least one initial handshake with a server to get info. And in the case of
+WebAssembly we would be downloading component's in memory, however those in-memory
+representations of the components will be at the browser level. In order to get
+to that result, Blazor WASM uses this `.Client` project/app. It's crucial for this
+to exist so that the application works correctly. This app's whole purpose is to
+download the interactive component's info into the browser.
+
+Again, it all depends on if a component is marked as interactive or not, any
+interactive component will be handled by this app one way or another.
+
+[IMPORTANT]
+====
+How do you run with the CLI a solution and marking a Startup project specifically?
+Just be standing on the specific project you want to run and execute the same command
+we had before: `dotnet run --no-hot-reload`
+====
+
+Once we run the app we will notice how this specific template has 3 pages for us:
+
+- Home = SSR, lives in the default project
+- Counter = This has interactivity turned on for it, so this lives in the `.Client`
+suffixed project
+- Weather = SSR, lives in the default project
+
+Because we selected per-component/page interactivity location, our router is
+configured as static rendering. So if we navigate away from a page and come back, 
+state is also not kept at all. **This is a really important distinction**.
+
+If we take out the Dev Tools, we can notice that a WebSocket connection is indeed
+initialized on this WebAssembly setup, but even if we try and poke around on an
+interactive page, we won't see any binary messages transmitted. So this connection
+must be used only for init purposes (nothing confirmed on docs), maybe.
+
+_Extra Info:_
+
+When we configure a **Global WebAssembly Interactive** project, the `.Client`
+project gets both the _Layout and Router_ components assigned to it. Since it
+has to now set everything as interactive, it leverages these components a lot,
+hence it makes more sense to put them at that project's level.
+
+And another important piece of info is that on the non-global setup, the Router
+component injects to itself all possible pages that are in `.Client`:
+
+````
+<Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+````
+
+There are small pieces of code also on `Program.cs` that take care of this smart
+scanning of the `.Client` project in order to expose them to the gateway application
+and make it work as if it was this one sole project (at least it seems that way
+to the user).
+
+In the `Program.cs` file the lines of code we should be aware of are important
+are:
+
+````
+builder.Services.AddRazorComponents()
+    .AddInteractiveWebAssemblyComponents();
+
+app.MapRazorComponents<App>()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(WebAssemblyDemo.Client._Imports).Assembly);
+````
+As you can see we have to call a specific method for WASM interactivity, and we also
+have to reference smartly the `.Client` assembly so that all components living there
+are injected correctly.
+
 ==== Mix Render Models
+
+If we head down to `Counter.razor` we will see it has the render mode attribute
+set to it as `@rendermode InteractiveWebAssembly`. We mentioned before that's not
+a good practice, so we will delete that and specificy the render mode at the component
+level (on a parent).
+
+With this current setup, we won't get the same flexibility as before, so first, let's
+actually create a page at the main project, that encapsulates the content's of
+Counter that is currently at `.Client`.
+
+| Main Project
+| --- Pages
+| ------- Counter.razor
+| .Client Project
+| --- Pages
+| ------ CounterPage.razor (We actually rename this component cuz the scaffold creates
+it without the `Page` suffix)
+
+And on the new page at the main project we would make some code like this:
+
+[source, razor]
+.Counter.razor
+----
+@page "/counter"
+<CounterPage @rendermode="InteractiveWebAssembly"></CounterPage>
+
+@code {
+
+}
+----
+
+To hide ugly imports we also added as a global import in `_Imports.razor`
+
+````
+@using WebAssemblyDemo.Client.Pages
+````
+
+With that we should be getting interactivity as before. A good refactor.
+
+[NOTE]
+====
+There's perhaps a hurdle here, when we run with `dotnet watch run --no-hot-reload`,
+this only scans the current project, so if we change things on the `.Client` project,
+we won't get a hot reload triggered, (unfortunately), so that will require us to
+stop and re-run the command. Which is also something I don't like, I'm used to the
+React/Angular approach, I think that keeps a good _flow state_.
+====
+
+You can do stuff like this even in `Program.cs`:
+
+````
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents()
+    .AddInteractiveWebAssemblyComponents();
+
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
+    .AddInteractiveWebAssemblyRenderMode()
+    .AddAdditionalAssemblies(typeof(WebAssemblyDemo.Client._Imports).Assembly);
+````
+Notice how we are adding `AddInteractiveServerComponents` to the DI as well as
+the razor component mapping pipeline.
+
+With all of this configured, the page should still work the same, however, it will
+be now flexible, and it can adhere to the best practice that we stated that we
+should be specifying a render mode at a _html level_.
+
+What's cooler though, is that by enabling this setup, we can even set the render
+mode to `InteractiveServer`, which might be surprising, (you can mix these two
+modes even though we are on an InteractiveWebAssembly app?).
+
+.Counter.razor
+----
+<CounterPage @rendermode="InteractiveServer"></CounterPage>
+----
+
+And yeah, if you do this, the functionality would still be fine. With the added
+benefit that we know get a web socket and the exchange of binary info works as
+if it where the previous approach we studied.
+
+We get access to all of these possibilities, simply because we adhered to the
+**best practices**.
+
+You can even those stuff like this:
+
+[source, razor]
+.Counter.razor
+----
+@page "/counter"
+<h1>Server Interactivity</h1>
+<CounterPage @rendermode="InteractiveServer"></CounterPage>
+
+<br />
+<br />
+<br />
+
+<h1>Web Assembly Interactivity</h1>
+<CounterPage @rendermode="InteractiveWebAssembly"></CounterPage>
+@code {
+
+}
+----
+That's interesting, you can declare the same component and switch its rendermode
+however you see fit. And it would still work fine. No issue whatsoever.
+
+[IMPORTANT]
+====
+A `.Client` component can be made as flexible as to be used multiple times, with
+different render modes, and be used however we see fit. Always aim to make your
+pages/components like this, extremely flexible, reproducible, clean.
+====
+
+**Conclusion:** If you can, place your components in `.Client`, and depending
+on your use case, choose wisely which render mode to use. Besides that, try to
+make the components as flexible as possible, so any requirement doesn't hard
+lock you or you yourself then incurr in higher maintenance costs because a
+component wasn't architected properly.
+
+==== Life cycle events in WebAssembly Interactivity
+
+==== Browser Storage && Javascript InterOp
+
+==== Use DI container to maintain states for WASM components
