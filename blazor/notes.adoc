@@ -6960,6 +6960,215 @@ component wasn't architected properly.
 
 ==== Life cycle events in WebAssembly Interactivity
 
+Okay, using the previous analysis we had on Server interactivity, we can arrive
+at similar conclusions but with a slight different nuance.
+
+_I won't do this since it's redundant, but the course added code to the `Counter.razor`
+component to print a message on each lifecycle hook_
+
+First of all, **Pre-rendering is on by default for WASM interactivity as well**.
+So we will get hooks running on the server, and then we will see `Console.log`
+messages on the browser. Because the code will be running on browser right after.
+
+A set of hooks runs on the server, and another set of hooks runs on the client.
+We have the same "issue" discussed before, code will run twice, so when initializing
+things, use the `OnAfterRender` hook and leverage its `firstRender` property.
+(Or, as we know, we should actually leverage `SetParametersAsync` since there's this
+"bug").
+
+After the first handshake, all other messages should be shown on a `Console.log`
+since all code gets downloaded to the browser.
+
+**CONCLUSSION:** So, we can conclude in that all previous concepts that apply
+for Server Interactivity and lifecycle hoooks, apply in the same manner, but only
+with small nuances that when taken into consideration should allow us to build
+applications correctly.
+
 ==== Browser Storage && Javascript InterOp
 
+We previously used two classes to leverage the browser's storages: `ProtectedLocalStorage`,
+`ProtectedSessionStorage`. And that works fine on Server Interactivity, however they
+are Server solutions. We have to use something else for WASM. And that's `Javascript
+InterOp`.
+
+[NOTE]
+====
+`LocalStorage` is considered a store of "Global Variables". And we don't like those
+since they can bring tons of problems. So that's another reason as to not try to
+use it, and prefer `SessionStorage`
+====
+
+When trying to use any of the `Protected...` classes on components that live at
+the `.Client` project, we won't have the ability to resolve them. It will seem
+as though they don't exist, and that is because **they are server interactivity
+technologies**.
+
+In its place we have to use the `IJSRuntime` to run javascript code directly and
+leverage the browser's capabilities that way.
+
+As a way to demo this we will create two pages in the `.Client` project, one to save
+into the session storage and another to retrieve the value:
+
+[source, razor]
+.Pages/BrowserStorageStep1.razor
+----
+@page "/browser-wasm-1"
+
+@inject IJSRuntime JSRuntime <.>
+@inject NavigationManager NavigationManager
+
+@rendermode WebAssemblyInteractivity <.>
+
+<h3>BrowserStorageStep1</h3>
+<br />
+<br />
+<input type="text" class="form-control" @bind-value="Data">
+<br />
+<br />
+<button class="btn btn-primary" @onclick="GoNextAsync">
+    Next
+</button>
+
+@code {
+    private string Data { get; set; } = string.Empty;
+
+    private async Task GoNextAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "demo-data", Data); <.>
+        NavigationManager.NavigateTo("/browser-wasm-2"); <.>
+    }
+}
+----
+<.> We inject the interop class through its interface (dependency inversion)
+<.> If we don't set this here, we won't get to work with inputs, buttons nor anything
+like that, **SO DON'T FORGET ABOUT THIS WHEN YOU ARE WORKING WITH THE RECOMMENDED
+APPROACH IN WHICH YOU MANUALLY MARK COMPONENTS AND PAGES THAT ARE INTERACTIVE**
+<.> And we then run this `InvokeVoidAsync` variation, this is done specifically
+because we don't expect a result back at all, hence we just default to a void.
+This takes as a string the name of the javascript function/object, and then the
+next parameters are parameters by convention that will be fed to the respective
+JS function. In the case of `sessionStorage.setItem` we feed a key and then its
+value to save in the _sessionStorage_
+<.> And after that we leverage the `NavigationManager` just as in the server
+interactivity project, this syntax and approach works the same.
++
+One small comment here is the fact that we should leverage async programming here,
+performance reasons most of the time, so always leverage `Task` and `await`.
+
+And on the receiving component we will leverage interop as so:
+
+[source, razor]
+.BrowserStorageStep2.razor
+----
+@page "/browser-wasm-2"
+
+@inject IJSRuntime JSRuntime
+
+@rendermode InteractiveWebAssembly <.>
+
+<h3>BrowserStorageStep2</h3>
+
+<br/>
+<br/>
+<br/>
+
+<text>
+    @Data
+</text>
+
+@code {
+    private string Data { get; set; } = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) <.>
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        Data = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "demo-data"); <.>
+        StateHasChanged(); <.>
+    }
+
+}
+----
+<.> Again, don't forget to mark the page with interactivity so that it actually
+works.
+<.> We mentioned previously that we need to leverage async, so we have to use
+this specific async variation of `OnAfterRender`, if we tried using another hook
+we would even get errors pointing us towards this hook. And that is because we can't
+try to run server hooks or objects that are on server when working on a browser.
+And in this specific hook we can leverage WASM objects and functions safely.
+<.> As you can see, leveraging async and await, we can execute the javascript code
+in charge of retrieving the value that was stored in the previous page.
+<.> Never forget to call this by the end, otherwise UI won't reflect the new initialized
+state.
+
+And so, we can head to `http://localhost:5182/browser-wasm-1` fill in the input,
+press the button, and on `http://localhost:5182/browser-wasm-2` we should be
+seeing the value that was saved on the first page.
+
+And this is how we can leverage interop to then use the browser's native session
+storage and not die while trying.
+
 ==== Use DI container to maintain states for WASM components
+
+This is pretty different.
+
+We will copy the same class we had for a _ContainerStorage_:
+
+````
+namespace WebAssemblyDemo.Client;
+
+public class ContainerStorage
+{
+    private string _message = string.Empty;
+
+    public string GetMessage() => _message;
+    
+    public void SetMessage(string message) => _message = message;
+}
+````
+
+Let's go over the theory again, even though we have marked our demo pages with
+WASM Interactivity, **Pre-render** takes care of rendering them on the server
+first.
+
+If we want to register a DI State Container, we have to register both on the main
+project and the `Client` project. If I just save it in one of them, we will run
+into issues.
+
+We mentioned this before, but we will mention it again:
+
+````
+builder.Services.AddSingleton<ContainerStorage>();
+````
+
+On WASM we should add state containers as `Singleton`. On Server Interactivity
+we prefer `Scoped` since the moment the SignalR channel dies, then the service
+will also be cleaned up. But here, in WASM, the moment the browser dies, then
+the app will die as well.
+
+[NOTE]
+====
+If you want to use `Pre Render` you have to register DI State Containers in both
+main and client projects. That is because it will be rendered once in the server
+and another on the client. If you register the service only on the Client, then
+you will get weird issues stating that the service hasn't been registered and
+so on.
+====
+
+After this, we can swap out our JS Interop implementation with our State Container
+and thing should still work the same. No SessionStorage should be in sight, however,
+we would still get the same experience.
+
+And yeah, you can try and turn off pre-render and test if just adding the DI
+Container Service on the `Client` works and doesn't run into issues.
+
+==== Debug WebAssembly Components
+
+==== Other Differences
+
+=== Data Access for SSR or Server Interactivity
+
+==== Overview of accessing DB from SSR or Server Interactivity
