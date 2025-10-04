@@ -7167,8 +7167,84 @@ Container Service on the `Client` works and doesn't run into issues.
 
 ==== Debug WebAssembly Components
 
+WASM Components' debugging is slightly different, that is mainly due to the fact
+that this is in the browser.
+
+There are three ways to debug:
+
+- Debug with Visual Studio
+- Debug with browser
+- Debug with Console.WriteLine
+
+**Visual Studio:**
+
+If you want the ability to debug with Visual Studio, you need to add a Nuget.
+
+````
+<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.5"/>
+````
+
+And on the `launchsettings.json` you need a specific setting:
+
+````
+"inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+````
+
+Be sure to update Visual Studio. Debugging WASM components is not very consistent,
+and updates might fix issues that are present.
+
+[NOTE]
+====
+You need Chromium-based browsers for debugging (at least with Rider), and so, even
+with Visual Studio let's aim at that.
+====
+
+Configuring it was a hassle, but basically, on Rider you can press `Ctrl + Alt + S`,
+and you will get a screen for settings, search for "Browser", and in there you can
+configure what browser Rider will launch. The trick is to select the one that has
+Google Chrome selected, and then just changing its path to `google-chrome-stable`,
+depends on the setup but if you get an error stating that `google-chrome` doesn't
+exist or whatever. Then yeah search in `/usr/bin/...` and see what's the name of the
+Google Chrome executable.
+
+After launching debug on the **MAIN** WASM project, we should get Chrome launching,
+and breakpoints working. (We will even see a small message before the page loads stating
+that the debugging is syncing or whatnot).
+
+On the first load of the page, the proxies need to load first, so wait a bit until
+they all initialize, and after they are up and running, try to interact with the
+page and then check if breakpoints work. Under the hood, there's a proxy between
+the browser and Visual Studio **NEVER FORGET THIS SPECIFIC PIECE OF INFO**.
+
+If the first approach doesn't work, try to debug the second approach:
+
+Which doesn't actually work, it involves launching Chrome with a specific setting
+and stuffs. And apparently you can debug with the browser "Sources" tab. But...
+I can't even see the source files listed, so Idk dude. Blazor, Blazor, Blazor. You
+don't really make it easy to love you.
+
 ==== Other Differences
+
+- Authentication
+- Accessing Data
+
+These are major differences depending on the interactivity type. So we will
+cover them in their own separate sections.
 
 === Data Access for SSR or Server Interactivity
 
 ==== Overview of accessing DB from SSR or Server Interactivity
+
+When we run SSR or Server Interactivity, the code that is running on the server
+can access directly the database.
+
+WebAssembly has the C# code running in the browser, meaning the code will have to
+deal with an API most of the time.
+
+We will use EF Core to access data from the server.
+
+==== Add NuGet Packages for using EF Core
+
+==== Create DBContext
+
+==== Configure connection strings and run migration
