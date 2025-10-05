@@ -7245,6 +7245,299 @@ We will use EF Core to access data from the server.
 
 ==== Add NuGet Packages for using EF Core
 
+We will start by installing a couple of packages on the Server Interactivity project:
+
+- EntityFrameworkCore (Don't forget to not apply the preview versions, at the time
+of writing the project is on .NET 9, so install .NET 9 versions). With this set of
+APIs you can target tons of different databases. But this are the base APIs.
+    - This is an ORM. E.g., Two tables, with a relationship, that representation
+    can all be mapped to memory with classes (on an application). The ORM maps
+    classes to tables. You can run database migrations by having the database
+    representation in the APP and then recreating all of that structure but on
+    the actual database service.
+- EntityFrameworkCore.SqlServer = This allows us to access APIs that target SQLServer.
+- EntityFrameworkCore.Design = Migrations 
+- EntityFrameworkCore.Tools = Migrations
+- Get SQL Server Management Studio (Windows Only)
+- There used to be a cross-platform solution. Azure Data Studio. But it seems it's
+getting destroyed:
+    - https://learn.microsoft.com/en-us/azure-data-studio/download-azure-data-studio?tabs=linux-install%2Cwin-user-install%2Credhat-install%2Cwindows-uninstall%2Credhat-uninstall
+    - https://learn.microsoft.com/en-us/azure-data-studio/whats-happening-azure-data-studio?tabs=dev
+- Rider seems to have integrations with SQL Server though I will try that.
+
+Don't forget to start the docker service, and then run docker commands as sudo:
+
+- sudo systemctl start docker
+- sudo docker <COMMAND>
+
+But you know the drill, let's start a container for a dev instance we can work on,
+since the course will use this database:
+
+````
+docker run -e "ACCEPT_EULA=Y" \
+           -e "SA_PASSWORD=12345678" \
+           -p 1433:1433 \
+           --name sql2019-dev \
+           -d mcr.microsoft.com/mssql/server:2019-latest
+````
+
+- Extra = Because I'm on Linux, and want to move away from proprietary stuff,
+I won't use Docker Desktop, but a container alternative called portainer:
+
+````
+docker volume create portainer_data && \
+docker run -d \
+  -p 8000:8000 \
+  -p 9443:9443 \
+  --name portainer \
+  --restart=always \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v portainer_data:/data \
+  portainer/portainer-ce:latest
+
+````
+
+Once you log-in be sure to create a user and password:
+
+- admin
+- admin12345678
+
+I don't know what the hell happened, but I didn't get hit with a screen that
+lists the environments. But you should, if not, click the Big Logo. You can
+then click on "Live Connect" and with that you should get access to all the GUI
+elements that inform you about the health of your docker instance.
+
+**GOING BACK TO THE MAIN TOPIC**
+
+The biggest selling point about doing a Code-First approach, and that it what
+we'll do, is that the moment you update a class, add something for the database
+representation in code, you can run a migration and have that change replicated
+on the database side.
+
 ==== Create DBContext
 
+Code-first, databae schema will be in code. We will run a migration, and we will
+generate the databae.
+
+Under `Data > ServerManagementContext`:
+
+[source, csharp]
+----
+using Microsoft.EntityFrameworkCore;
+using ServerManagement.Models;
+
+namespace ServerManagement.Data;
+
+public class ServerManagementContext : DbContext <.>
+{
+    public DbSet<Server> Servers { get; set; } <.>
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder) <.>
+    {
+        base.OnModelCreating(modelBuilder); <.>
+
+        modelBuilder.Entity<Server>().HasData( <.>
+            new Server { Id = 3, Name = "Server3", City = "Toronto" },
+            new Server { Id = 3, Name = "Server3", City = "Toronto" },
+            new Server { Id = 4, Name = "Server4", City = "Toronto" },
+            new Server { Id = 2, Name = "Server2", City = "Toronto" },
+            new Server { Id = 5, Name = "Server5", City = "Montreal" },
+            new Server { Id = 6, Name = "Server6", City = "Montreal" },
+            new Server { Id = 7, Name = "Server7", City = "Montreal" },
+            new Server { Id = 8, Name = "Server8", City = "Ottawa" },
+            new Server { Id = 9, Name = "Server9", City = "Ottawa" },
+            new Server { Id = 10, Name = "Server10", City = "Calgary" },
+            new Server { Id = 11, Name = "Server11", City = "Calgary" },
+            new Server { Id = 12, Name = "Server12", City = "Halifax" },
+            new Server { Id = 13, Name = "Server13", City = "Halifax" });
+    }
+}
+----
+<.> We can separate code based on domain, concern or many other criteria. But in short,
+we can create multiple contexts and have them inherit `DbContext` so that we get
+access to tons of overrides and stuffs that dynamically (under the hood) run and
+start talking to our actual backing service (database).
+<.> We always work in a model of `DbSet` this represents a table and its records.
+We will actually re-use our `Server.cs` class that we created before for our static
+repository approach.
+<.> If we want to seed data, we can use the `OnModelCreating` method it receives
+an object that we can use for multiple use cases.
+<.> Don't forget to run the base methods, Blazor might be one thing, but things such
+as EF actually have important logic on them.
+<.> As mentioned before, this parameter has an API that allows us to do tons of
+things to the database, we can establish reltionships, constraints, etc. But in our
+case we just want to seed, `HasData` is used for that and you can feed both a list
+or just consequent initialization variables. By convention it will try to map to
+the primary key a property like: `<ENTITY-NAME>Id`. We have a `ServerId` prop which
+means we shouldn't get any weird errors or stuffs.
+
 ==== Configure connection strings and run migration
+
+Now that we have architected the Code First code. We will connect to the database
+now.
+
+[NOTE]
+====
+So apparently the password for the server needs to follow this:
+
+ERROR: Unable to set system administrator password: Password validation failed.
+The password does not meet SQL Server password policy requirements because it is
+not complex enough. The password must be at least 8 characters long and contain
+characters from three of the following four sets: Uppercase letters, Lowercase
+letters, Base 10 digits, and Symbols..
+====
+
+My choice (of course for testing purposes): `Str0ngPassw0rd@`
+
+After that you can use either client to connect, just remember the basics:
+
+Server=localhost;user=sa;password=Str0ngPassw0rd@ (THIS CONNECTION STRING WORKS
+FINE IN RIDER.)
+
+(Port by default is 1443).
+
+Trust the server certificate, encryption can be set as optional.
+
+Once we connect to the database we won't have the ServerManagement database yet.
+So now, how do we populate our Database?
+
+**Connection Strings: ** A string to embed into our project the way to connect
+to the database.
+
+_NOTE:_ The course uses some GUI thing in Visual Studio to generate the connection
+string. Let's **NOT**, okay? Keep it Simple.
+
+We know a good practice is to keep configurations external, and .NET has that
+requirement already figured out:
+
+````
+"ConnectionStrings": {
+  "ServerManagement": "Data Source=localhost;Initial Catalog=ServerManagement;User ID=sa;Password=Str0ngPassw0rd@;Trust Server Certificate=true"
+},
+````
+
+Reading plain text makes pretty evident what's going on. Only thing worth of note
+is that `Initial Catalog` is the property that allows us to set the database name,
+and for our specific local dev container powered env, the user by default is `sa`,
+and the password is what we mentioned before.
+
+After we have setup these things, we can go and configure some DI Container stuff
+to start integrating with the DB.
+
+You would normally just do something like this:
+
+````
+builder.Services.AddDbContext<ServerManagementContext>();
+````
+
+But there's an issue with this code. **EF Is not Thread Safe**. And when adding
+the context like this, it is created as `Scoped` by default. Meaning that the instance
+will only live as long as the SignalR channel lives. You are bound to run into
+concurrency issues, multi-threading will be blocked from your tool of options (unless
+you want to live with nasty issues in prod) due to our Server Interactivity nature.
+
+So we will leverage a different method:
+
+````
+builder.Services
+    .AddDbContextFactory<ServerManagementContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("ServerManagement")));
+````
+This can help us creating contexts that are not as short-lived, and in turn are
+safer. On top of that we will now connect to the connection string we added to
+our `appsettings.Development.json`. We will leverage the `UseSqlServer` extension
+and we will then leverage the `builder.Configuration` object and its method that
+automatically will look at the `ConnectionStrings` properties, and then depedning
+on the key it will retrieve the respective value that we configured.
+
+After this, we need to go back to our context class and somehow also wire it up
+so that it will start talking to the database, we don't have to re-invent the wheel,
+the tools are there for us to leverage:
+
+````
+public ServerManagementContext(DbContextOptions<ServerManagementContext> options) : base(options)
+{
+}
+````
+
+In here, we can simply call the constructor, receive an `options` parameter,
+and then pass it down to the base class' constructor. Under the hood this will
+initialize things and connect to the database and start integrating seamlessly.
+
+And now, we will run commands, but all on GUI. NO IDE MAGIC.
+
+. `dotnet tool install --global dotnet-ef` = Install the tool.
+. Navigate to the project directory: `cd path/to/ServerManagement`
+. dotnet ef migrations add Init --project ./ServerManagement.csproj --startup-project ./ServerManagement.csproj
+. dotnet ef database update
+
+[NOTE]
+====
+If you get an error such as:
+
+````
+Unable to create a 'DbContext' of type 'ServerManagementContext'. The exception
+'The seed entity for entity type 'Server' cannot be added because another seed
+entity with the same key value for {'Id'} has already been added. Consider using
+'DbContextOptionsBuilder.EnableSensitiveDataLogging' to see the conflicting key
+values.' was thrown while attempting to create an instance. For the different
+patterns supported at design time, see https://go.microsoft.com/fwlink/?linkid=851728
+````
+
+This means that there's an instance with the same Id, and hence the migration can't
+be applied, so check the seeding code DUDE!
+====
+
+[NOTE]
+====
+More errors:
+
+An error was generated for warning 'Microsoft.EntityFrameworkCore.Migrations.PendingModelChangesWarning':
+The model for context 'ServerManagementContext' changes each time it is built.
+This is usually caused by dynamic values used in a 'HasData' call (e.g. `new
+DateTime()`, `Guid.NewGuid()`). Add a new migration and examine its contents to
+locate the cause, and replace the dynamic call with a static, hardcoded value.
+See https://aka.ms/efcore-docs-pending-changes. This exception can be suppressed
+or logged by passing event ID 'RelationalEventId.PendingModelChangesWarning' to
+the 'ConfigureWarnings' method in 'DbContext.OnConfiguring' or 'AddDbContext'.
+
+We configured our class to have a Random number decide if the server is Online or
+not. **DELETE THAT CODE** That's bad code dude.
+====
+
+Once that's done, be sure to delete the `Migrations` folder. And run the commands
+again, everything should run smoothly.
+
+Also, Rider's database integration is kinda weird. It doesn't update with the new
+database, so just "try to create the same database" it will error saying it
+exists, and it will finally show up. Be sure to select to connect to the default
+schema `dbo` and with that, you should be able to connect to the local SQLServer
+instance and start querying and stuffs, if we query our Servers table we should
+get the 10 seeded records we configured. _Cool, cool_.
+
+If we know go back and analyze a bit further, what happened under the hood, was
+that a migrations file was created under `Migrations/` this file actually is auto-generated
+code with two main methods:
+
+- Up = Method with all sorts of code to apply mutations that change the schema
+of the database
+- Down = All sorts of changes that undo some structure on the database
+
+[NOTE]
+====
+By default, there will always be a metadata migrations table created by EF Core,
+so don't panic if you see an underscore prefixed table you didn't expect.
+====
+
+Also, you can choose to run a specific migration by specifying its name directly,
+since we created a migration called `Init` we can run a command such as `dotnet ef
+database update Init`. And it will try to run the migration, and after refreshing
+the database state, we should be seeing the rows and all just like before.
+
+==== Implement the ServersEFCoreRepository
+
+==== Use the plugin based repository
+
+=== Data Access for Blazor with WebAssembly Interactivity
+
+==== Access DB from WebAssembly
