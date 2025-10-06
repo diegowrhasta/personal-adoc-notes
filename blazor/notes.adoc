@@ -7831,3 +7831,87 @@ the use cases should still behave the same and everything.
 === Data Access for Blazor with WebAssembly Interactivity
 
 ==== Access DB from WebAssembly
+
+Because we were using Server interactivity, we can directly access the database
+from our component code. No need of an API.
+
+Components with WASM cannot follow the same pattern, mainly because of security
+issues. The browser is not secure, someone can reverse-engineer the code.
+
+We should expose the database through an API interface. In our case we should
+prefer RESTful APIs. It's an abstraction that we can refer to as "remote functions".
+The execution of these functions is through HTTP Request/Responses. We invoke the
+API and we return data after that.
+
+==== How Web API works
+
+This is a really big topic. But we will hyperfocus on the basics:
+
+A Web API interface is a set of remotely hosted **functions**. But what kind of
+operations? We can expose business logic or data. In the case of a Web API, we
+can expose `data`.
+
+The clients are virtually endlessly, we can expose mobile apps, web apps, TVs,
+etc.
+
+The usual operations we will execute are:
+
+````
+Create
+Read
+Update
+Delete
+````
+
+How do we point the app towards what operation we want to make? We should map that
+to something called `Http Verb`.
+
+_Anatomy of an HTTP Request/Response:_
+
+. URL = Target resource. Mainly used to point towards a path. You can put parameters
+in there, but you shouldn't abuse it, besides, it's not secure enough.
+. Http Verb = Many verbs, but we usually use 4 to map to the CRUD operations.
+POST (Create), GET (Read), PUT (Update), DELETE (Delete).
+. Http Body = Prefer this to put data attached to a request. Mostly used with
+POST, PUT, PATCH. (GET Requests don't really use Body, and some setups won't let you
+leverage it, responses do have a body though)
+. Header = In here there's metadata for the Request & Response. It describes some
+info about it. (We usually specify here that the request-response uses JSON as
+a format).
+
+We just need to trigger the correct method with the correct parameters so that we
+then trigger the database actions from a client.
+
+==== Prepared Server Management CRUD code in WebAssembly
+
+Basically, we won't re-invent the wheel, we are copying some files from the already
+developed ServerInteractive project and focus on the main stuff we want to get
+across with WASM and Rest.
+
+Just download the course's `.zip` file. And copy the respective files, and create
+the respective folders.
+
+You should be able to launch the app, navigate to `/wasm/servers` and see a list
+and have some level of interactivity. (It might get stuck for a while in Debug
+mode since it has to initialize the WASM debugger).
+
+==== Setup Firebase Realtime Database
+
+We are not going to develop a Restful API, so we will leverage Firebase's already
+built-in Restful API so that we focus on how Blazor WASM should talk to Restful
+clients.
+
+- Search for Google Firebase (use your own google account)
+- There's no cost for the Realtime Database, so we will create a project in GCloud
+to then start using the Realtime Database.
+- We should create a firebase project at `console.firebase.google.com`, set it up
+in `test-mode`.
+    - It starts empty, each Firebase database looks like a file tree structure,
+    it is different to the SQL Server backing service we used.
+
+==== Use Postman to access the Web API endpoints
+
+==== Invoke API in C#
+
+==== Prepare Body in HttpRequest
+
