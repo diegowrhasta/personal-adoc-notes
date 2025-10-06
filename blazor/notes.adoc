@@ -7536,7 +7536,297 @@ the database state, we should be seeing the rows and all just like before.
 
 ==== Implement the ServersEFCoreRepository
 
+Up until we now we have been working with a static data repository (in-memory),
+however, since we are now going to integrate with SQL Server, we will swap it out
+with an actual database connecting repo. (We can definitely apply patterns here and
+interfaces to make the swap painless, but well, the course is Blazor focused, not
+backend focused so we will go a bit ugly with it).
+
+`ServersEFCoreRepository` => Apparently this should be an abstraction that could
+connect to any database.
+
+And so we will start creating methods on our repository:
+
+[source, csharp]
+----
+namespace ServerManagement.Models;
+
+public class ServersEfCoreRepository(IDbContextFactory<ServerManagementContext> contextFactory) <.>
+{
+    public async Task AddServerAsync(Server server) <.>
+    {
+        await using var db = await contextFactory.CreateDbContextAsync(); <.>
+        db.Servers.Add(server); <.>
+
+        await db.SaveChangesAsync(); <.>
+    }
+
+    public async Task<List<Server>> GetServersAsync()
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        return await db.Servers.ToListAsync(); <.>
+    }
+
+    public async Task<List<Server>> GetServersByCityAsync(string city)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        return await db.Servers
+            .Where(x => x.City != null && x.City.Equals(city, StringComparison.OrdinalIgnoreCase)) <.>
+            .ToListAsync();
+    }
+
+    public async Task<Server?> GetServerByIdAsync(int id)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        return await db.Servers.FirstOrDefaultAsync(x => x.Id == id); <.>
+    }
+
+    public async Task UpdateServerAsync(int serverId, Server? server)
+    {
+        if (server is null) <.>
+        {
+            throw new ArgumentNullException(nameof(server));
+        }
+
+        if (serverId != server.Id)
+        {
+            return;
+        }
+
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var serverToUpdate = await db.Servers.FindAsync(serverId); <.>
+
+        if (serverToUpdate is null)
+        {
+            return;
+        }
+
+        serverToUpdate.IsOnline = server.IsOnline;
+        serverToUpdate.Name = server.Name;
+        serverToUpdate.City = server.City;
+        await db.SaveChangesAsync(); <.>
+    }
+
+    public async Task DeleteServerAsync(int serverId)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+        var serverToDelete = await db.Servers.FindAsync(serverId);
+        
+        if (serverToDelete is null)
+        {
+            return;
+        }
+        
+        db.Servers.Remove(serverToDelete); <.>
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<List<Server>> SearchServers(string serverFilter)
+    {
+        await using var db = await contextFactory.CreateDbContextAsync();
+
+        return await db.Servers
+            .Where(x => x.Name != null && x.Name.ToLower().StartsWith(serverFilter.ToLower())) <.>
+            .ToListAsync();
+    }
+}
+----
+<.> We will leverage primary constructors to make the DI cleaner.
+<.> We will leverage async methods, since a database call is technically a thread
+blocking operation that can be optimized with async programming.
+<.> We will use a special syntax also for an unmanaged resource with `await using`.
+And in here notice how we are actually leveraging the factory so that we get a short-lived
+instance of the context. With `using` the moment the variable is out of scope (so
+after the method is executed) then the resource is disposed of for us. Becase EF
+is not **thread safe** we should apply this pattern to avoid concurrency issues.
+<.> This is the typical pattern with EF, in which we "make operations in-memory".
+<.> And lastly to persist the changes we are going to do to the database, we run
+a `SaveChangesAsync()`.
+<.> We should also leverage async retrieval of the records of the database. Also,
+`ToListAsync` is used here so that the SQL Statement takes place at this point in
+time, so we make a query to the database.
+<.> The course uses a really old way of finding and comparing and using an int
+as a comparison value, but I am pretty sure that modern EF supports the equals with
+this culture parameter so we should be fine.
+<.> We are returning if we find a record, if not it will return a `null`, course returns
+a "default" object, which I don't agree with.
+<.> These checks should not be here, I think **mixins** could be applied here.
+<.> And yeah, we can directly feed an int to match to a primary key and then
+retrieve that record in memory and do whatever we want with it.
+<.> After we make all the changes we want in memory, we can just hit the database
+to perform an update.
+<.> We can directly remove an object of the collection and then apply the query
+with a `Save`, under the hood EF Core will attempt to match the record that has
+to be queried for deletion at the DB level.
+<.> This is the correct way to convert to SQL with EF a starts with, the IDE can
+even suggest to do something else, **DON'T**. This is convertible, and should be
+fine.
+
 ==== Use the plugin based repository
+
+We will now swap the old repository with the new repository that talks to the
+database.
+
+The course leverages what is "Extracting an interface". I know Rider has this,
+but maybe with the way I wrote the class it messes up and it doesn't show up. Anyway
+I leveraged its built-in AI to generate the interface so that I can just copy-paste
+it into an interface file:
+
+[source, csharp]
+----
+namespace ServerManagement.Models;
+
+public interface IServersEfCoreRepository
+{
+    Task AddServerAsync(Server server);
+    Task<List<Server>> GetServersAsync();
+    Task<List<Server>> GetServersByCityAsync(string city);
+    Task<Server?> GetServerByIdAsync(int id);
+    Task UpdateServerAsync(int serverId, Server? server);
+    Task DeleteServerAsync(int serverId);
+    Task<List<Server>> SearchServers(string serverFilter);
+}
+----
+And you can easily put that under `ServersEfCoreRepository` for implementation.
+And with that we should be fine.
+
+_A bit of theory:_ Why are we adding this layer with an interface? Basically because
+we want to apply the **plugin based architecture pattern**.
+
+This basically states that we should design and implement things around **Interfaces**,
+and that is because the implementation details should live outside of the application,
+we don't couple our modules to implementation types or details. We simply wire that
+up somewhere else, yet other teams, other projects can design the implementations following
+the contract established and we can simply swap out things, loose coupling becomes
+king in this sense.
+
+The course states that this could live in another project, but we won't go that
+far for this course. Also it says it follows _Clean Architecture_ with _Use Cases_.
+And it is project-based. I know this.
+
+UI will only leverage the interfaces, it won't be coupled to implementations this
+way.
+
+And so the last piece of the puzzle:
+
+````
+builder.Services.AddTransient<IServersEfCoreRepository, ServersEfCoreRepository>();
+````
+
+We will leverage DI to resolve this service in the consumer side. And it should be
+`Transient`. Why? Because this is a stateless, lightweight type of service, the
+backing service (database) is always there, and this is an interface into it. Transient
+is created the moment it's requested for DI and dies the moment it goes out of scope.
+(Typically when the requesting class gets garbage collected). And so, we want for the
+service to live as little as possible, hence we are registering as so.
+
+And here comes two things:
+
+- The course suggests we replace all the calls to the static store manually. This
+wastes so much time, and in real life applications it's unacceptable. Hence **always
+design around interfaces from the start, tech debt otherwise creeps in pretty hard
+the more the project grows**.
+- The course used sync methods, I prefer the more performant async methods, but that
+comes with a price, async gets replicated all across the code, if one thing is
+async, all other things must be async, hence tech debt hits you even harder.
+
+But in short the process is:
+
+. Inject the interface at the component level, better to call it the same name as
+what the static repo had so that you swap out the name easily
+. Turn all calling methods to the repo's methods async, and adjust with `await`
+accordingly
+. Clean up everything to start using the SQLDatabase repo (EF Core) and fix any
+compilation issues
+
+[NOTE]
+====
+Also making a big change that changes tons of code is also extremely dangerous,
+I wouldn't even try to make a single commit with so many changes as the course
+suggests.
+====
+
+One interesting thing that I ran across and implemented:
+
+[source, csharp]
+----
+private List<Server>? _servers; <.>
+
+protected override async Task OnAfterRenderAsync(bool firstRender) <.>
+{
+    if (!firstRender)
+    {
+        return;
+    }
+    _servers = await ServersRepository.GetServersAsync();
+    StateHasChanged();
+}
+----
+<.> This used to initialize in-line. But when injecting and initializing with
+a server we can no longer do that.
+<.> Hence (because we have set the app to be InteractiveServer), we should leverage
+`OnAfterRender` as the place to initialize our things.
+
+After changing anything and running the app. We should still have the same user
+experience. With the difference that populating the list of servers might be
+a bit different now, since we now rely on a backing service, and it takes a bit
+longer to get data from there than an in-memory list.
+
+Found bugs within the code, also the one thing I called out ages ago, about how
+the list's "Turn On/Off" button worked because we were in-memory came up now. We
+never updated the actual state.
+
+````
+return await db.Servers
+            .Where(x => x.City != null && x.City.ToLower() == city.ToLower())
+            .ToListAsync();
+````
+Course was right, we need this "old-school" type of comparison so that EF Core
+can translate this correctly.
+
+On `Servers.razor` I had to fix it:
+
+````
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (!firstRender)
+    {
+        return;
+    }
+
+    if (NavigationManager.Uri.Contains("back-from") && string.IsNullOrWhiteSpace(PreviousCityName)) <.>
+    {
+        return;
+    }
+
+    CityName = PreviousCityName ?? "Toronto"; <.>
+
+    var torontoServers = await ServersRepository.GetServersByCityAsync(CityName);
+
+    TorontoOnlineServersStore.SetNumberOfOnlineServers(torontoServers.Count(x => x.IsOnline));
+
+    StateHasChanged();
+}
+````
+<.> This had to be a `&&` because only when we hit the `back-from` workflow and
+we don't provide a `PreviousCityName` is that we shouldn't attempt at retrieving
+something.
+<.> And in here we should fallback into `Toronto` for the use case in which we
+are just getting to the page for the first time.
+
+And the fix for the list's turn on/off button:
+
+````
+var status = Server.IsOnline = !Server.IsOnline;
+        await ServersRepository.UpdateServerAsync(Server.Id, Server);
+````
+We don't just work with the in-memory representation, we have to make a query to
+the database.
+
+After all these changes, we should be seeing how the database gets updated. How
+the use cases should still behave the same and everything.
 
 === Data Access for Blazor with WebAssembly Interactivity
 
