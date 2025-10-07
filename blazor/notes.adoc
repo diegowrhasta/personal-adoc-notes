@@ -7911,7 +7911,191 @@ in `test-mode`.
 
 ==== Use Postman to access the Web API endpoints
 
+I already know about Postman, and the magic that it has with its collections.
+I want to do something different, so I'll be using https://insomnia.rest/download[Insomnia].
+Also, since I'm on Arch (btw), I will be installing it from the AUR (`yay -S insomnia-bin`),
+just the bin, because the "build it yourself" version is actually broken.
+
+Seems to start just like Postman, you get to login with many different options,
+and there's a "guest" mode with apparent "limited capabilities".
+
+We are going to launch the 4 different functions we have configured.
+
+[NOTE]
+====
+So there's a cool Postman functionality that when creating a new collection/request
+you can actually select a "Create API Basics" and it will create for you a collection
+with 4 pre-loaded requests (CRUD).
+====
+
+We can then get based on our created Realtime Database, a URL to hit, we are going
+to consume a `server` resource. Always suffix the whole URL with `.json` that's a
+requirement. Otherwise you will get hit with a login screen or some error message.
+
+````
+<FIREBASE-URL>/servers.json
+````
+
+We can then hit a POST:
+
+Body
+````
+{
+	"serverId": 1,
+	"name": "Server 1",
+	"city": "Toronto",
+	"isOnline": true
+}
+````
+
+And then the API should respond with the unique key for the record:
+
+````
+{
+	"name": "-Ob-NVPdCgJT50AwgTIN"
+}
+````
+
+The Unique Key will always be auto-generated and be treated as the "root" of the
+document. This is how `POST` works in Firebase, if we don't like that, we have to
+leverage `PUT`. That way we can send the body to something like `/servers/1.json`,
+and we will be able to insert the record with the `id` we want.
+
+_NOTE:_ This is not a standard case, it's how we have to go around Firebase's
+conventions. In an ideal world, we would have to use `POST`.
+
+_NOTE 2:_ Probably something that has to do with the fact we are forcing Firebase
+to work with our own **Ids**. When we list servers, we will see one `null` entry.
+And the course suggests we write "code around that", bad, bad.
+
+We can then play around the path, the verb, and do all the CRUD operations that
+we know. (If you know, you know)
+
 ==== Invoke API in C#
+
+The normal process to start talking Restful, is to serialize all the content we
+want to send to an API (into JSON). Attach that as a Body and send it over the
+network.
+
+The Web API will process the Request and it will come with a response (THAT WE HAVE
+TO DESERIALIZE).
+
+So now, we'll start sending requests from our Application.
+
+Luckily MS already has built-in things for us, we just have to install `Microsoft.Extensions.Http`
+on Main and Client projects of the WASM Blazor app.
+
+As you can notice, a good pattern and practice is to always leverage the DI Container,
+that way we inject managed services in our components that we leverage as easily
+as adding one line of code. The pattern of adding them through `Program.cs` also
+allows for us for easier config, debug and extension.
+
+The course _hard codes_ the firebase URL. That's so bad. I'm adding an `appsettings.Development.json`
+into the client project to see if this will work. Also adding that same file name
+to `.gitignore` so that we don't commit to version control.
+
+[IMPORTANT]
+====
+Yeah... WASM in Blazor is just not good, not a really good implementation, it's a
+hassle to work with, replicating code, doing really annoying things. So choose
+InteractiveServer, that's a better approach.
+====
+
+I say this, because we can't leverage configuration values, to hide, and **NOT
+HARDCODE THE URL AS THE COURSE SUGGESTS**.
+
+In short what took place:
+
+. We created an IApiRepository, ApiRepository. And we then copied the code twice
+for Client and Main project for the DI Injection as `Transient`
+
+We then injected an Http client:
+
+````
+builder.Services.AddHttpClient("ServersApi", client =>
+{
+    client.BaseAddress = new Uri("<HARD-CODED-URI>");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+````
+It's a good practice to give it a name, so that we retrieve a client with a specific
+set of configurations. _However, this should be externalized, no magic strings_.
+
+And lastly on the page for `Servers.razor` we injected the repo through its **interface**.
+That's it. Of course, we are leveraging async methods now since HttpClient by default
+adheres to this **BEST PRACTICE**. And we have to modify code so that it talks
+async, instead of sync. (So bubbling async-await wherever it is needed).
+
+Okay, one interesting find is that at the http client level we can literally use
+methods that allow us to skip over installing newtownsoft or manually deserializing
+and stuffs:
+
+````
+var response = await client.GetFromJsonAsync<List<Server>>("/servers.json");
+
+var response = await clientGetAsync("/servers.json");
+response.EnsureSuccesStatusCode();
+
+return response.Content.ReadFromJsonAsync<T>();
+````
+So if we leverage `GetFromJsonAsync` or `GetAsync` or `ReadFromJsonAsync` we can
+avoid installing Newtownsoft, or manually deserializing contents.
+
+[NOTE]
+====
+Another thing I didn't like is the fact that the course writes implementation and
+leverages the "Extract Interface" Refactor always. Better to design from abstraction
+level first than start coding directly. That way you manually think about the things
+you will need and then start implementing one by one.
+====
 
 ==== Prepare Body in HttpRequest
 
+We know this. We will now leverage code to add a body to a POST:
+
+[source, csharp]
+----
+public async Task AddServerAsync(Server server)
+{
+    var client = clientFactory.CreateClient(API_NAME);
+
+    server.ServerId = await GetNextServerId(); <.>
+    var response = await client.PutAsJsonAsync($"/servers/{server.ServerId}.json", server); <.>
+    response.EnsureSuccessStatusCode();
+    
+    return; <.>
+
+    async Task<int> GetNextServerId()
+    {
+        var servers = (await GetServersAsync()) <.>
+            .Where(x => x is not null) <.>
+            .ToList(); <.>
+
+        if (servers.Count == 0) <.>
+        {
+            return 1;
+        }
+        
+        return servers.Max(s => s.ServerId) + 1; <.>
+    }
+}
+----
+<.> This isn't production ready. We are making a second call through the network
+and to the database just to get one scalar. Not optimal
+<.> Leveraging this method to auto-serialize, and abstract things that aren't that
+important.
+<.> Used a local function since it seems only this method will leverage it, putting
+a `return` before the declaration of the local function is a good way to separate
+the runtime and also logically.
+<.> This way we can wrap the result and act on it.
+<.> The compiler itself says it's impossible, it's not, because of the `null` that
+we mentioned when listing, this is also an alarm though, we might be using the
+API wrong.
+<.> When cast into a list, we should leverage `Count` instead of `Any`, since one
+is a literal property access instead of some processing method that enumerates.
+<.> This also is not that performant as far as I'm aware, we will be reading again
+the whole collection just to get the Max `ServerId`, but whatever.
+
+_Note:_ Another reason I hate we are hardcoding the URL of the database. This could
+send a wrong message to Juniors. They might think it's okay to commit that. IT'S
+NOT, IT'S UNSECURE AND YOUR VERSION CONTROL TURNS AGAINST YOU RIGHT THERE.
