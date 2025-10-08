@@ -8099,3 +8099,76 @@ the whole collection just to get the Max `ServerId`, but whatever.
 _Note:_ Another reason I hate we are hardcoding the URL of the database. This could
 send a wrong message to Juniors. They might think it's okay to commit that. IT'S
 NOT, IT'S UNSECURE AND YOUR VERSION CONTROL TURNS AGAINST YOU RIGHT THERE.
+
+==== Implement the Api Repository
+
+Not much to say here. It's pretty standard:
+
+. Add Update, List By Id methods to the ApiRepository
+. Consume them from the app component's, and then async all the way up since that's
+what the syntax involves
+. Be careful of the _delete URL_ I coded a delete of the whole database instead
+of one record
+. Also, when you delete, send that instruction and retrieve the fresh list of record,
+you need to do a `StateHasChanged()` right after otherwise you won't get the screen
+updated with the new records.
+. Ran into the "OnParametersSetAsync" issue that it will try to make a request
+**twice** on the `EditServer.razor` component. Moved away from that method and
+went into "OnAfterReder"'s pattern. With this we are only making one request
+guaranteed, and it still works the same.'
+
+=== Authentication & Authorization
+
+==== Overview - How authentication works in Blazor
+
+Authentication working in daily life:
+
+- Say you go to a theme park.
+- When you want to play inside the theme park, you have to purchase a ticket.
+    - This has to be printed, plastic card. Either way you have to purchase it.
+    - Once you present the ticket, and you have to get on a ride, the worker's will
+    ask you for your ticket. You need to present that ticket all the way to be allowed
+    to get on. But perhaps your ticket only has access to certain rides. This "action"
+    that restricts an already provided ticket is called **AUTHORIZATION**.
+        - Not everyone is allowed, there may be constraints, some might not get
+        a ticket. This is **AUTHENTICATION**.
+- How does this work in Blazor?
+    - In Blazor in .NET is a bit complex.
+    - On traditional web apps. You would authenticate with a server, get a cookie
+    back, store the cookie in the browser, and any other subsequent request should
+    have to go back to the server with the cookie attached, the server would then
+    validate the cookie, and if it's all good it would run the code you are telling
+    it to run. This is a **stateless** type of authentication. Because the server
+    doesn't keep track of the "tickets" of the users.
+
+We need to work around the three types of Routing we discussed before:
+
+- Static Routing = This adheres to the traditional web app stateless pattern.
+- Server Interactive Routing = (Location is Global). In this case there's a
+SignalR channel between the client and server. Cookie **DOES NOT LIVE AT THE
+BROWSER SIDE**, it will be stored at the SignalR channel itself as **authentication
+state**
+- Web Assembly Interactive Routing = The whole app is downloaded to the browser,
+your authentication ticket is stored within the application as _persistent state_.
+Within the WASM application, **not the browser's local storage**.
+
+==== All authentication scenarios
+
+In Blazor within .NET 8 is a bit complicated, hence we will drill down bit by bit
+every scenario for authentication/authorization.
+
+In Blazor within .NET 8 is a bit complicated, hence we will drill down bit by bit
+every scenario for authentication/authorization.
+
+- Static Routing
+    - Blazor SSR
+    - Server Interactivity with per component/page interactive location
+    - WASM Interactivity with per component/page interactive location
+- Server Interactive Location
+    - Server Interactivity with a Global interactive location
+- WASM Interactive Location
+    - WASM Interactivity with a Global interactive location
+
+We will go through each of these scenarios one by one in order to really understand
+and breakdown how Authentication and Authorization are broken down depending
+on scenario.
