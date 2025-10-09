@@ -8172,3 +8172,231 @@ every scenario for authentication/authorization.
 We will go through each of these scenarios one by one in order to really understand
 and breakdown how Authentication and Authorization are broken down depending
 on scenario.
+
+==== Authentication in Blazor SSR
+
+We will create a new project. No interactive mode and Auth = Individual Account.
+
+Just by setting these options for scaffolding we get components ready for the whole
+Auth flow in mind.
+
+- It even comes with an already built-in migration.
+- It comes with `Identity` already implemented into the DI container
+- It even comes with EF Core already added and integrated as well, alongside an
+`ApplicationDbContext`
+
+So `Identity` is a "feature", pretty mature actually, that's already part of
+AspNet.Core.
+
+If you go and look at the `appsettings.json` file, it will even have a connection
+string already configured to try and work with SQLite (local, lightweight database
+that's saved in a file(s)), we don't want to use that though. Let's integrate with
+the SQL Server database that we already have running on Docker:
+
+````
+"DefaultConnection": "Data Source=localhost;Initial Catalog=AspNetAccounts;User ID=sa;Password=Str0ngPassw0rd@;Trust Server Certificate=true"
+````
+
+[NOTE]
+====
+And now, let's just say that there's _course magic involved here_. Because in the
+video, it literally shows changing this connection string to a SQL Server string and
+_it just works_. But in fact, it doesn't _just work_. We have to make some changes
+====
+
+. Install Microsoft.EntityFrameworkCore.SqlServer
+. Switch the SQLite DI Container injection statement and replace with SQLServer's
++
+````
+builder.Services
+    .AddDbContextFactory<ApplicationDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+````
+. Delete the `.db` and all migration data that was scaffolded (this is all SQLite
+focused).
+. dotnet ef migrations add Init --project ./Security.BlazorSSR.csproj --startup-project ./Security.BlazorSSR.csproj
+. dotnet ef database update
+
+And after all of this, we should have everything running correctly, and we can
+connect to our SQL Server's `ApsNetAccounts` database and check the structure
+that was generated.
+
+If you run the application you will get a screen with 3 navbar items that we didn't see
+previously:
+
+- Auth Required
+- Register
+- Login
+
+[NOTE]
+====
+Dev password is `abc123@Z`
+====
+
+If we go into `Register` we can try to register a new user with a password.
+
+At this point in time you will get a "dev debug screen" stating that the app doesn't
+have an actual email integration configured to it. And so, it will be necessary
+to press on the link there to **auto-confirm** the email. In a normal flow a user's
+email should get a confirmation email that he can click to then confirm the registration
+to the website.
+
+After we press the "auto-confirm" page, we can skip over that and stick to development.
+
+_NOTE:_ This is all AspNet.Core's Identity Feature, a mature and complex integration
+that helps us setting up Authentication and Authorization out the box without having
+to build anything from zero. It's complex, so it can be its own course on its own,
+right now _we will be just scratching the surface_.
+
+After this we can login with the user we created, and the third navbar item would
+switch to "Logout".
+
+If we logout and open up the DevTools, and head to the "Cookies" section under our
+apps domain. We should actually see tons of cookies, (The course only shows one,
+but I'm guessing that newer versions of Identity add more metadata). This default
+cookie is the Antiforgery cookie. However, once you login, you will get a new cookie
+under `.AspNetCore.Identity.Application`. This cookie is the session one.
+
+If you head to any page e.g., `/weather` or the navbar page `Auth Required` and
+look at the `Network` under the DevTools, you will see there's always a header
+`Cookie`, the course shows a structure that on newer .NET versions is no longer
+applicable so we will skip over it, but it just states that it sends both an anti
+forgery cookie concatenated with the actual user cookie through a semi-colon.
+
+In our case it's a fully encrypted string, oh yeah, even if you want to look into
+the cookie on the browser, it's fully encrypted, it's ***secure.***
+
+==== User Registration
+
+We will deep dive a bit on how the user registration works.
+
+The page that does the registration is at `Register.razor`.
+
+If you have a look at the Form's `OnValidSubmit` you will see how it creates a
+`User` instance based on a custom type called `ApplicationUser` right now its code
+is empty, but this pattern is a good practice with extensibility in mind:
+
+````
+using Microsoft.AspNetCore.Identity;
+
+namespace Security.BlazorSSR.Data;
+
+// Add profile data for application users by adding properties to the ApplicationUser class
+public class ApplicationUser : IdentityUser
+{
+}
+````
+
+So as you can see, to tie this into an `Identity` user, you would just inherit
+from `IdentityUser` and add extra functionality/data as you see fit on this
+specific inherit class.
+
+If you actually start reading the code:
+
+[source, csharp]
+----
+public async Task RegisterUser(EditContext editContext)
+{
+    var user = CreateUser();
+
+    await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None); <.>
+    var emailStore = GetEmailStore();
+    await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None); <.>
+    var result = await UserManager.CreateAsync(user, Input.Password); <.>
+
+    if (!result.Succeeded)
+    {
+        identityErrors = result.Errors;
+        return;
+    }
+
+    Logger.LogInformation("User created a new account with password.");
+
+    var userId = await UserManager.GetUserIdAsync(user);
+    var code = await UserManager.GenerateEmailConfirmationTokenAsync(user); <.>
+    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+    var callbackUrl = NavigationManager.GetUriWithQueryParameters(
+        NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
+        new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
+
+    await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+
+    if (UserManager.Options.SignIn.RequireConfirmedAccount)
+    {
+        RedirectManager.RedirectTo(
+            "Account/RegisterConfirmation",
+            new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
+    }
+
+    await SignInManager.SignInAsync(user, isPersistent: false);
+    RedirectManager.RedirectTo(ReturnUrl);
+}
+----
+<.> Check how it makes these calls in sequence, one to set the user's username.
+<.> And another call to set the user's email. And with this code you might immediately
+notice that both username and email are the same.
+<.> This is a really important piece of code. This takes care of taking the user
+**in-memory** loaded instance, and send the password that's in the form and try
+to save it to the database. The password _of course_ is saved as a HASH, not as
+plain text. This `UserManager` class is really something you will use a lot and
+it's dependency injected.
+<.> Lastly, if the registration of a user is succesful, we will attempt to send
+the confirmation e-mail and re-direct the user to another page.
+
+==== Login process
+
+You can analyze `Login.razor`, it basically is a form that captures 3 pieces of
+data:
+
+. Username
+. Password
+. If you want to persist the session or not
+
+`LoginUser()` is the bulk of the logic.
+
+[source, csharp]
+----
+public async Task LoginUser()
+{
+    // This doesn't count login failures towards account lockout
+    // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+    var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false); <.>
+    if (result.Succeeded)
+    {
+        Logger.LogInformation("User logged in.");
+        RedirectManager.RedirectTo(ReturnUrl);
+    }
+    else if (result.RequiresTwoFactor)
+    {
+        RedirectManager.RedirectTo(
+            "Account/LoginWith2fa",
+            new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+    }
+    else if (result.IsLockedOut)
+    {
+        Logger.LogWarning("User account locked out.");
+        RedirectManager.RedirectTo("Account/Lockout");
+    }
+    else
+    {
+        errorMessage = "Error: Invalid login attempt.";
+    }
+}
+----
+<.> This method takes care of trying to log-in, to save the cookie to the browser
+and then enable the app to start leveraging said cookie. How does the app know
+about the user's info? Because inside the cookie there's an authentication ticket,
+and said ticket contains the user's info/metadata.
+
+And then based on different failure conditions then the app can react for 2FA, if
+the user is locked out, if the login has failed, or if succesful we just go to the
+next screen.
+
+_NOTE:_ And for security purposes if a failed attempt is recognized we have to display
+a **really generic error message**.
+
+==== Authorization process
+
+==== Accessing the authentication ticket
+
+==== Authentication in Server Interactivity per page component
