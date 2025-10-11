@@ -8397,6 +8397,174 @@ a **really generic error message**.
 
 ==== Authorization process
 
+Under the premise that we have gotten our cookie back from the server. The moment
+we want to access a different page, that's when the server will ask for a cookie,
+and validate it. This process is the **Authorization**, this makes sure a user is
+logged in, and that the user has the right level of access to the resource.
+
+If we head to the `Auth.razor` component, we can easily notice the `@attribute [Authorize]`
+attribute.
+
+Any page/component that you want to mark to validate for access needs this small
+attribute added to it. We can put to test this idea, by simply taking this decorator
+and putting it in the `Weather.razor` component.
+
+[NOTE]
+====
+A good idea would be to put under `_Imports` the `Microsoft.AspNetCore.Authorization`,
+namespace, since this would widely be used, and we should really try and get our
+component code to be as clean as possible
+====
+
+If we logout, and try to head down to the `Weather` menu item, we would actually
+be redirected to the login page automatically. If you take a look at the URL
+`/Account/Login?ReturnUrl=%2Fweather` you will notice how it actually holds a
+route parameter, after successfully logging in we would then be redirected to the
+previously visited page that redirected us. (This is a really nice UX, and I think
+we should inspire ourselves in such an interesting design pattern)
+
+If we delete manually the `AspNetCore.Application` cookie, and refresh the page,
+we would again get redirected to the login page. This corroborates the idea that
+this cookie is extremely important, and it really holds the ticket for a user in
+order to be allowed to get in or get out. That's the underlying mechanism.
+
+[IMPORTANT]
+====
+This is simply a check for "IS HE LOGGED IN"? Nothing else, permissions are a
+different topic that we will cover later. But just mark this as important, that
+protecting your page/component with `Identity` can be as simple as that.
+====
+
 ==== Accessing the authentication ticket
 
+Authorization is based on the information that's inside the authentication ticket
+that lives in the cookie.
+
+Once we are authorized to see the page, we make some logical decisions based on
+particular data that the user holds. How can we access this metadata?
+
+````
+Hello @context.User.Identity?.Name!
+````
+
+This line of code is really important in `Auth.razor`. That whole `@context.User...`
+is the way to access user metadata. The `context` property is actually a class
+of type `AuthenticationState`, and it lives in the underlying base component.
+From there we can acess this `User` property that's of `ClaimsPrincipal` type.
+And by drilling down we can then get access to user metadata, such as in this
+instance, the `Name`.
+
+_Normally, what's on the authentication ticket?_
+
+- Name
+- Height
+- Age
+- Position
+
+Any personal information attached to a user is recorded as a key-value pair.
+
+That's what's on a regular ticket, you can keep this ticket and go to the authorized
+places. (In the places they can then double check your personal data for further
+logic-checks. E.g., You should be age 50 in order to ride a rollercoaster, or should
+be under 180 cm).
+
+This idea of leveraging metadata in order to enhance further granular checks, is
+also applied in **Identity**. Now if we try to leverage the `Identity` property
+we saw previously, we wouldn't get that much information to be honest. For accessing
+to more metadata (and also custom metadata) we can leverage `Claims`:
+
+````
+@context.User.Claims
+````
+
+The `Claims` property is a key-value data structure (Dictionary). We can debug a
+bit about how the claims here look like with this code:
+
+````
+@if (context.User.Claims is not null)
+{
+    <ul>
+        @foreach (var claim in context.User.Claims)
+        {
+            <li>@claim.Type : @claim.Value</li>
+        }
+    </ul>
+}
+
+// And this is something we can get printed
+http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier: 3a105806-923e-4446-a192-f77e8da773b6
+http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name: diego@diego.com
+http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress: diego@diego.com
+AspNet.Identity.SecurityStamp: 4T3PWYRQNQAMQL5PTDMMBBWOIOIE3JYV
+amr: pwd
+````
+
+There are default claims with metadata and things that we might not have direct use
+for but that the Framework requires, on top of other things that are much more
+humanly understandable such as `name`, `emailaddress`. And as mentioned before,
+_custom properties can be added_.
+ 
+If you wanted to add more claims, you can insert into the `AspNetUserClaims` table
+more records, this is a table that literally mirrors the key-value pair pattern.
+
+[source, sql]
+----
+INSERT INTO AspNetUserClaims <.>
+VALUES ('3a105806-923e-4446-a192-f77e8da773b6', 'Role', 'Manager') <.> <.>
+----
+<.> And so a simple insert into the table should suffice.
+<.> The UserId can be retrieved from the `nameidentifier` claim.
+<.> And in here a small detail, if we have "identity" keys, or keys that are
+auto-generated, we don't have to insert a `null`, but we can simply skip over
+that column as if it didn't exist, and we can start putting in the other values
+we want for the record.
+
+This is an example of an inserted record on top of another claim.:
+
+1,3a105806-923e-4446-a192-f77e8da773b6,Role,Manager
+3a105806-923e-4446-a192-f77e8da773b6,Department,Software Development
+
+If we were to reload the Blazor app, and try to search for the new claims we just
+inserted we would easily notice how these new claims don't show up. _WHY?_ Because
+the claims info is stored within the cookie, we already logged in, and got a cookie
+at a point in time in which these claims didn't exist, and so our state is technically
+"inconsistent". So by re-login, we actually get to see new claims.
+
+And now, by accessing these claims and values, we get access to control authorization
+at the app level with this authorization info.
+
+Other names: _Security Context_.
+
 ==== Authentication in Server Interactivity per page component
+
+We will create a new Blazor application for security and with ServerInteractivity
+per page.
+
+Once the app is created, we will now just follow a bit of the previous steps we had
+to install and connect to SQL Server, and we won't rely on Migrations anymore, since
+we have a database now, we will hot-wire to the already created database.
+
+[NOTE]
+====
+I guess this is another "good point" you can make for going for the full Microsoft
+ecosystem driven approach. And that is that if you follow standard structures and
+procedures then you would be able to seamlessly change, switch between different
+apps/clients and they would all still be speaking the same language.
+====
+
+After we have run all the installation steps, we should be able to run this new
+project, and even login with the previously registered user we used on the SSR
+project.
+
+We can apply the same experiment of logging in, Dev Tools, Delete `.Application`
+cookie, and then reload the page. We would get kicked out just the same.
+
+What is happening in this setup:
+
+. We are still using static routing
+. We are still sending HTTP Requests to the server in order to get back a new
+page (you can easily corroborate this by looking at the Network tab of Dev Tools)
+. Interactivity is applied only at the page level, so that we get reactive interactions
+without JS.
+. At the Identity level, everything still works the same
+
