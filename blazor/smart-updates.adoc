@@ -1,0 +1,45 @@
+= Introduction
+
+These are notes that are paired with the repository at https://github.com/diegowrhasta/blazor-smart-updates[GitHub]
+
+== Blazor lifecycles
+
+As we know Blazor by design has different lifecycle hooks we can access to then
+run some specific logic that would provide for a tangible result on the application
+we are building.
+
+- `OnAfterRender`
+- `OnSetParameters`
+
+Are probably the most important hooks that we can leverage to run initialization
+logic that only runs once, and/or a change on the parameters coming from a parent
+component is detected.
+
+However, it is that when working with specific scenarios, and with specific libraries,
+the mix-up in design ideologies alongside a general disconnect between the ease
+of use and implementation of solutions rears its ugly head.
+
+When looking to work with a library such as `Blazorise` which holds a pretty robust
+API yet, an API that could use more QoL improvements such as hooks to tap into
+a component mounting, or something that strays away from the simple Blazor hooks,
+since there are edge cases and specific scenarios in which we might run into
+conditions that end with a reference to a component still being `null` but us
+trying to load some data into it.
+
+**It is for these edge cases in mind that this repository aims to provide for a
+different pattern "fool proof" against these oddities that come up**.
+
+== Observer Pattern
+
+As we know, when dealing with _race conditions_ I.E. async code running on different
+contexts, it's best to move into design patterns, or things that are as isolated
+as possible and run in their own, and notify once they are ready. Hence the idea
+is to leverage a Subscriber pattern so that the moment that an async operation
+is done, then a component gets a signal to trigger its `StateHasChanged()` method.
+Now, in case the necessary dependencies aren't ready (e.g., A component hasn't
+been mounted yet) we can run a retry mechanism that waits a bit to try and run the
+desired subscriber function.
+
+== Code
+
+
