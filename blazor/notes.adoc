@@ -8568,3 +8568,293 @@ page (you can easily corroborate this by looking at the Network tab of Dev Tools
 without JS.
 . At the Identity level, everything still works the same
 
+==== Authentication in WebAssembly Interactivity per page component
+
+Just create a new project but in this case WebAssembly Interactivity and per-page,
+that's it. (And run the same Sql connection setup so that we can talk to the database)
+
+You will notice something specific. The interactive pages are `Counter.razor` and
+`Auth.razor`. They are at the `.Client` project. And they have set for them
+`@rendermode InteractiveWebAssembly`.
+
+**NOTE:** In order to install SqlServer and establish the connection you need to
+install it at the _Main_ project. After you set everything up there, then you
+should be able to connect to the SqlServer database without issue.
+
+. Because the interactivity location is per-page/component, the routing is still
+static. (Only the components are downloaded to the browser). So there will be
+Http requests made to the server, we still server pages as in the SSR and Server
+Interactivity server. (WE ALSO SEND COOKIE OVER).
+
+Even though this is a Blazor WebAssembly project, and because they use `cookie`,
+we use the Authorization ticket, it's the same. _Don't worry about it_.
+
+[NOTE]
+====
+Sometimes Rider doesn't create projects on the first try. Don't really know why.
+Just try again, _don't give up_
+====
+
+==== Authentication in Global Server Interactivity
+
+- New Project
+    -- But this time a Global Interactivity Location
+- Connect to SQL
+
+So some details here:
+
+. If you go into `App.razor` you will notice how we have a specific attribute
+applied to the `<Routes>` component.
+
+[source, razor]
+----
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["Security.BlazorServerInteractivityGlobal.styles.css"]"/>
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet @rendermode="PageRenderMode"/>
+</head>
+
+<body>
+<Routes @rendermode="PageRenderMode"/> <.>
+<script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null; <.>
+
+}
+----
+<.> As you can see it's at the router level that we apply `@rendermode`.
+<.> And unless we override this setting at a component level, then by default we
+will be working with interactive server routing.
+
+The course shows that the scaffolded project, for whatever reason makes the `/Account`
+path be an exception to this. So `Indetity` works with static routing for whatever
+limitation/reason. But on the new .NET versions, this pattern seems to have **changed**.
+
+And this new pattern is really interesting,
+
+[source, csharp]
+.Components/Account/Pages/_Imports.razor
+====
+@using Security.BlazorServerInteractivityGlobal.Components.Account.Shared
+@attribute [ExcludeFromInteractiveRouting] <.>
+====
+<.> At the root of the `Pages` folder we have this `_Imports.razor` which immediately
+makes me draw parallels to what typescript has with its `barrels` feature. But in here
+this is acting as a barrier to apply globally to all pages under `Account` (this
+is just an assumption), and so any `/Account` page/component will not be treated
+as an interactive routing component.
+
+- If we start the app and head to Home, we will see the initial handshake request
+- If we head to `Counter` no network request will be logged anymore, and that is
+because the SignalR leveraging kicks in
+- If we head to `Weather` no network request is loaded either
+- If we head to any of the auth pages however, a request to the server will be
+made and we will get a network log. We get kicked out, redirected and the page
+reloads.
+- **BUT**, if we actually Login, and we now try to navigate to any page, THEN WE
+WILL HAVE SIGNALR FULLY. We won't get any more Network logs. **THIS IS A REALLY
+IMPORTANT CONCEPT YOU HAVE TO KNOW IN ORDER TO DEBUG CORRECTLY).
+- What's even more interesting, is that if you go to the `Storage > Cookies`, and
+you delete the `AspNetCore.Application` cookie, and try to head to the pages that
+require Auth, you won't get kicked out, the app would still recognize you as
+"he's still logged in". _Why?_ Well, we already mentioned this, because the SignalR
+channel is the one maintaining the cookie now, it's no longer the browser acting
+as the source of truth.
+    - If you want to get kicked out (lol), just do a hard refresh of the page.
+    The moment we refresh the page, the SignalR channel is broken and a new
+    one is established, and this new instance, of course, has no memory of a previous
+    channel nor its state.
+
+_NOTE_: Once we are in, then the interactive location becomes server interactive,
+hence the browser cookie is no longer used for further exchanges. This is the
+same flow, but small under the hood details vary slightly, nothing more. _It simply
+works differently, that underlying mechanism is different_. But you use things
+the same.
+
+[IMPORANT]
+====
+So in short, you will leverage the SignalR channel to get the authentication ticket,
+not the browser after a succesful login.
+====
+
+==== Authentication in Blazor Global WebAssembly Interactivity
+
+Everything we've seen so far is applied with a slight change, looking at the main
+project's `App.razor`:
+
+[source, razor]
+----
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["Security.BlazorWebAssemblyGlobal.styles.css"]"/>
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <HeadOutlet @rendermode="PageRenderMode"/>
+</head>
+
+<body>
+<Routes @rendermode="PageRenderMode"/>
+<script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveWebAssembly : null; <.>
+
+}
+----
+<.> As you can see, the only change here is that by default all components will
+run with `InteractiveWebAssembly`.
+
+Yet, when looking at the `_Imports` from the Account folder, we would see how it
+excludes all subordinate components/pages there from this default setting.
+
+_Note:_ This is a really interesting pattern that I think I could also inspire myself
+in for different types of problems. It's better than the other approach the course
+shows and seems to be the initial approach the Blazor team took but later refactored
+and made way more decoupled and extendable.
+
+- The same idea is applied still. All pages are SignalR leveraged, if you aren't
+logged in, the log in pages are Static Routing. Once you login however, interactive
+rendering kicks in.
+
+[IMPORTANT]
+====
+Okay, I think I made a mistake. In the sense that after login everything will
+be web assembly and interactive rendering. But if you head to the `Manage Account`
+page, this will be treated as Static Routing. **ALWAYS**
+====
+
+Now the course explains something that is no longer applied in .NET 9. So first let's
+go through the course's explanation to understand concepts first, but later we will
+reconcile how this is no longer applicable/should be adapted to the new Framework's
+conventions.
+
+_COURSE_
+
+- If we head down to the `Client` project:
+    - `PersistentStateAuthenticationProvider.cs` is a class that is here declared.
+    This class that lives at the client level, will try to retrieve persisten info
+    that's on the **client**
+    - And it is actually used in the `Program.cs` by adding it as a `Singleton`
+- If we head down to the main/server project:
+    - We will have code that provides the persisting authentication state data
+    to the client, _because this info has to come from somewhere_.
+    - `PersistingServerAuthenticationStateProvider.cs`
+        - This has a `OnPersistingAsync` method that takes care of persisting the
+        `userId` and `email`.
+        - The course goes into manually adding user info (claim info) on the
+        server side persistance class. (E.g., Adding a `Role` property)
+
+[NOTE]
+====
+Oh no.............................. The scaffold has weird behaviors and errors.
+Microsoft WHY? If you head to the Auth Page, you will see for like 2 seconds the
+claims we used to see on our previous test when adding custom claims to a user.
+And then it will refresh and only show **one claim**. And if you try to logout
+when standing on this page, we will get hit with an exception.
+====
+
+The course into the fact that in order to add custom claims and stuffs and for that
+to be exposed and seen, you have to manually go and add code that will encapsulate
+that data that's on the database and that Identity also exposes.
+
+_NET 9 Approach_
+
+Instead of having all these extra boiler-plate classes, by default serialization
+is handled through an extension method on the server-main side:
+
+````
+// New in .NET 9 - handles serialization automatically
+builder.Services.AddAuthenticationStateSerialization();
+````
+
+You can however, extend this stock-option easily through inheritance:
+
+````
+public class CustomAuthenticationStateProvider : AuthenticationStateProvider, IHostEnvironmentAuthenticationStateProvider
+{
+    private Task<AuthenticationState> authenticationState;
+
+    public CustomAuthenticationStateProvider()
+    {
+        authenticationState = Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
+    }
+
+    public override Task<AuthenticationState> GetAuthenticationStateAsync() => authenticationState;
+
+    public void SetAuthenticationState(Task<AuthenticationState> task)
+    {
+        authenticationState = task;
+    }
+}
+````
+
+And then on the **Client** side, you also just call an extension method:
+
+````
+builder.Services.AddAuthorizationCore();
+
+// New in .NET 9 - deserializes authentication state automatically
+builder.Services.AddAuthenticationStateDeserialization();
+````
+
+But notice how the server is in charge of **Serialization**, whilst the Client
+works with the `Deserialization`.
+
+Now, let's stop here for a second to think:
+
+_Why did Microsoft change the pattern?_ It can never be "because it's cooler this
+way". There must have been an issue, or a chance to make things better, to make it
+"easier". So we should aim at leveraging that new approache's "better" pattern.
+And so one alternative and recommendation is instead to leverage this whole custom
+mapping to a component that renders really Early.
+
+_NOTE:_ The Main Project references Client, not the other way around.
+
+- And the flow for persistance has to be:
+    - Server persists the data (serializes it).
+    - The Client retrieves the persistent data and deserializes it.
+
+[NOTE]
+====
+So yeah, WASM was a great concept, idea. But for production and just ease of
+work, this "method": on Blazor is not mature enough, it's cumbersome, bothersome
+overall. Stick to server side rendering (funny how the React community would hear
+this and go crazy). Server Interactivity is **KING**
+====
+
+==== Secure our server side Blazor app
+
+==== Policy based authorization
+
+=== Pre-rendering in Blazor
+
+==== What is Pre-Rendering and Why
