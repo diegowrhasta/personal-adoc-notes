@@ -40,6 +40,46 @@ Now, in case the necessary dependencies aren't ready (e.g., A component hasn't
 been mounted yet) we can run a retry mechanism that waits a bit to try and run the
 desired subscriber function.
 
-== Code
+== The Real Deal
 
+After further analysis and consulting, I realized that I was making it harder
+on myself without good reason, and that is because I didn't understand the concepts
+_WELL ENOUGH_.
 
+So a couple of concepts to have CLEAR:
+
+- `StateHasChanged()` triggers a re-render = Re-runs the `@code` expressions
+in the markup (the `@if`, component bindings, etc)
+- `OnAfterRenderAsync()` runs **AFTER the render completes* = After the DOM
+udpates and component references `@ref` are assigned
+- Component references (`@ref`) are assigned **during render** = If a component
+isn't in the markup (due to `@if`), the `@ref` stays null
+
+So, our chicken - egg problem is the fact that the component ISNT'T there, and
+when the hook runs (`OnAfterRenderAsync`), the `@ref` hasn't been assigned yet.
+It will _after this hook runs_. And so we can't hit the component to update the
+data at all, we will never will, because once all logic, all hooks run, that's
+when the render cycle finishes and our component will get the reference.
+
+[IMPORTANT]
+====
+As a Golden Rule: If you need a `@ref` to a component, that component must be
+in the markup BEFORE you try to use it.
+
+Don't conditionally render components you need to interact with programatically,
+instead:
+
+- Always render the component
+- Conditionally populate its data
+- Or hide it with CSS/visibility
+====
+
+So the key insight is:
+
+_Code in `OnAfterRenderAsync` can start running **before the render** fully completes,
+so refs might not be available yet if the component is being conditionally added
+to the DOM.
+
+**ALSO**, and this is just my own idea, don't try to use complex types on Blazorise's
+charts, in the end we are looking at number data, and that can easily be represented
+with primitive types, no need to start adding classes or other weird things to it.
