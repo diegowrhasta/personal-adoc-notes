@@ -8853,8 +8853,190 @@ this and go crazy). Server Interactivity is **KING**
 
 ==== Secure our server side Blazor app
 
+Let's try to apply Authentication and Authorization to our existing project.
+
+This exercise is mainly to show how can you add `Identity` into an existing
+project that didn't have it before:
+
+. From a scaffolded Auth project we had, copy over the whole `Account` folder
+(Under Components) to the same path but in the target project
+. Copy over the `Data` contents to its target project counterpart
+. Add the `Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore` Nuget
+. Add the `Microsoft.AspNetCore.Identity.EntityFrameworkCore` Nuget
+. After that, you will have to adjust all namespaces, imports and stuffs (without
+Rider this would be such a hassle, I Know)
+. And then the `Program.cs` needs to have all the DI container services injected
+on top of extra configurations so that all the workflows work correctly
+. There's also a Diagnostics package line: `app.UseMigrationsEndPoint();` that
+should also be copied over.
+. Don't forget to pass over the connection string with a name that doesn't clash
+with the one we have (`appsettings.json`)
+. We have to also change the `Routes.razor` component to use a different _Route View_
+on top of coding the action in case the user is not authorized.
+. And lastly the `NavMenu.razor` component should have added under an `<AuthorizedView>`
+component all the code when it comes to the Authorization endpoints and stuffs. We
+also need to pass over all the `@code` code, and inject the `NavigationManager`
+. Don't forget to put as much as you can both in `GlobalUsings.cs` and `_Imports.razor`
+
+_NOTE:_ Looking at the `AuthorizedView` usage on this scaffolded items you still
+can get the sense of how it's used so you then use it. If you want to wall something
+with auth, you should wrap them with `AuthorizedView` and you can also configure
+what to show in case the user isn't authorized.
+
+A good practice will be to now run the app and check if we can login with the previously
+used user (which in turn lets us now we are connecting to the database correctly),
+and of course, that we are actually building the project without errors.
+
+With all of this setup. We should now think in terms of the actual app. _What do
+we wanna protect?_
+
+We will do:
+
+- The Add Server Page
+- The Edit Server Page
+
+As it was mentioned before there's a `@attribute [Autorize]` that we can leverage
+to inject into our components to protect them.
+
+With just that, we can head into the servers page, try to Edit a server, and then
+(whilst not logged in) we would get redirected to the Login page, once we login
+we would get redirected back to the screen we were denied entry from.
+
+[NOTE]
+====
+This idea of leveraging route parameters to save the pages that triggered a request
+for auth, and once authorized throwing back the user to his previous workflow is such
+a nice pattern (UX wise), I will try to leverage it as much as possible.
+====
+
+_NOTE:_ I noticed in the console logs an exception is thrown, it apparently doesn't
+affect the user experience, but remember, _no broken windows_ on **THIS HOUSE**,
+so be sure to research that exception some time.
+
 ==== Policy based authorization
+
+Let's now expand further what we did, besides a simple "Yes-No" type of check,
+let's make a more granular check, i.e., If the user is a "Manager" _then_ he can
+edit servers. Normal users can add, edition is manager only.
+
+**Policy based authorization:** Leveraging `Identity` we can apply this feature so
+that we reach our desired result. We have to configure the authorization.
+
+In the `Program.cs` you would add something like this:
+
+````
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Manager", policy => policy.RequireClaim("Role", "Manager"));
+});
+````
+This structure is pretty simple, the `AddAuthorization` extension method allows us
+to start adding the controls we want, through policies. In this instance we are adding
+a policy called `Manager`, and the logical check for it is to ensure that the logged
+in user has a `Claim` under a `Role` key and with a `Manager` role. You can add more
+values since this second argument is of `params[]` type.
+
+How did we get this info? By looking at the `AspNetUserClaims` table of the Identity
+database, in it we have our previously created user with this claim.
+
+And if you want more policies you can simply start adding more lines just like this
+one.
+
+_Extra Note:_ A more recommended approach is to use a newly introduced builder
+instead:
+
+````
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("Manager", policy => policy.RequireClaim("Role", "Manager"));
+````
+This is less verbose, but also, by reading on the docs, it integrates better with
+new report, exception and login APIs.
+
+Once all of this is done, the way to leverage this policy and enforce it is by
+adding something extra to the previously added attribute in a component:
+
+````
+@attribute [Authorize(Policy = "Manager")]
+````
+
+See the relationships here, we added a policy with a `Manager` name, and in here
+we are enforcing the usage of a **Policy** of the same name. This is how things
+connect, _don't forget that_.
+
+If we go into the app and create a new user, say `tester10@tester.com` and check on
+the database the claims table, we will immediately notice how no info in regards
+to this new user is present. Hence he doesn't have the `Manager` role. With this
+very same user we can try and go into the add/edit server pages, and we would get
+redirected to the login immediately.
+
+_The course also did the whole wizard setup that I didn't code, and it adds a layer
+of specificity by having this new user have access to the Add - Wizard _flow_, but
+when trying to edit this being solely for managers. The idea, and implementation
+is interesting, so at least _keep that in mind_.
+
+Lastly, if we want for this user to actually have the right to edit, we would then
+insert the claims at the database level for his ID. Now, this is ugly of course,
+we would never want to do this in prod, a management interface of any kind (doesn't
+necessarily have to be UI) would take care of adding these claims and stuffs with
+Identity's API (because it has endpoints)
 
 === Pre-rendering in Blazor
 
 ==== What is Pre-Rendering and Why
+
+What is pre-rendering, and why?
+
+This is a by default turned-on feature in Blazor, yet it has some consequences.
+It is available for Server interactivity and Web Assembly interactivity.
+
+Server Interactivity:
+
+Whenever we are doing the initial handshake between browser and server, the user
+_without pre-render_ would need to wait for the server to get a request, process
+it, send it back to browser, browser interpreting all of the content and then
+getting a screen. It's a long process, that's _less responsive_ because it all
+hinges on the fact that the SignalR channel needs to be established.
+
+Besides the less-response issue, we also have issues with web crawlers (search engine
+indexing). A robot will start scanning a website, and because things would take
+time to render, the crawler would interpret as the whole website being completely
+empty. Which would then rank the website pretty low. It would rank the static pages
+maybe, others not. For SEO purposes no pre-rendering is baaad.
+
+WebAssembly Interactivity: Yes, this is more _responsive_ in general, but it runs into
+the same issues as Server Interactivity, SEO will be affected since a pre-ramup period
+takes place when talking to a server, getting the necessary files and data and then
+starting the WebAssembly portion of the app. The first response will be WebAssembly
+code, no usable content on the web page.
+
+So _pre-rendering_ takes care of getting a request, processing everything as fast as
+possible, instantiating all necessary components in memory, getting everything ready
+to the point of HTML and sending that back to the client.
+
+_HTML reaches the web page_, so it can display in the DOM automatically. With that
+_pre-baked_ HTML the blazor js file will come, and he will do the whole handshake on
+its own. The moment the SignalR channel is established then that pre-render component
+is completely disposed of, and the server tries to rebuild said component now
+with the handshake between client and server finished.
+
+So what's the "problem" with pre-rendering:
+
+- We will instantiate components **twice**. So most things would be called twice,
+if you have `expensive` component initialization code, then all that logic will
+be run twice more than likely.
+
+_NOTE:_ WebAssembly also gets an ad-hoc in-memory component representation from the
+very beginning. But the moment a handshake is established, and we "cut" the server
+connection, or rather we confirm that we provided the WASM app with all it needs,
+then this component gets disposed of. And the WASM whole runtime and processes
+kick in.
+
+So there's a need for pre-rendering and the problems it introduces. Now we will
+talk about the different solutions we can apply to leverage the good from both
+worlds.
+
+==== Solution 1: Use OnAfterRender
+
+==== Solution 2: Disable Pre-Rendering
+
+==== Solution 3: Use PersistentComponentState
