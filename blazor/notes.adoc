@@ -9037,6 +9037,287 @@ worlds.
 
 ==== Solution 1: Use OnAfterRender
 
+So, pre-rendering has problems. Main Problem: Component Initialization can run
+many times.
+
+First solution to it: `OnAfterRender`.
+
+We have been doing this already, if we head down to the `ServerListComponent.razor`
+code, we will see how we are indeed leveraging the `OnAfterRender` hook, and at the
+same time we control that this logic only runs once.
+
+````
+protected override void OnAfterRender(bool firstRender)
+{
+    base.OnAfterRender(firstRender);
+    if (!firstRender)
+    {
+        return;
+    }
+
+    Timer = new Timer(_ => { base.InvokeAsync(StateHasChanged); }, state: null, dueTime: 2000, period: 2000);
+}
+````
+However, this approach _apparently is less responsive_. This loads initially in the
+server, it's kinda bad but still nice since we haven't disabled pre-rendering, all
+the code that runs statically, it still is statically rendered, the user doesn't
+look at a blank page.
+
+[NOTE]
+====
+Yep, I should have followed the "Smart-dumb" component approach, I have now run
+into an issue here. The course will run a solution that relies on the list of
+servers being at the `Servers.razor` page, luckily this code can still be put
+in the children component, but this indeed can turn into something ugly the more
+we try to extend.
+====
+
+So, to improve the experience a bit, we can run something like this on our server
+list component:
+
+[source, razor]
+----
+@if (servers.Count <= 0)
+{
+    <p><em>Loading...</em></p>
+    return; <.>
+}
+----
+<.> Notice how we are applying the return early principle here. Otherwise we will
+go and render the actual list content.
+
+We can then artificially mock a slow server response by doing an `await Task.Delay()`.
+And we will easily see how much of a nice experience it is to see a message instead
+of letting the user sit and wait for a blank screen.
+
+**Second Problem:** This is bad for SEO still, _why?_ Because SEO will only see
+the response after _n seconds_. The SEO will then deem the site as really slow on
+performance and rank it low. It's better to pre-render your data, but it's more
+of a suggestion.
+
+[IMPORTANT]
+====
+Be sure to leverage `OnAfterRender` and its `firstRender` flag to solve the problem
+of multiple initialization code runs. This works for Server and WASM interactivity.
+You can solve "slowness" by adding conditional renderings of loading messages/components.
+SEO is affected in a way, although not in a _"horrible"_ way.
+====
+
 ==== Solution 2: Disable Pre-Rendering
 
+Multiple component initialization can also be solved by simply turnin pre-rendering
+off. Makes sense, doesn't it? This whole problem is starting **because** pre-render
+is turned on.
+
+The way to disable pre-render we would write something like this:
+
+````
+// This is locally, so just a component can have it disabled, (as an attribute)
+rendermode="new InteractiveServerRenderMode(prerender: false)"
+
+// This is explicit render syntax. (Should be at the top of the component)
+@rendermode @(new InteractiveServerRenderMode(prerender: false)
+
+````
+
+If you remember ways back how we logged component hook execution, we used to see
+two sets of events, they sort of "repeat" executions (or that's what it seems like).
+
+With this turning off of prerender we can see how those "repeated" executions do not
+in fact log twice now.
+
+[NOTE]
+====
+The course showed how to _locally_ turn off pre-render. This however is nullified
+immediately if said component is a Child of another component that has pre-render
+still on. The parent would re-render twice, and the child in turn would also be
+submitted to do the same. So if you want to really stop double inits, be sure to
+track down the component tree and disable it at the root of everything. Still,
+if you are using a component in `Blazor SSR` or something specific, you can definitely
+disable prerender at a local level as it has been laid out in the code excerpt
+up above.
+====
+
+If we were to do this in WASM, we can log at logging, and we will something really
+interesting. The Log rendering is split between Server - Client. One set of hooks
+would run on the server (and we can see those logs in the console), and the other
+set of hooks would run on the Client (and we would see console logs in the Dev
+Tools).
+
+_The moment we turn prerender off_ we will stop seeing the Server logs. And only
+the console logs show up.
+
+[IMPORTANT]
+====
+Still, this is **LESS RESPONSIVE**. Everything has to be downloaded before code
+is executed. So it takes a while to see results, it's not good on SEO at all.
+Before loading, screens are blank and we can't be ranked good.
+====
+
+Still, this can solve our problem, things will look very smooth, and we would get
+rid of the double execution thing.
+
+_Internal Tools:_ Nobody cares. We can make a choice to just turn it off. Buddy.
+
 ==== Solution 3: Use PersistentComponentState
+
+There's some docs you can read from Microsoft for this, https://learn.microsoft.com/en-us/aspnet/core/blazor/components/prerender?view=aspnetcore-9.0#persist-prerendered-state[LINK].
+
+In here we have code examples and theory, which is nice, but in summary:
+
+[source, razor]
+.ServerListComponent.razor
+====
+@implements IDisposable
+
+@inject IServersEfCoreRepository ServersRepository
+@inject PersistentComponentState ApplicationState <.>
+
+@if (servers.Count <= 0)
+{
+    <p><em>Loading...</em></p>
+    return;
+}
+
+<table class="table table-striped">
+    <RepeaterComponent Items="servers">
+        <Header>
+            <thead>
+            <tr>
+                <th>
+                    Name
+                </th>
+                <th>
+                    City
+                </th>
+                <th>
+                    Status
+                </th>
+                <th>
+                    People Online
+                </th>
+                <th></th>
+                <th></th>
+            </tr>
+            </thead>
+        </Header>
+        <Row Context="server">
+            <ServerComponent Server="server"></ServerComponent>
+        </Row>
+    </RepeaterComponent>
+</table>
+
+@code {
+    [Parameter] public string? CityName { get; set; }
+    [Parameter] public string? SearchCity { get; set; }
+
+    private readonly string FALLBACK_CITY = "Toronto";
+    private List<Server> servers = [];
+    public Timer? Timer { get; set; }
+    private PersistingComponentStateSubscription? _persistSubscription; <.>
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        if (parameters.TryGetValue<string>("CityName", out var cityName))
+        {
+            if (cityName != CityName)
+            {
+                base.SetParametersAsync(parameters);
+            }
+        }
+
+        if (parameters.TryGetValue<string>("SearchFilter", out var searchFilter))
+        {
+            if (searchFilter != SearchCity)
+            {
+                base.SetParametersAsync(parameters);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ApplicationState.TryTakeFromJson<List<Server>?>("Servers", out var restored)) <.>
+        {
+            servers = restored!;
+        }
+        else
+        {
+            await PopulateCitiesAsync(); <.>
+        }
+
+        _persistSubscription = ApplicationState.RegisterOnPersisting(PersistData); <.>
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await PopulateCitiesAsync(); <.>
+    }
+
+    private Task PersistData() <.>
+    {
+        ApplicationState.PersistAsJson("Servers", servers);
+
+        return Task.CompletedTask;
+    }
+
+    private async Task PopulateCitiesAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(SearchCity))
+        {
+            servers = await ServersRepository.SearchServersAsync(SearchCity!);
+            return;
+        }
+
+        servers = await ServersRepository.GetServersByCityAsync(CityName ?? FALLBACK_CITY);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _persistSubscription?.Dispose(); <.>
+    }
+
+}
+====
+<.> We should inject this specific `PersistentComponentState`. We will leverage
+it in its entirety.
+<.> And we will store in a state variable a subscription which will interface with
+the `ComponentState`.
+<.> And so on `OnInitializedAsync` we will make a check against the state service first,
+under one specific **key** we will try to retrieve data. If the service returns something
+to us, we happy and we can assing said (_typed_) restored data to our local state
+variable without having to call expensive logic.
+<.> Because I abstracted the whole logic in its own method, this piece of code
+looks way cleaner than the course variation.
+<.> This is from the docs, the course does something different and in my end the
+app broke. By the end of everything, that's when we call this method that binds to
+a `Task` method in order to try and save state into the store. This spits back a
+subscription that we keep stored.
+<.> We still need this piece of code so that we re run our logic when parameters change,
+(this feeds into the workflow that after you press a city, it will filter servers of
+that server). Without this piece of code, then that flow would break.
+<.> And this is the method that was mentioned some points above, this has to be
+sent to the method the state service exposes, this is a callback that internally
+will be called to run and somehow register state persistence.
+
+So this approach leverages `OnInitializedAsync` and it will run twice as we know,
+because it is `InteractiveServer` and because we have `prerender` set to **true**.
+
+- We still have pre-render
+- We avoid calling expensive logic (init logic)
+- We leverage a framework exposed service (the App State) to act as a cache
+- We move away from `OnAfterRender` since using this hook is a bit counter-intuitive,
+we actually focus on `OnInitialized` a hook than in its name should scream it being
+where all our init logic should be.
+- But _most importantly:_ Our flow **still behaves the same, but way more optimized**.
+
+This is the actual recommended approach. (It still adds some overhead and boiler-plate
+code).
+
+The code in the end does say that it would be in all Blazor developers hopes that
+Microsoft implements a much smoother, cleaner way of going around these desings
+considerations. But for now, the recommended approach would be this specific
+application state pattern.
