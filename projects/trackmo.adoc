@@ -1,0 +1,55 @@
+= Introduction
+
+These are all notes that I will be taking when developing a personal tracking
+application: https://github.com/diegowrhasta/trackMo[TrackMo].
+
+== Base
+
+A modern, good practice, automated project should always have.
+
+- A clean `.gitignore` catered to your specific tech stack
+- CI-CD pipelines (basic build, test, perhaps deploy)
+- Static Code Analyzing
+- Code Styles
+
+=== .NET Project Specifics
+
+- Leveraging modern .NET we can make usage of things such as:
+	- Centralized Build Props
+	- Centralized NuGet Packages
+	- GlobalUsings
+	- Top Level Statements
+	- Code style file
+
+== Setup
+
+This project follows specific patterns:
+
+- One Frontend Application
+- One Backend Application
+- Full Orchestration with Docker and Docker Compose
+
+[NOTE]
+====
+Yes, it's true that we _could_ just have everything in ONE app, since we will
+user Blazor Server Interactivity, and we could in theory connect directly to a
+database there. But, separation of concerns, please. I **know** from experience
+how easy that gets out of hand and compilations time take _forever_.
+====
+
+=== No Docker Compose command
+
+- `docker info`
+- `docker --version`
+- `docker compose --version`
+- `docker-compose --version`
+
+If any of these fail, then that means the compose plugin _might not be installed_, 
+You can just run something like: `yay -S docker-compose`.
+
+=== Running the whole orchestrated environment
+
+`docker compose up --build` is a good practice so that you know you are running the
+latest builds with the latest pieces of code.
+
+
