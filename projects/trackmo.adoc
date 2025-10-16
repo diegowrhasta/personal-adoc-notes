@@ -52,4 +52,105 @@ You can just run something like: `yay -S docker-compose`.
 `docker compose up --build` is a good practice so that you know you are running the
 latest builds with the latest pieces of code.
 
+=== Blazorise installation
 
+_WHY ARE YOU INSTALLING THIS?_ To **practice**. For what? 秘密〜
+
+Following the guide at:
+
+https://blazorise.com/docs/start[Blazor Docs]
+
+We can install Blazorise pretty easily. _I Think_
+
+[IMPORTANT]
+====
+Dude, be sure you have a `.gitignore` in your repo. Otherwise you will end up comitting
+things YOU SHOULDN'T HAVE.
+====
+
+To remove previously tracked files so that you stop pushing a repo that's heavier
+than anti-matter: `git rm --cached -r path/to/directory`
+
+Okay, I think I found my guy. The Blazor dude, the man, the rockstar:
+
+https://www.youtube.com/watch?v=h52pEYRQHl0[Youtube]
+
+=== Theming Blazorise
+
+Okay, so I want to customize the component library to fit a specific palette.
+One that's homely.
+
+You can always look at designs others have made for inspiration. Here's what I got:
+
+https://www.pinterest.com/pin/3448137210255571/[Pinterest Kindle Re-design idea]
+
+From here, I did a bit of _magic_ and landed on an interesting color palette:
+
+https://www.petersondesignhouse.com/2022/01/color-palette-no-11.html[Color Palette]
+
+- `#91AEB0`
+- `#364A62`
+- `#E3B386`
+- `#DC8E75`
+- `#B5594B`
+- `#776C6B`
+
+Juxtaposing this to hierarchies we can extract something like this:
+
+- Primary = #364A62 (deep slate — used for main actions / header)
+- Secondary = #DC8E75 (warm peach — accents)
+- Success = #91AEB0 (muted teal — success states)
+- Warning = #E3B386 (soft gold — warnings/notice)
+- Danger = #B5594B (brick — errors)
+- Info = #776C6B (muted mauve — info / subtle text)
+- Background primary = #FFFFFF (keeps content readable)
+- Background secondary = #F6F5F4 (subtle warm background)
+
+==== Injecting color
+
+Luckily Blazorise has a way to style things dynamically, without hard-coding, and
+of course following good design patterns.
+
+[source, razor]
+.Routes.razor
+----
+<ThemeProvider Theme="AppTheme"> <.>
+    <Router AppAssembly="typeof(Program).Assembly"> <.>
+        <Found Context="routeData">
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)"/>
+            <FocusOnNavigate RouteData="routeData" Selector="h1"/>
+        </Found>
+    </Router>
+</ThemeProvider>
+
+@code {
+
+    private Theme AppTheme = new()
+    {
+        ColorOptions = new ThemeColorOptions
+        {
+            Primary = "#364A62", // deep slate
+            Secondary = "#DC8E75", // warm peach
+            Success = "#91AEB0", // muted teal
+            Warning = "#E3B386", // soft gold
+            Danger = "#B5594B", // brick
+            Info = "#776C6B", // muted mauve
+            Light = "#F8F9FA",
+            Dark = "#222222"
+        },
+        BackgroundOptions = new ThemeBackgroundOptions
+        {
+            Primary = "#FFFFFF", // main content background
+            Secondary = "#F6F5F4" // subtle warm secondary background
+        },
+        IsRounded = true,
+        IsGradient = false
+    };
+
+}
+----
+<.> By leveraging `<ThemeProvider>` we can easily inject a `Theme` object that
+has tons of properties we can customize to change the palette of all the Blazorise
+components
+<.> We have to wrap the whole `<Router>` component in order to cascade the color
+palette to any Blazorise component.
