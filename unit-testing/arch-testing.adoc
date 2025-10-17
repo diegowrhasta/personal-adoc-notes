@@ -105,6 +105,8 @@ we should have a dependency tree as such:
 
 WebUI -> Infrastructure -> Application -> Domain/Core
 
+image::assets/clean-architecture-diagram.png[]
+
 We should **NEVER** have dependencies that flow the other way:
 
 - Domain/Core -> Application
