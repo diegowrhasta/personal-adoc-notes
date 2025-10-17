@@ -1,0 +1,12 @@
+= Introduction
+
+These are notes in regards to Architecture Testing. A simple type of Unit Testing
+that brings project security in a different form.
+
+== Code
+
+I have setup a small project in order to test different patterns that can be useful
+when doing Architecture testing for DOTNET:
+
+https://github.com/diegowrhasta/archunit-dotnet[Github]
+
