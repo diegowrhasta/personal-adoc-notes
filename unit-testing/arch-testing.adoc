@@ -199,3 +199,112 @@ _slower/heavier_. But you shouldn't really fret over that. Unless you are doing
 something **extremely wrong**, tests should still adhere to the principle of
 _they should be really fast_.
 ====
+
+[IMPORTANT]
+====
+It's also worth noting that whilst, _yes_, we have a set of unit test naming
+conventions (https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices#follow-test-naming-standards[Reference])
+when it comes to these _Architecture Tests_ things can turn a bit different in a
+way, we don't have methods to test, nor specific conditions. So you _can_ stray
+a bit further from these rules with a good reason: _these type of tests are not
+really unit tests_, they are **infrastructure tests**.
+====
+
+==== Good Patterns
+
+And so, when writing a test, it's best to avoid redundancies, luckily the API from
+the library is extremely useful and you can chain things together with `And()`,
+and so a _nice looking pattern_ that I came up with can be:
+
+````
+var webRule = Types()
+            .That().Are(CoreLayer)
+            .Should().NotDependOnAny(WebLayer)
+            .Because("Core should not have dependencies on Web Layer");
+        
+        var infrastructureRule = Types()
+            .That().Are(CoreLayer)
+            .Should().NotDependOnAny(InfrastructureLayer)
+            .Because("Core should not have dependencies on Infrastructure Layer");
+        
+        var applicationRule = Types()
+            .That().Are(CoreLayer)
+            .Should().NotDependOnAny(ApplicationLayer)
+            .Because("Core should not have dependencies on Application layer");
+
+        webRule
+            .And(applicationRule)
+            .And(infrastructureRule)
+            .Check(Architecture);
+````
+Of course, all the assemblies referenced here were declared previously as private
+fields. But I think you can _get it_. We literally compose different rules as
+if they were "functions" that in a certain line we just "check", we sort of run
+the test after we have declared all the rules that will be checked. This is indeed
+a _pretty nice pattern_. What I like the most is that it's quite clean.
+
+And looking at this from the outside, you can easily see how by reading these tests,
+you immediately can get a good feeling as to how the project has been structured
+and what rules should you follow. (_No broken glasse_).
+
+Thus leading us into the biggest argument that I have when justifying these type
+of tests:
+
+[IMPORTANT]
+=====
+Tests should act as a form of documentation for your application. We have Unit,
+Integration tests that will add a safety net and document how the application is
+expected to behave. And **Architecture Tests** can now add a layer of documentation
+_in the form of code_ as to how the project was laid out, what design decisions have
+been made, what to stick to, and it can even open up the possibility to realize
+the design might not be the best, and push you to refactor or another iteration
+of a better design since tests made you realize that you didn't account for **that
+one use case**, or that by looking at this **you are incurring in technical debt**.
+=====
+
+_TESTS WERE WRONG:_ After further testing I realized something:
+
+````
+var coreRule = Types()
+            	.That().Are(WebLayer)
+            	.Should().NotDependOnAny(CoreLayer)
+            	.Because("Web should not depend on Core");
+````
+Code such as this one checks: **If NOT EVEN ONE CLASS from Web has a dependency
+to Core**. This is good for our check of _no reference whatsoever should be in
+sight_. But for our checks of _okay you should have references, or you "can"
+at the very least_ this is not good, cuz it will expect for all classes to have
+at least one dependency, and that doesn't make any sense (it would push us to
+breaking the _Interface Segregation_ principle, referencing things for the sake
+of a test).
+
+Hence tests should be slightly adjusted for that:
+
+````
+public void Web_Should_Only_Depend_On_Application_And_Infrastructure()
+{
+    var webRule = Types()
+        .That().Are(WebLayer)
+        .And().DependOnAny(ApplicationLayer)
+        .Should().Exist()
+        .Because("Web should depend on Application");
+    
+    var infrastructureRule = Types()
+        .That().Are(WebLayer)
+        .And().DependOnAny(InfrastructureLayer)
+        .Should().Exist()
+        .Because("Web should depend on Infrastructure");
+    
+    var coreRule = Types()
+        .That().Are(WebLayer)
+        .Should().NotDependOnAny(CoreLayer)
+        .Because("Web should not depend on Core");
+
+    webRule
+        .And(coreRule)
+        .And(infrastructureRule)
+        .Check(Architecture);
+}
+````
+You can see how switching the `Should()` for `And()` on top of then just applying
+a `Should().Exist()` allows for our tests to actually test what we intend to test.
