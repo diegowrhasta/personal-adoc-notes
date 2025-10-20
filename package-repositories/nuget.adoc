@@ -1,0 +1,33 @@
+= Introduction
+
+These are notes taken when exploring the different options we might have when 
+hosting NuGet packages (.NET).
+
+== Options
+
+Depending on the use case, the team, the organization, we might have to start
+abstracting classes/assemblies into re-usable libraries that can be shared amongst
+teams, amongst the company with ease.
+
+We all (.NET programmers) are already used to hearing the term `Nuget` which is
+just another alias for a **library**. Most of the time, we get all the packages we
+need from a "free" and already configured repository (https://api.nuget.org/v3/index.json[LINK]).
+
+It's however that sometimes we might have internal assemblies we might want to
+redistribute privately, may it be for security/privacy concerns or by company
+policy, or simply because it would be way easier to have our _own Nuget repository_
+to which we can drop any NuGet we might want and then for anyone with access to
+said repository to simply look for it, and **install it**.
+
+With this background in mind there are many options that we will be exploring
+today:
+
+- NuGet.Server
+- BaGet
+- Nexus OSS
+- Artifactory
+- Azure/GitHub
+
+== NuGet.Server
+
+
