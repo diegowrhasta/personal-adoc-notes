@@ -22,7 +22,7 @@ said repository to simply look for it, and **install it**.
 With this background in mind there are many options that we will be exploring
 today:
 
-- NuGet.Server
+- NuGet.Server (tldr; Don't)
 - BaGet
 - Nexus OSS
 - Artifactory
@@ -30,4 +30,107 @@ today:
 
 == NuGet.Server
 
+Basically, there's a NuGet that helps us setting up a server really easily.
+
+[NOTE]
+====
+SIKE! This is complete hype. `NuGet.Server` is actually an old implementation that
+was for **.NET Framework**. The old man that should be retired by now but software
+entropy allows him to still live through life support.
+====
+
+This package is for the old .NET, it would typically run under `IIS`. And, well,
+please, let's move forward, if you have to work on Framework _maybe_ this is a good
+idea, but the repo will not focus on old tech. (_Unless something specific is needed_).
+
+== BaGet
+
+This is an open-source, _modern_ take in what would `NuGet.Server` would've become,
+had Microsoft actually focused on the community before.
+
+Anyway, there are 2 ways of setting up BaGet, the easier one is with `docker`,
+plug-and-play type of thing. The second one is by setting up a project yourself
+that you can then publish and host.
+
+=== Docker
+
+Plug-and-play:
+
+````
+docker run -d \
+  --name baget \
+  -p 5555:80 \
+  -v $(pwd)/baget-data:/var/baget \
+  loicsharma/baget
+````
+- Running a container with the `baget` name
+- We are binding the container's `5555` port to out host's `80` port
+- We are binding a local path at the container to our host's `/var/baget` path
+- We are pulling the baget image from Docker hub
+
+This will store all the nuget packages in hour host's `/var/baget`. This is but
+an example, you can obviously set another directory to persist the packages.
+
+[NOTE]
+====
+As you know. Linux is _convention_ driven, and the `/var/` directory has a clear
+intent and purpose: **store variable data files that change frequently during the
+system's operation (logs, temp files, spool files)
+====
+
+If you head to `localhost` on the browser you should see a pretty looking `NuGet`
+interface. Let's now run a couple of test to see how to use this tool.
+
+_Extra:_ The feed, would actually be under `http://localhost:5555/v3/index.json`.
+
+==== Pushing a package
+
+We will setup one library class project that will start pushing its releases to
+our BaGet server.
+
+**EXTRA:** And so, even in here you have options, _oh so many options_. But it's nice
+that you get them, since it means that the teams designing these tools have seen
+all sorts of situations and issues, and created solutions for them:
+
+[IMPORTANT]
+====
+When talking about `NuGet`. We need to understand a **feed**, which in short is just
+a URL to a NuGet server. We can have many of them besides the _official_ one. These
+feeds can be added in different scopes
+====
+
+This small table showcases how we can setup feeds:
+
+| Scope    | File Location                 | Affects                    | Best For             |
+| -------- | ----------------------------- | -------------------------- | -------------------- |
+| Global   | `~/.nuget/NuGet/NuGet.Config` | All projects for that user | Convenience          |
+| Solution | `./NuGet.config`              | Projects in that solution  | Team setup           |
+| Project  | Inside project folder         | That project only          | Fine-grained control |
+
+For a `private` repo, I'd assume your setup, constraints and conditions are fairly
+specific, if everything is behind a firewall and away from prying eyes, you can
+get away with extra things. Still, we want to keep things really fine grained, specially
+since our repository is a solution hosting different projects and artifacts that
+DEMO the different options we have for NuGet repositories.
+
+And so, in order to setup a quick and easy demo I did this:
+
+- Created a Class Library
+- Executed `dotnet new nugetconfig` in said library's directory
+- Created a Web API project
+- Executed `dotnet new nugetconfig` in said library's directory
+- Added in the `nuget.config` file the feed for our local server:
++
+````
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <!--To inherit the global NuGet package sources remove the <clear/> line below -->
+    <clear />
+    <add key="nuget" value="https://api.nuget.org/v3/index.json" />
+    <add key="BaGet" value="http://localhost:5555/v3/index.json" />
+  </packageSources>
+</configuration>
+
+````
 
