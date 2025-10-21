@@ -166,7 +166,7 @@ portal and check if your package is now being listed. _It should_.
 [NOTE]
 ====
 If you want to start consuming "non-Https" repos. In an IDE such as Rider, you have
-to some "manual stuff". And that is. When looking at the `Sources`. Rider will inded
+to do some "manual stuff". And that is. When looking at the `Sources`. Rider will inded
 pick up on the configurations you have. **BUT ONLY IF YOU HAVE A `nuget.config` file
 at a _Solution Level_. (Is this perhaps to enforce a good practice?). So anyways.
 Depending on the setup, you can indeed have a `nuget.config` file at a project level,
@@ -185,4 +185,147 @@ NuGet packages that our local repo provides
 . We will also be able to install our pushed package normally
 
 ==== Versioning packages and automation
+
+**Nomenclature:**
+
+The first thing you need to know is that the universally accepted standard for
+.NET libraries is **Semantic Versioning (SemVer)**. The format is `MAJOR.MINOR.PATCH`.
+
+- **MAJOR (x.0.0):** Increment when you make **incompatible API changes**. If
+consumers of your library need to change their code to update, that is a major
+bump.
+- **MINOR (1.y.0):** Increment when you add **backwards-compatibility functionality.**
+New features, but no breaking changes.
+- **PATCH (1.0.Z):** Increment when you make **backwards compatible bug fixes**.
+
+For pre-release versions, you add a suffix `-alpha`, `-beta`, `-rc1` (Release Candidate).
+E.g., `1.2.0-beta.1`.
+
+**NuGet - Dotnet:**
+
+. We have to leverage the `<Version>` property in our project's `.csproj` file. This
+allows us to tag a specific release build. Avoid old `AssemblyInfo.cs` attributes
+for versioning a NuGet package.
+. **Be strict with dependencies:** If a library depends on another package, specify
+a range, not a fixed version, unless there's a good reason (e.g., `[1.0, 2.0)`, means
+`>=1.0.0 and <2.0.0`)
+. **Version everything:** Every build that could be consumed should have a unique
+version. Avoid pushing the same version twice to the feed (this can cause caching
+issues)
+
+**Automating:**
+
+We will go a bit _overkill_ but I think it's good to know about **tools** we can
+**_leverage_** to make our lives easier and avoid annoying menial tasks so we
+focus more on **VALUE**.
+
+- Step 1: Install GitVersion `dotnet tool install -g GitVersion.Tool`
+- Step 2: Create a `GitVersion.yml` **config file** in the repo root. A simple
+starting point is simply: `next-version: 1.0.0`
+
+- Step 3. And now, we don't want to be running manually all of this, like. WHAT?
+Leverage scripting. (I am running Linux), so we should create something like:
+
+[source, bash]
+----
+#!/bin/bash
+
+# Configuration
+PROJECT_PATH="./Wan.SelfNuGets.BaGet.TestLibrary.csproj" <.>
+NUGET_SOURCE="http://localhost:5555/v3/index.json"
+# API_KEY="your-api-key"
+# We are not configuring security for now
+
+# Calculate the next semantic version using GitVersion
+echo "Calculating version using GitVersion..."
+VERSION_INFO=$(dotnet-gitversion /output json /showvariable SemVer) <.>
+# For a pre-release version with branch name, you might use:
+# VERSION_INFO=$(dotnet-gitversion /output json /showvariable NuGetVersionV2)
+
+if [ -z "$VERSION_INFO" ]; then
+    echo "Failed to calculate version."
+    exit 1
+fi
+
+echo "Version to publish: $VERSION_INFO"
+
+# Update the .csproj file with the new version.
+# This uses `sed` (Linux/macOS). On Windows in Git Bash, it should also work.
+sed -i "s/<Version>.*<\/Version>/<Version>$VERSION_INFO<\/Version>/g" $PROJECT_PATH <.>
+
+echo "Updated project file to version $VERSION_INFO"
+
+# Build, Pack, and Push
+dotnet build $PROJECT_PATH -c Release --nologo
+dotnet pack $PROJECT_PATH -c Release --output ./nupkgs --no-build --nologo <.>
+
+# Find the specific .nupkg file we just created
+NUPKG_FILE=$(find ./nupkgs -name "*$VERSION_INFO.nupkg" | head -n 1) <.>
+
+if [ -z "$NUPKG_FILE" ]; then
+    echo "Could not find the generated .nupkg file."
+    exit 1
+fi
+
+echo "Pushing $NUPKG_FILE to $NUGET_SOURCE..."
+# dotnet nuget push "$NUPKG_FILE" --source $NUGET_SOURCE --api-key $API_KEY <.>
+dotnet nuget push "$NUPKG_FILE" --source $NUGET_SOURCE
+
+echo "Done! Published $VERSION_INFO"
+
+----
+<.> This is a great pattern, remember this for scripting. You should declare all
+the variables you will use at the beginning, (and of course if you are feeding things
+at runtime this makes declaration and ETC factor even less since it's way easier to
+spot this)
+<.> The algorithm the tool uses to calculate is quite sophisticated, and we will
+break down a bit of its logic after this, but just so you know that we are running
+the tool to generate a `json` output, and then extracting the value of one specific
+property there
+<.> And this is, _I think_ the best aspect of this script, we don't have to go
+and manually setup each new version by typing and and wasting time thinking of the
+version. (Of course, by following the conventions explained before we can manually
+go and edit the `GitVersion.yml` file to make the tool push a specific idea we have
+in mind). But here, we literally edit _through the script_ our `.csproj` file.
+<.> By looking at this line you should recognize the `pack` command in it. This is
+what we did manually before (it pays off to do things yourself first, to then start
+automating, breaking stuff apart, it also helps debugging later way easier since you've
+made your homework, you went through trial-by-fire)
+<.> Again, depending on **YOUR USE CASE** you can bend "rules" a bit, skipping over
+an `API-KEY`, not using `https` it's all situational. Don't fret over the fact that
+perhaps the _framework_ throws an error because you are doing something it doesn't like.
+For testing purposes, dev environments, even integration environments (or UAT), it
+all will depend on the requirements, and you **making it work**. Nothing else matters.
+
+**How GitVersion Calculates Version Info**
+
+Let's break down `VERSION_INFO=$(dotnet-gitversion /output json /showvariable SemVer)`
+
+`GitVersion` basically analyzes the project's Git history and uses a sophisticated
+rule system. The `SemVer` variable typically follows the pattern: `MAJOR.MINOR.PATCH-{metadata}`.
+
+**_EXAMPLE_**
+
+As an example, we did the whole process on the previous steps of these notes. And
+I configured the next version to be `1.0.1`. **_However_**, in the end the pushed
+version ended up as `1.0.0-8`.
+
+This -8 is what's known as "commit height" or "patch increment" from the last
+tagged version:
+
+````
+Initial commit/tag: 1.0.0
+  │
+Commit 1
+  │
+Commit 2
+  │
+...
+  │
+Commit 8  ← You are here → Version: 1.0.1-8
+````
+
+GitVersion thought: "We're 8 commits ahead of the last stable version, so let's
+create a pre-release version with height 8."
+
 
