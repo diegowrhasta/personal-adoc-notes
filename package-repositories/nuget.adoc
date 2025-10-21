@@ -134,3 +134,55 @@ And so, in order to setup a quick and easy demo I did this:
 
 ````
 
+[IMPORTANT]
+====
+By default, NuGet enforces the usage of `https` and that's definitely an extra layer
+we can go through _if we wanted to_. Since we don't really have any sort of requirement
+to push us towards researching how to setup a secure NuGet repo and also consuming it
+we will not use that.
+====
+
+So when trying to consume an `http` feed, we will get an error:
+https://learn.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1302[NuGet requires HTTPS sources]
+in order to get around it you can just mark the feed as "secured":
+
+````
+<add key="BaGet" value="http://localhost:5555/v3/index.json" allowInsecureConnections="true"/>
+````
+
+After this you can head down do your library project and just run:
+
+- `dotnet pack`
+  - If you were to look into the folders you will notice that this generates under
+  `/Release` a `.nupkg` file. This is the "executable" that we can then push to
+  a NuGet repo
+- `dotnet nuget push ./bin/Release/Wan.SelfNuGets.BaGet.TestLibrary.1.0.0.nupkg -s http://localhost:5555/v3/index.json`
+  - **IMPORTANT:** You should be pushing to the same URL that is used to retrieve
+  NuGet packages. Don't listen to some tutorials that list `/nuget` or something.
+
+After you have effectively pushed your NuGet, you can head down to the BaGet's
+portal and check if your package is now being listed. _It should_.
+
+[NOTE]
+====
+If you want to start consuming "non-Https" repos. In an IDE such as Rider, you have
+to some "manual stuff". And that is. When looking at the `Sources`. Rider will inded
+pick up on the configurations you have. **BUT ONLY IF YOU HAVE A `nuget.config` file
+at a _Solution Level_. (Is this perhaps to enforce a good practice?). So anyways.
+Depending on the setup, you can indeed have a `nuget.config` file at a project level,
+but if you wanna consume things normally, you should at the very least setup one
+file at a solution level.
+====
+
+_Rider specific hack:_ Even then, our BaGet source won't be listed by default, and
+we won't be able to install it in the project we want unless:
+
+. We select under Rider's Sources (in NuGet)
+. Select the detected Solution level `nuget.config`
+. To the right mark the next empty item's (after the official NuGet) "Allow Insecure"
+. After this `BaGet` will pop into existence, and we will be able to search for the
+NuGet packages that our local repo provides
+. We will also be able to install our pushed package normally
+
+==== Versioning packages and automation
+
