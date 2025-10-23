@@ -1,0 +1,48 @@
+= Introduction
+
+I realized, I might not have the best basics whent it comes to Microsoft SQL.
+And so, this is a literal refreshing, and powering up of those skills/knowledge.
+
+The content of these notes will be based around this course:
+
+https://www.udemy.com/course/complete-microsoft-sql-server-database-administration-course/[Udemy Course]
+
+But of course, the idea is to also make my own ideas, investigate even further and
+note all those extra bits and pieces that (imo) give a much rounder depth of
+knowledge than just limiting yourself to course content.
+
+== Complete Microsoft SQL server Database Administration Course
+
+=== Introuction
+
+Two instructors. They seem to be veterans with 20+ years of experience in IT
+plus reputable degrees from good unis.
+
+_Databases are my passio_ and the _Accidental DBA_ bits lead me to believe these
+are green flags of the course.
+
+=== Course Overview
+
+Seems we will get a good mix of theory on top of practical stuff. That's good,
+since my opinion is always to know your basics/theory well enough so that you
+can then apply all of that practically. We are already pretty far away from
+what many tutorials and materials used to be just a "copy what I do, and don't
+ask questions".
+
+Looking forward to learning interesting concepts on top of actually applying
+them. _Besides just basics_. Since, well, I like learning, but also because when
+push comes to shove and I need to also help a discussion with extra knowledge
+that some might not have at the moment, that's when a difference can be made.
+And we can ship things faster, and **get that user need fulfilled**.
+
+=== Introduction to a Database
+
+We know this. But in short.
+
+- Data = Any piece of info that is unstructured but that can mean something
+in a certain context (date, age, height, name)
+- Databases are a solution to manage large volumes of data easily, with a way
+better framework than a spreadsheet, and taking a fraction of size.
+- There are powerful concepts in databases such as `joins`, `groups` and many
+others. Things that in Excel are not a thing, or trying to replicate is also
+way harder.
