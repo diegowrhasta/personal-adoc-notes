@@ -46,3 +46,242 @@ better framework than a spreadsheet, and taking a fraction of size.
 - There are powerful concepts in databases such as `joins`, `groups` and many
 others. Things that in Excel are not a thing, or trying to replicate is also
 way harder.
+
+=== What is RDBMS?
+
+Relational Database Management System.
+
+So, a Relational Database is but **one** type of database. It uses a **structure**
+that allows us to **identify and access data** in relation to another piece of data
+in the database. Often, data in a relational database is organized into **tables**.
+
+Here's an example of how the data would be organized:
+
+.Employees Table
+[cols="1,2,2,1", options="header"]
+|===
+| ID | First Name | Last Name | Department
+| 1  | John       | Smith     | Engineering
+| 2  | Maria      | Garcia    | Marketing  
+| 3  | David      | Chen      | Sales
+| 4  | Sarah      | Johnson   | HR
+|===
+
+.Addresses Table
+[cols="1,3,2,2", options="header"]
+|===
+| Employee ID | Street Address       | City       | State
+| 1           | 123 Main Street      | Boston     | MA
+| 2           | 456 Oak Avenue       | Chicago    | IL
+| 3           | 789 Pine Road        | Houston    | TX
+| 4           | 321 Elm Boulevard    | Phoenix    | AZ
+|===
+
+Now, zooming out of this SQL world. Let's go back to spreadsheets for another example,
+you can in theory organize data into _tables_ right? They might look the same,
+but their properties are fundamentally different. Excel tables have no inherent
+relation between them, and you certainly can't apply operations between tables
+that can perhaps refine, extrapolate or summarize the data that both tables
+hold. (Can't combine to pull **info** out of **data**).
+
+**_Now going back as to how SQL Tables are different_**
+
+Say, I have the data about employees, and those employees' addresses. What if I ask
+the question _How can I get Diego's address_? Well you might have in both tables
+a common field such as `ID` or `Employee ID` and by matching that specific piece
+of data between the two tables, you can build your way into knowing _Diego's address_.
+
+And so, the course will focus on how to wrap our head around the concept of SQL
+tables, and how we can use them to store data, and refine it, and query it, and
+overall make it work for us so that really complex pieces of info are structured
+in such a way we can understand them (there's logic to them) but also are under
+a framework that is extremely powerful when getting information out of data.
+
+=== What is SQL?
+
+Structured Query Language = It's a **programming language** used to communicate with
+data **stored** in a **relational database management system**. SQL syntax is similar to
+English language, which makes it relatively easy to READ/WRITE/UPDATE/TRANSLATE
+data.
+
+_S Q L_ or _Sequel_. Pronounce it either way.
+
+Why is it called like that? It actually was created with the name Structured English
+Query Language. And it was named **sequel**. But that was trademarked, and so,
+to avoid lawsuits, it was changed to `SQL`.
+
+[IMPORTANT]
+====
+SQL IS NOT A DATABASE. It is a command line language that many RDBMS use to access
+data from tables.
+====
+
+Just like in Linux, there are 10K distros, and there are 10K DEs, under the hood,
+they are still using `bash` they still share many tooling from what `GNU/Linux`
+is.
+
+Similarly, **SQL** has the same concept, this language has been designed specifically
+to be used to pull, **query** data from a database. And we have tons of relational
+databases out in the market (PostgreSQL, SQLite, MySQL, Microsoft SQL, etc).
+_The correct way to define them with a general term is Relation Database Management
+Systems_
+
+An example of a statement is: `SELECT * FROM tablename;`. Check this statement out,
+it almost reads as english, the idea is to be perceived that way. Later you will
+see how there are other words that are _powerful_ operators like `WHERE`, `AND`,
+`OR`, `GROUP BY` amongst others.
+
+=== Top 5 RDBMS using SQL
+
+- Oracle DB = Old, one of the biggest database vendor in IT.
+- Microsoft SQL Server = Old, amongst the first ones actually, it's consired as
+really stable, secure and reliable. It competes against Oracle and IBM DB2.
+- MySQL = Swedes, community developed, open-source. SUN Microsystems bought it.
+Then Oracle got SUN Microsystems. Even though this is open-source, there are
+commercial licenses from Oracle. _Easy to use, inexpensive, reliable, large
+community_.
+- PostgreSQL = Community developed, open-source, (Successor of Ingres).
+- MariaDB = Community developed, open-source, this actually is a fork of MySQL.
+Because someone was concerned about the Oracle acquisition. Hence it branched off
+and became its own thing. This actually was done by the original people that made
+MySQL.
+
+=== Introduction to Microsoft SQL Server
+
+MSSQL = Microsoft Server SQL is a suite of database software published by Microsoft
+and used extensively in enterprise world.
+
+- Features:
+	- A relational database engine which stores data in tables, columns and rows.
+	- Integration Service (SSIS), which is a data movement tool for importing,
+	exporting and transforming data.
+	- Reporting Service (SSRS), which is used to create reports and serve reports
+	to end users.
+	- Analysis Sevice (SSAS), which is a multidimensional database used to query
+	data from the main database engine.
+
+In this course we will work with MSSQL 16, 19. And work on a Windows Server 2016, 2019.
+"machine". Depending on which SQL Server version you decide to use, then you will have to
+match the right OS.
+
+Oh yeah we will use the full **Enterprise Version** for both RDBMS and OS. They
+have a trial of 180 days (about 6 months). _We should finish the course by then_.
+
+[NOTE]
+====
+85% of corporate companies around the world use MSSQL 16 or 19, or older, hence this
+course will focus around them. (_That way you can have the biggest chances of saying
+you know how to work with a version that a potential employer might have a need for_)
+====
+
+**SQL Server Management Studio** is an additional software we have to download to
+be able to query data, run reports, manage tables and rows, perform backups and
+analyze performance charts.
+
+_Note:_ Even though they have a year in their name, they are not actually released
+on those years.
+
+The most recent versions are:
+
+- SQL Server 2014
+- SQL Server 2016 **
+- SQL Server 2017
+- SQL Server 2019 **
+
+.Pros and Cons
+[cols="2,2", options="header"]
+|===
+| Various supported versions   |   Expensive Enterprise edition
+| Online product documentation |   Difficult licensing process that's always changing
+| Microsoft premiere support   |
+| On-premises and cloud database support |
+| Plenty of tools and applications
+| Support for use on Linux
+|===
+
+[IMPORTANT]
+====
+The main idea of the course is not to sell you on Microsoft SQL. But to make you
+fluent in SQL. The language that is _more or less_ the universal spoken language by
+all the major RDBMS out there. So if you know how to use it to query, filter, manipulate
+data, you can easily jump between all the different databases.
+====
+
+=== Different editions of Microsoft SQL
+
+- Enterprise Edition = This delivers **high-end data center** capabilities with
+**blazing fast performance**, unlimited virtualization, end-to-end business intelligence.
+So basically high service levels for mission critical workloads and end-user
+access to data insights.
+- Standard Edition = **basic data management** and business intelligence database
+for departments and **small organizations** to run their applications and support
+common development tools for on premise and cloud, it enables effective database
+management with minimal IT resources.
+- Web = **Low-total-cost-of-ownership** for **web hosting companies**. E-commerce
+sites use this a lot.
+- Developer = This is basically **Enterprise** but the idea is for testing purposes,
+and also learning. You can't use this for production though, if Microsoft gets
+word of some company using this for production. You can get easily get sued.
+- Express = **entry, free level database** The idea is something small to start
+with, Microsoft's idea with this tier is for people to start small, and if things
+work out really well, they seamlessly upgrade this edition to the "better ones"
+seamlessly.
+
+The idea behind aiming for the **Enterprise Edition** choice of usage, is that
+you will get exposed to the full capabilities of the suite that way. Since it has
+all the features, and it focuses on the most complex problems, since this is the
+_corporate world_ with different needs than small businesses (which are still valid
+things to be respected, but the nature of the problems that each organization tries
+to solve vary in scope and just overall amount of users).
+
+=== Quiz 1: Introduction
+
+- What is a database?
+R: A database is an organized and systematic collection of data generally stored
+and accessed electronically from a computer system
+
+- What is the difference between spreadsheet and database?
+R: A lot, but databases storage costs are less, and give a way better framework to
+work with data so that you can really manipulate and do what you will with it.
+
+- What is a difference between database and relational database?
+R: DBMS store data as file whereas RDBMS stores data in a tabular form, AND In
+database the data elements need to access individually and in RDBMS multiple data
+elements can be accessed at the same time.
+
+- In RDBMS an identical field in one table can be used to pull data from another table
+R: True
+
+- SQL stands for:
+R: Structured Query Language
+
+- Which year SEQUEL was first invented by IBM?
+R: 1970
+
+- Which of the following is NOT a relational database
+R: MongoDB
+
+- Oracle DB is an open source RDMBS
+R: False
+
+- What is the difference between SQL and MySQL?
+R: SQL is a standard language for retrieving and manipulating structured databases.
+On the contrary, MySQL is a relational database management system. AND SQL is used
+to query and manage RDBMS.
+
+- MariaDB is named after
+R: Monty's younger daughter, Maria.
+
+- Which of the following is NOT MS SQL version?
+R: 2015
+
+- Which of the following is Development edition of MS SQL?
+R: Basically, ALL FEATUREs, but its intended purpose should be testing environments.
+
+== Download, Install and Configure Windows
+
+=== Welcome to Download, Install and Configure Windows
+
+=== MS SQL Server Pre-Requisite
+
+=== Lab Setup
