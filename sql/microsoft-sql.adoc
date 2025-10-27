@@ -284,4 +284,112 @@ R: Basically, ALL FEATUREs, but its intended purpose should be testing environme
 
 === MS SQL Server Pre-Requisite
 
+- Admin rights on a computer
+- Hard Disk = 6 GB minimum (20 GB for the course)
+- All editions of Microsoft SQL (except Express) require 1 GB of memory. Express
+- 512MB, and 4 GB for Windows. We will have a Windows machine, with Microsoft
+SQL installed.
+- Only x64 processors are needed. 1.4 GHz, Recommended 2.0 GHz.
+- OS = Windows Server 2016, or the newer 2019. Whichever is available.
+
 === Lab Setup
+
+. With limited resources = You could just have your computer with OS and install
+the Microsoft SQL RDBMS. If your computer is really slow, you can still use the
+Express version, but many of the features of the course that will be covered won't
+be accessible to you.
+. The recommended approach is to **Virtualize**. We will use a virtual machine,
+so that we will have a virtual machine installed with Windows Server. And we will
+install Microsoft SQL Server Enterprise Edition there.
+
+=== What is virtualization?
+
+In the real world, in the world of infrastructures (servers), the bread and butter
+is actually **virtualization**. But before, you usually just installed a OS, an app
+on top of it and you were done.
+
+This has a problem though:
+
+- A physical server has some specs (e.g., 16 GB RAM, 4 CPU)
+	- You install a OS (takes 4 GB of RAM)
+		- You install services (like MSSQL)
+			- And then this only takes half of all the capability of the server.
+			It became a waste of resources. **Hence** virtualization came to try
+			and optimize, to use that computing power and still get more value of
+			it.
+
+The infrastructure then changes:
+
+- A physical server
+	- You install a virtualization layer
+		- You install tons of different OS and each one has applications running
+		on it (how many will depend on the specs of the server and the requirements
+		of the different virtual machines you will install)
+
+What's the advantage? You can actually **use all the resources**. The beauty of
+virtualization is also the fact that you can _three or four SOs at the same time_,
+it's really important and beneficial for the world of computers (servers and infrastructures).
+
+The main point is: **It uses all the resources of the server/machine**
+
+=== Download and install VMWare Workstation Player
+
+This is a virtualization layer that sits on top of your OS. (I will not, because
+I'm on linux and QEMU kicks VMware's Butt)
+
+We need the right resources:
+
+- At least more than 4 GB of RAM (On Windows 10).
+- HDD should at least have 50 GB.
+
+[NOTE]
+====
+Did VMWare sell its soul or something? There's a whole website you have to go to
+and register just to get an installer. Jesus.
+====
+
+=== Optional - Download and Install Oracle Virtualbox
+
+Another virtualization software such as VMWare Player, made by **Oracle**.
+
+=== Create a Virtual Machine
+
+Remember:
+
+- Computer
+	- Virtualization Software (VMWare Player)
+		- Virtual Machine (Container that has resources added to it). 20 - 50 GB
+		of space, 4 GB RAM, 1 - 2 CPU
+
+In VMWare Workstation you need to set the connection to Bridge, but on QEMU, things
+are differently, NAT is actually what allows to connect the HOST to the VM and viceversa
+on top of allowing the VM to get access to the internet.
+
+How, we will install:
+- `Windows Server 2019 Datacenter Evaluation (Desktop Experience)`
+- Custom
+- Allocate all the HDD
+- Next
+- Set a Password (Has to be somewhat complex otherwise it won't let you go past this
+screen)
+
+And yeah to unlock it is with `Ctrl + Alt + Supr`.
+
+- Accept the default network with `Ok`
+- You can disable the Server Managment to pop-up always on startup.
+- On VMWare you will have to install the VMWare tools (for better experience)
+
+- **Change the name of the machine to `LABMSSQL`**.
+- Change the timezone to your timezone
+- You will get a splash screen reminding you about for how long you have the
+evaluation copy (and it's 180 days - 6 months). If you don't finish the course
+in that amount of time and come back, you will have to install Windows Server
+AGAIN.
+
+=== Fix EFI Network Time out error for VM Player
+
+=== Download and Install Windows Server (2019)
+
+=== Virtual Machine Management
+
+=== Quiz 2: Download, Install and Configure Windows

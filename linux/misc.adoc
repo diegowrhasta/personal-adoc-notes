@@ -11,9 +11,13 @@ tool. You can install it with a command such as:
 - `sudo pacman -S qemu virt-manager virt-viewer dnsmasq vde2 bridge-utils openbsd-netcat`
 
 After that you can open up the `Virtual Machine Manager`. If it says something along
-the lines of _Can't connect to the demon_. Then you can start it with `systemctl start libvirtd.service`.
+the lines of _Can't connect to the demon_. Then you can start it with:
 
-If after that another error around a network pops up: `sudo virsh net-start default`
+- `systemctl start libvirtd.service`.
+
+If after that another error around a network pops up:
+
+- `sudo virsh net-start default`
 
 _Note:_ You can also enable the service to auto-initialize with `systemctl enable libvirtd`.
 
