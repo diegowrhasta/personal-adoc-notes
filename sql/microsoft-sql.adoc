@@ -504,6 +504,96 @@ But just pick one version, and stick to it. That's the best advice.
 
 === Prerequisites for MSSQL 2016 Installation
 
+These are good requirements for Lab and for Production environments. But of course,
+for production we should have at least 6 GB of RAM (recommended), on top of (_of course_)
+Microsoft's own format (NTFS, ReFS).
+
+- Express Editions: 512 MB RAM, All other editions: 1 GB RAM
+	- But recommended: 1 GB RAM, 4 GB RAM respectively
+- Intel or AMD processors are okay
+- And don't worry about network, that comes built-in and it's already working
+
+**NOTE:** You need .NET Framework 4.6 for the Database Engine, Master Data Service,
+or Replication.
+
+_Considerations:_
+
+- MSSQL 16 only works on **x64** machines
+- MSSQL 16 can be installed on Windows Server 2012, 2016, 2019
+- You cannot run SQL Server services on a domain controller under a local service
+account
+	- In English, this means that (I guess by default?), SQL Server won't run on
+	the same server that has all credential and login info. (This is the Domain
+	Controller, the most **sensitive and secure server**, it's literally the keys
+	to the kingdom)
+	- And a local service account, is the most generic type of account that can
+	be registered (and used) under a Domain Controller. SQL Server cannot run
+	with such an account, it needs an account specifically created and catered
+	towards using the SQL Server service.
+- Separate disks for Data Files, Log Files, and tempdb (This is Microsoft's
+recommendations)
+
 === Prerequisites for MSSQL 2022 Installation
 
+The newest MSSQL version.
+
+So, in short. **_It requires the same things that all previous versions required_**.
+
+_Good_.
+
+[NOTE]
+====
+Okay, **ONE THING** that is different, and of course it turns like this. Is that
+you can only run this in Windows 10 TH1 1507 or greater. And if this is running in
+Windows Server it has to be **2016 or greater**
+====
+
 === Download and install Chrome Browser
+
+Okay, this isn't really one lesson on how to click some links and install. It actually
+teaches you how to stop Internet Explorer of being annoying for a second.
+
+_I'm not saying this is good, for Prod environments, definitely, being annoying is
+way better than being completely laxed_.
+
+But to stop pop-ups every 2 seconds saying that a site is not trusted:
+
+. Open Internet Explorer
+. Search for the **cog**
+. Select `Internet options`
+. Go to `Security`
+. Select the `Trusted sites` icon
+. And lower the lever of "Security level for this zone" to `Medium Low`
+
+And when you still get the pop-ups, just check anything that says "Don't show again"
+or "Continue", basically, ignore all the warnings (because we are power users and
+we know what we are doing).
+
+Even now though, you can still try and look for Chrome or Mozilla, try to download
+and it won't work either. You have to go to the same screen we were before but:
+
+. `Internet Options`
+. Security
+. Custom level
+. Search for "Downloads"
+. Mark "Enabled" instead of "Disabled"
+
+After this, you can google whatever browser you want, and download it.
+
+Because we are cool, we chose _Firefox_. But in a perfect world, we would go
+for _Librewolf_.
+
+It is with this new browser we should search and download "AdventureWorks Sample
+Database" this is on the Microsoft Docs, it's probably a pretty widely used database
+sample hence it is in Microsoft Docs even.
+
+Download the OTLP => 2019 version. (bak file). Depending on what OS you decided to
+install and what MSSQL Server you will install then you should match the specific
+backup. (For the uninitiated, a `.bak` file is a typical extension for a database
+backup in the MSSQL world)
+
+=== Download MSSQL and SQL Server Management Studio
+
+=== Install and Configure MSSQL 2016
+
+=== Install and Configure MSSQL 2019
