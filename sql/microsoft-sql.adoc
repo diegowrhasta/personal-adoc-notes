@@ -592,8 +592,221 @@ install and what MSSQL Server you will install then you should match the specifi
 backup. (For the uninitiated, a `.bak` file is a typical extension for a database
 backup in the MSSQL world)
 
+[NOTE]
+====
+When running specifically Windows Server on QEMU, resolution might seem a bit off,
+luckily by playing with the resolution settings at the VM level we can get a better
+view that might suit your needs. Play around with it.
+====
+
 === Download MSSQL and SQL Server Management Studio
+
+Search in google "Download Microsoft SQL Server 2019". Get to the first official,
+link, try to download the `.exe`, and you will have to fill in a form (literally
+walled by data harvesting). After filling it in with totally real information,
+you can then actually download the `.exe`.
+
+- Open the .exe
+- Select `Media File`
+	- This will download the ISO for the server (and all the files that are necessary).
+	And it will take some time, probably around 10 minutes or so. So just wait.
+- Close
+- Search for SSMS 19
+- Download the installer
+
+[NOTE]
+====
+If you are turning off your VM. Do clean shut downs, do not suspend or use the
+Hypvervisor's controls.
+====
 
 === Install and Configure MSSQL 2016
 
+So a production environment might look something like this:
+
+- Most Powerful Machines had MSSQL Server
+- 96+ CPU
+- 256+ GB RAM
+- Solid State Drives
+- Terabytes of Storage Attached
+- Data files, Log Files, tempdb and backups or separate disk drives
+
+Now, we do not have such a thing. We have a fairly small machine, with small
+capacity. Still we will try to emulate a bit of how production might work by
+working with different folders and labeling them as you would for different data
+files, log files, etc.
+
+**FIRST**
+
+Let's create some folders in the C: drive.
+
+- SQL_LOG_FILES
+- SQL_DATA_FILES
+- SQL_TEMPDB
+- SQL_BACKUPS
+
+This is but a naming convention the instrudctor has been following for years.
+Bear in mind this is entirely theoretical, yet, you can extrapolate that into
+other environments, teams, conventions. But having a sense of **ORDER**, I think
+is the biggest thing you should keep in mind. There are many use cases, many requirements,
+many things that actually dictate how you will structure a database, how you will
+setup many devices, servers, services. But in the end, you need to have a logic
+to your own madness, if you don't. Things are not going to be pretty, if things
+have _too much of a lean structure_, then productivity tanks, (and many other
+factors play into this, it's not just "having order or nomenclature"). But I know
+from first-hand experience that followin your basics, having organization, can
+be useful (_when done properly, and when not over-preparing nor over-engineering
+getting in your way_).
+
+And now we will open up the setup for the copy of MSSQL 201x we downloaded.
+
+This opens up a wizard that's kinda craaazy, in the sense that there are tons of
+options. Again, it's a toolbox, and (only someone who's insane) would know every
+single thing. It's something you have to understand just about enough to navigate,
+and when the moment comes, you can dive into a topic or tool and make it work
+for your need. That's more realistic, pragmatic, and actually professional than
+pretending that sole memorization of things without a sense of applying that
+"knowledge" practically is somehow "better" or "good".
+
+- You can also read in the MS Docs, tons of links in the "Planning" page, but a
+really useful tool there is the `System Configuration Checker`. By clicking this
+it will run tons of checks to tell us if the current machine can have SQL Server
+installed without issues. There are tons of things to check, yet this tool automates
+the checks. It's a **good practice** to always start this tool. If something is
+wrong we have to go and **FIX IT**.
+- Once all of that is done we simply click on the second tab "Installation" -
+New SQL Server stand-alone installation or add features on an existing installation
+	- You can go through the installation wizard pretty easily, yet there are some
+	interesting points to highlight: You are asked for a license, in prod you would
+	need to buy one and input it here. For a course, the evaluation copy should
+	be more than enough.
+		- This tool also runs the checks we ran before
+		- We should check the option to "always check for updates"
+- After continuing another set of `checks` will run. These checks are actually
+focused around you solving them in order to continue, the one thing that usually pops
+up here is "Firewall is on". We (for the purpose of this course) turn it off,
+once that's off we have to re-run the checks, the firewall should not be an issue.
+- Next screen asks for what features would you want to install. We will only be
+focusing on three:
+	- Database Engine Services
+	- SQL Server Replication
+	- Client Tools Connectivity
+A cool fact about the wizard and each option you select is that there's tons of
+information, like it tells you what are the pre-requisites for services, you should
+install things that might be missing. It also will tell you how much everything will
+take in store. These three options we selected are about 1 GB in storage.
+- We will come across another screen that talks about "Default Instance" and
+"Named Instance". Basically, this is a specific configuration that for specific
+use case scenarios might be useful.
+	- E.g., You want to have multiple sets of SQL Server installed on a machine,
+	because you want a specific set to be encrypted whilst another not (this is
+	but one example). And so, when you install more than one SQL Server, you will
+	need to point to the `Default Instance` and the other instances will become
+	named instances. There can only be **one default**. We will only work with one
+	instance so we will keep it as "Default Instance". Another thing is that
+	you can choose a name for your instance. However a good practice is to keep
+	it as `MSSQLSERVER`.
+- The next screen introduces the concept of "Service Account", and how MSSQL
+adheres to best practices from the get-go. So there are these options:
+	- SQL Server Agent
+	- SQL Server Database Engine
+	- SQL Server Browser
+All these services have different roles to play when it comes to allowing MSSQL
+Server to work as intended. **And**, we actually will create per-service a service
+account, this is the "user" that communicates the Windows (the OS) with the Service
+itself. _By default the Local System Account is used_. This is a highly privileged
+service account that has access to everything. (He's admin basically). In prod
+you would have to install the `Domain Controller`, and we then create Domain Accounts,
+and each one with a specific access to the specific service.
+	- Set all the services to be `Automatic` so that when we boot-up they also
+	boot-up
+	- And in Collation > Keep the default. But in short, this setting tells SQL
+	Server how to share, compare and sort data based on characters.
+- After that, we will setup the Configuration itself.
+	- SQL Server has **two types of authentication**
+		- Windows Authentication = Default one, and referred as "Integrated Security".
+		This security mode is _of course_, integrated and tightly coupled to Windows.
+		So specific users and groups are trusted to log into SQL Server. A Windows
+		user does not need additional credentials to authenticate with MSSQL Server.
+		So you don't actually need to input a password and stuffs, since if you
+		have logged in, your user is used to manage SQL Server.
+		- Mixed Mode = SQL Authentication plus Windows Authentication. So SQL
+		Authentication is a mode that basically saves credentials **within**
+		the MSSQL Server. _In Windows, we save them under the **Domain Controller**_.
+			- We will actually use this. In here you can set a password, which will
+			be the password for the `sa` the Server Administrator. This _of course_
+			has to be **really strong**. And there's a handy button there to also
+			add the current user as the administrator, that way you can login
+			and have to add credentials (which is more secure).
+	- After we save the credentials we can head into `Data Directories`. In here
+	it allows us to map folders for different purposes to System Directories. We
+	previously created 4 folders in the `C:` drive, each one will be mapped to these
+	locations that MSSQL Server by default configures
+		- Data root directory > C:\SQL_DATA_FILES
+		- User database directory > C:\SQL_DATA_FILES
+		- User database log directory > C:\SQL_LOG_FILES
+		- Backup directory > C:\SQL_BACKUPS
+	- TempDB = We will later explain what this is, but for now, just be sure to
+	remove the default path that was there and add a new map to `C:\SQL_TEMPDB`
+		- Also set the `Initial Size` (on the two locations that are there) to
+		**128 MB**. This part of SQL Server is really important, it helps with
+		performance basically, so you should try to make it _as big as possible_.
+		It will also depend on the number of files. Depending on the cores the
+		PC has, then the default number of files filled in varies `1:1`. Before
+		you used to have to create all these files manually, but since that version
+		the installation itself picks-up the number of CPUs and generates the respective
+		number of files.
+	- FILESTREAM = Nowadays, data is not just "date of birth", "name". Stuff like
+	that. Data now has pictures, songs, movies attached to it. Other types of
+	file formats. And so, to store them, we don't use the DB, we actually keep
+	them in disk, and then we create a reference on the Database. Why? SQL Server
+	doesn't allow you to create a BLOB record that's bigger than 2 GB. And that,
+	of course, nowadays is _child's play_.
+		- And so, for these use cases/file types. We enable the FILESTREAM setting.
+
+Once that's done, we get a summary of all the config we established, and it will
+also save an `.ini` file in disk (this is really well made dude). Once we hit
+`Install` (after 10 - 15 minutes), many steps will take place.
+
+==== SQL Server Best Practices
+
+We will go in depth later, but it's best to understand that SQL Server has tons
+of config, and depending on the environment we might have to setup things with
+performance and other considerations in mind (nature of workflow, OLTP database,
+BI SQL Server). Once we install the SQL Server, we tune the server after based on
+such requirements. "Fascinating stuff".
+
+After the installation is done, we actually get logs, we see everything that the
+installer did, and it's AMAZING. _If there was an error in the installation_, the
+logs should be a good source of truth to debug and fix.
+
+After that also, we should search in the Search Bar of Windows "SQL Server". In there
+we should be able to the `SQL Server 2008 and SQL Server 2016". 2008 should be empty,
+but 2016 will have an option called **Configuration**. In there under `SQL Server
+Services`, you should be able to see `SQL Server` and that `running`.
+
+To stop, restart, the best is to come to this place and right click the services to restart.
+If you manually shutdown the machine or something, data might be corrupted, and bad
+things could happen. Using this interface and options will **ASSURE** that you
+do a graceful shutdown of the service.
+
+[IMPORTANT]
+====
+Oh wow, so now I get why the course took the time to make different videos for each
+installation. In here there are less options that in `2019` for example. I was trying
+to just install 2019, but now I see the difference.
+====
+
+It's nice, this is like, really nice. But, come on, a bit redundant, still it's good
+to know this, and learn from my "mistake". Can keep in my head "If I want details,
+I can come back to these videos for further "examination"
+
+Okay, so since I won't lab all versions, I will take notes of the other versions that
+I will "not" be installing. 
+
 === Install and Configure MSSQL 2019
+
+
+
+=== Install and Configure MSSQL 2022
+
