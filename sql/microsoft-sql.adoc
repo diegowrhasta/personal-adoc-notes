@@ -806,7 +806,162 @@ I will "not" be installing.
 
 === Install and Configure MSSQL 2019
 
+[NOTE]
+====
+Props to the course. So they themselves understand that this could be dead time,
+dead weight, so they went out their way to mix it up, it's not just the previous
+tutorial plus some extra steps. They are adding also extra content. Wow.
+====
 
+_Short presentation:_
+
+Before any installations, before anything that has to do with the tools. We need
+to understand that a fundamental level, Databases are the key sources of data
+for our business, and this in turn makes them extremely important. These are
+the backbone of a business.
+
+This is where:
+
+- Transactions get saved
+- Inventory gets saved
+- Sales are getting served
+
+Everything that is related to the business relies on the business data, regardless
+of Front Office work, or back office work. Internal systems such as HR, Payroll.
+They all share this same idea at their code. Data is **King**.
+
+Because of this degree of importance, we also have to understand that the most
+powerful machines in the company should be dedicated to the databases (servers).
+
+That extra background, adds into the overview of how a production environment might
+look like:
+
+- Most Powerful Machines had MSSQL Server
+- 96+ CPU
+- 256+ GB RAM
+- Solid State Drives
+- Terabytes of Storage Attached
+- Data files, Log Files, tempdb and backups or separate disk drives
+- Most Powerful Machines had MSSQL Server
+- 96+ CPU
+- 256+ GB RAM
+- Solid State Drives
+- Terabytes of Storage Attached
+- Data files, Log Files, tempdb and backups or separate disk drives
+
+Again, because data and databases are so important, we also should really look
+after the idea of preparing, configuring these machines and systems in such a
+way that they are reliable, resilient. And recover from errors or disasters.
+
+And now we will follow analog instructions to what we had in the `2016` section.
+Download Chrome or a modern browser that doesn't have as many restrictions as the
+per-default Internet Explorer (which is also a really old browser). It takes too
+much time to work with Internet Explorer, doesn't really help, hence we install
+another browser as the first step.
+
+- Download SQL Server 2019. (From the official MS site)
+	- Microsoft offers cloud integrations that you could pick, but in order to
+	install MSSQL server we should pick the "On Premises download" option.
+- The installation wizard is not just some run-of-the-mill installation program.
+It has tons of tools and options that help maintain, research further and overall
+support in the installation of MSSQL.
+- 1443 is the default SQL Server connection. The correct _production ready_ approach
+is to manually allow this port. **NOT DISABLE THE FIREWALL**. But for the sake of
+the course, we will just do that. But for **security purposes** it's best to
+always follow the idea of: `least privilege is best`. Also a _small note_ here,
+the firewall being turned on is treated as a **warning**.
+- Most important things to install
+	- Database Engine Server
+	- SQL Server Replication
+	- Client Tools Connectivity
++
+Yet, depending on your requirements, there are tons of other features and tools
+we can choose to pick.
+- As you continue with each step, the wizard is always keeping track of the machine
+and configurations, if anything might be a problem, it **will let you know**.
+- Expanding on the idea of the named instances and default instances, if you were
+to configure a named instance you would have to connect to it by combining two
+things: `MSSQLSERVER-test`, the anatomy is: `<InstanceId>-<Name>`.
+	- We will cover how this feature is used further when we go around **replication**.
+- Another reminder of the service accounts, and how a good practice is to separate
+per each feature a different service account, and by pairing this with a domain
+server we should provide both a user and password for them. For the purposes of
+our lab though, we will use the `NT Account` which is local, and all services should
+be configured to have an **Automatic** startup.
+- When setting up authentication, something to keep in mind is that if you configure
+your instance as `Windows Authentication Mode`, you effectively lock yourself out
+of creating SQL Server users and connecting to the instance.
+	- Hence, mixed mode is the best of both worlds. And in this mode you need to
+	create from the get-go a SA or admin account. (Also don't forget to add the
+	current user as admin)
+- In `production` we will have different drives for different concerns of **data**.
+	- MDF and LDF files are the ones to store data and logs respectively, in an
+	ideal world, **these types of files should be on different drives**.
+	- In order to mimick the separate drives, we will be using different folders
+	for the different data locations (separated by concern/type)
+- TempDB is really important, but its details will be explained later.
+	- It's a good practice to always keep more than 1 file for TempDB, and the initial
+	file size and different parameters will highly depend on the business requirements,
+	(this is different to the information told at the previous section). In production
+	environments files will be around 3 - 4 GB in size, and other parameters as
+	well will be really buffy, we will be working with MB numbers:
+		- Initial size (MB): 64
+		- Autogrowth (MB): 64
+		- TempDB log file
+			- Initial size (MB): 8
+- MaxDOP: When we run SQL Server on a computer that has **more than one core**,
+it detects the best degree of parallelism. Number of processors employed to run a
+single statement, for each parallel plan execution.
+	- When we execute a query, we have the option of running it through multiple
+	cores, so that said query also runs faster. Multiple CPUs work together in this
+	instance to process the query and make it way more performant. This all depends
+	on how many Logical CPUs you have on the server. (_Production numbers go from 32
+	CPUs to way higher)
+- Memory: This setting showed up on 2019. This is a configuration that entirely
+allows you to set how much memory you want for SQL Server to allocate from the
+server.
+	- **IMPORTANT:** SQL Server uses a lot of memory. _Why?_ Because this DBMS
+	_by design_ tries to pass data from disk onto memory, in order to access the
+	data quickly. _Quick Select, Quick Update_. So the more memory you allocate
+	it the better, however resources and finite, and we have to balance the memory
+	used by the OS and SQL Server. A good rule is 80 - 20. 80% of memory to
+	SQL Server and 20% to Windows should be a good ratio.
+		- And another **good practice** is to state the server with SQL Server,
+		should **only be running SQL Server**, don't try to host a web server
+		or other stuff like that.
++
+We will select: `Recommended` and allocate Max Server Memory (MB) to `512`. And
+also be sure to tick the check mark.
+- FILESTREAM = The options here basically are extra configurations that you can
+add to write things to disk, allowing users to access FILESTREAM and things alike.
+We will check everything.
+- Again, a summary is displayed by the end with all the things you set for the
+server, alongside the path of all the config in **text form**.
+	- Hit `Install` and just wait, dude. Depending on the computing power of the
+	machine this can take up to 30 minutes.
+	- By the end, you will see a summary of all features that were installed
+	(and whether their installation was successful or not), alongside a path
+	to a **log file**. In case there was an issue, you should go into this log
+	file and read the contents to understand better how to fix the problem.
+
+To check if you truly have the service installed, you should open up the Start
+Window and search for `Microsoft SQL`, you should get a folder with tons of
+executables, but the most important one being **Configuration Manager**, this is
+a program that DBAs use a lot actually, to restart, start and just manage the
+service's lifecylce. And _as already mentioned before_, this is the recommended
+approach when trying to interfere with the server's status. This tool makes sure
+SQL Server shuts down gracefully and avoids issues by pulling the plug and corrupting
+things.
+
+By double-clicking on the respective service, you will get a Window to manage
+differen aspects of it. You can choose to switch the path for logs, or features
+to be turned on/off. There are tons of things that you can do here, and we will
+definitely go into detail in further sections. (You can even find the path to the
+log file here)
+
+You can even go into: `SQL Native Client 11.0 Configuration > TCP/IP > Port` to
+change the default port in which the service is running. (_If you do end up changing
+it, you will have to restart though_)
 
 === Install and Configure MSSQL 2022
 
