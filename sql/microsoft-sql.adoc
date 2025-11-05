@@ -965,3 +965,104 @@ it, you will have to restart though_)
 
 === Install and Configure MSSQL 2022
 
+[IMPORTANT]
+====
+When we talk about SQL Server in Production environments, we refer to the most
+powerful machines. They are serving trafick/data from customers and transactions
+of applications. SQL Server runs on the most powerful machines in our infrastructure.
+====
+
+Of course, for our lab purposes, we won't replicate the same specs as production
+machines, our VM will have the installation and usage of MSSQL Server as the
+reason it has been setup, so the machine is low on specs, but just good enough for
+**our purposes**.
+
+[NOTE]
+====
+So, on 2022 there's a new option to choose `Developer` edition. This is the
+"perpetual" version that we can use "forever". Well as long as not for production
+environments. Evaluation is `90 days`.
+====
+
+It also comes with Terms and Conditions > **Accept Them**.
+
+[IMPORTANT]
+====
+In production environments **WE DO NOT UPDATE THINGS WILLY-NILLY** so automatic
+updates should never be set by default. The right procedure is to first update
+in lower environments, test, and if everything looks fine, then production can
+be upgraded knowing that we won't break it.
+====
+
+- Checks on top of checks are across the whole installation wizard. (And this is
+a great idea you should be inspired by, or at the very least appreciate).
+	- That's how the Firewall check pops-up.
+		- **IMPORTANT:** But now this video tells a different story when it comes
+		to the Firewall issue. It's more pragmatic, in a way. _It all depends on
+		the business requirements_. Based on your particular use case, team,
+		setup, you will probably configure the firewall differently, but a given
+		is that in **production**, just having _no firewall_ is **BAD**.
+
+(Oh wow, there's Machine Learning as a feature for MSSQL Server, _wow_).
+
+- By default the service is installed in `C:\Program Files\Microsoft SQL Server`
+
+Do you want to give your SQL Server the same name as the instance? Actually the
+name of the instance adheres to the **name of the machine**. So if your machine is
+called "TestMachine" the instance name would have that name by default. However,
+if you can change the name, you should always do that.
+
+_We tend to keep it to the default name_. The only use case in which we make use
+of named instances is when we want to install more than one SQL Server instance
+on **one server**. (_The SQL Server services can work independently in this setup_).
+
+MSSQL Server => Runs as a service on a Windows Machine. And like any service,
+an account has to be associated with it. Through said account is that the service
+gets to actually run. _Said account needs privileges_.
+
+We usually work (_in production_) with Service Accounts. This is with a whole
+Domain setup ready. In our lab we don't have that, and won't set it up, so we
+won't use Service Accounts. We will just use **the local account**.
+
+The idea is to separate each different "service" into a different "service account".
+
+When the SQL Server goes down, if you stop it, or if the hardware goes down and
+we have to stop the machine. When the bring the server back online, do we want
+SQL Server to automatically start? Then you should set that up in the configurations.
+
+If you want it manually, then set it up as **Manual**. By default SQL Server Agent
+is set to `Manual`. You can always change that to _Automatic_ though.
+
+- MIXED MODE
+
+[NOTE]
+====
+The reason as to why a good practice is to not put all the drives for the different
+types of files and data inside the same Server Drive is because if that goes down,
+it becomes a `one point of failure`. It's then **always** recommended to put each
+data directory in different drives, so that the chances of losing the data are
+less likely.
+====
+
+_It's only for our lab purposes, that we have a small machine and with limited
+resources that we will emulate this separation of concerns by creating **diferent
+files**_.
+
+- On `TempDB` be sure that the Log and TempDB files are both pointing to the
+`TempDB` folder.
+	- Okay, params here are completely different to the other SQL Server versions.
+
+- No 80-20 rule here for memory :(
+
+- I don't think the other versions asked for a restart? 2022 seems to require it.
+
+**Don't forget:** There's a log by the end. You should use the log to debug if
+there was something wrong. (And please, use these things as inspiration for the
+software you yourself build, imitate, take ideas that are cool, that way you will
+build cool things)
+
+=== Install 2016 SQL Server Management Studio
+
+=== Install 2018 SQL Server Management Studio
+
+=== Install 2019 SQL Server Management Studio
