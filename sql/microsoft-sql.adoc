@@ -1061,8 +1061,151 @@ there was something wrong. (And please, use these things as inspiration for the
 software you yourself build, imitate, take ideas that are cool, that way you will
 build cool things)
 
+[IMPORTANT]
+====
+Okay, I'm an idiot and forgot the password to access the machine. Luckily there's a
+good way of resetting it. You just need to plug in the installing ISO for Windows
+Server. And then choose to "Repair" the computer. After that you should choose
+"Troubleshoot". In there a console pops-up, input this: `net user Administrator Str0ngPassWorD@`.
+This is how you set a password again. And yeah, this is the password now. **DON'T
+FORGET IT AGAIN**
+
+A bit more than that though: https://www.youtube.com/watch?v=m4BBSa8uS5E[Tutorial]
+
+Really cool way of "hacking your way" the command is actually
+
+`net user administrator Passw0rd` => Have it just like that. JUST EASY.`
+====
+
 === Install 2016 SQL Server Management Studio
+
+We already downloaded SMMS, and installed it (don't remember doing that? HEH).
+Apparently it takes longer to install this than the actual MSSQL Server database.
+
+[NOTE]
+====
+There are tons of other database access tools. But the first-party developed one,
+and of course with more features (at least up to date) will be the one that Microsoft
+themselves develops. (But I want to give a quick shoutout to `DBeaver` this is insane
+once you set it up correctly. You can even get DDL scripts and diagrams all reverse
+engineered from Microsoft SQL Server)
+====
+
+Once the program opens up we will be greeted with a window to connect to MSSQL Server.
+Now, if you choose to use `Windows Authentication`. you will see how the password
+field is actually completely grayed out. And the reason being, we are already logged
+in, already authenticated, so by just switching to this option. Our user will be
+used to authenticate with MSSQL Server and get access to the instance.
+
+However if we we choose `SQL Server Authenticate` we can also use the `sa` account.
+And yes, it is **TONY**.
+
+_Note:_ Oh yeah, the installation is just (Next > Next > Next).
+
+Once you open up SMMS and then log into the instance. You get access to all the
+system databases that are there by default. You also get access to the `Security`
+folder, which actually shows all the different accounts to log into the instance
+(Under `Logins`). And in there at the bottom, you should be able to see `sa`.
+If you open its properties, you can then access `Server Roles`, and at the bottom
+you should see the account with a check on `sysadmin`. This should enable the account
+to literally do WHATEVER you want with the instance.
 
 === Install 2018 SQL Server Management Studio
 
+_How do we communicate with SQL Server? Microsoft has its own GUI to talk to it,
+and it's Microsoft SQL Server Management Studio. It used to be part of the SQL
+Server installation until the 2012 version. But since then, you have to separately
+download it and install it.
+
+When accessing the official page to download SMMS, you get access to download
+different management studios, all different versions, be sure that you use the
+recommended versions (not previews) and ones that match the version of Microsoft
+SQL Server.
+
+[NOTE]
+====
+OHHH, dude, this also installs `Azure Data Studio`. This is a lightweight and
+a bit cooler GUI to connect to servers. (Not just MSSQL Server).
+====
+
+The setup of this version will require to also restart the computer.
+
+**BIG NOTE:** Oh, so like, when you are the wizard to connect, you can choose
+to connect to different services, not just a "Database" **ONE** of the services
+is the _Database Engine_, and yeah that is the most used one and the one that
+deal with the data portion of the whole suite. But just know, that we have tons
+of other features and Engines.
+
+- If we have multiple instances, (named instance use case) we can also choose in
+the connect wizard which of the instances we want to connect to. (This is used
+for replication)
+
+(_Azure Active Directory_ will be skipped for now, but that's another type of
+authentication)
+
+_Note:_ You can actually "log in twice", with the `sa` account and with the
+`windows` account. And it will show you on each connection, with which account
+you have logged in.
+
+SMMS is the place that we will use to connect to MSSQL Server, it has all types of
+information and ways to leverage the database features.
+
+**There are two types of databases:**
+
+- System Databases = Installed automatically with the setup we did when installing
+Microsoft SQL Server
+	- master = main database
+	- model =
+	- msdb = setup jobs and ssi packages
+	- tempdb = the temporal database
+These are all system databases, and we should back them up just as we backup user
+data databases.
+- User Databases = These are databases that deal with actual user data, and we
+create all of them manually
+
+Using GUI you can create databases pretty easily, literal right-click, go through
+wizards. _Typical Microsoft pattern_.
+
+- Security Tab = In here you can see all the users (logins), you can see all the
+roles that we can configure for users on a database
+- Server Objects = In here we can specify linked servers, triggers, etc.
+- Replication = If we want to replicate data from one server to another server
+- High Availability
+- Management = In here you can see tons of options, but one **really important**
+option here are the SQL Server logs. If there are any sort of issues with the
+database, you can go into the logs here and start troubleshooting what the heck
+is up fam.
+	- Maintenance Plan = These are for backup management
+	- SQL Server Agent = Service which comes pre-installed, the Agent is in charge
+	of scheduling the jobs. Jobs that we are going to run on different schedules.
+		- Backup every 2 am (for example).
+		- We can create scheduled jobs (e.g., Okay at 2 am every day, run this
+		script, automations are built-into SQL Server). Nothing by default, we
+		setup everything here.
+		- We can setup alerts
+		- Proxies
+
 === Install 2019 SQL Server Management Studio
+
+Repeated info. But extra:
+
+You can just right click on a database and then choose `Run Query`, after you
+do that you can run a pretty generic command: `SELECT @@VERSION`, this command
+will show you immediately what's the version of the MSSQL Server instance.
+
+The interface tells you a lot of info:
+
+- What databases you have
+- What tables a database has
+- Logins allowed to connect to a database
+- Server Objects
+
+We will be looking into all these features and details further in the course.
+
+=== Download and Install AdventureWorks Database
+
+=== Download and Install AdventureWorks 2022 Database
+
+== Database Fundamentals and Design
+
+=== Welcome to Database Fundamentals and Design
