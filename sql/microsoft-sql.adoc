@@ -1304,6 +1304,70 @@ _What will we cover?_
 
 === What is Data?
 
+When we use the term _database_, we inevitably make the connection to the word
+_data_.
+
+**Data** is a _collection_ of facts, numbers, words, measurements, observations
+or descriptions. However this data starts as **raw**, something that might not
+have that much meaning outside of context or _pre-processing_, once we process that
+data, we can turn it into **information**, which is actually data with meaning
+and with the potential to give us insight into conclussions that can be drawn.
+
+In the context of databases, _data_ is referenced as any single item that can
+be stored in our _database_, this can be a single item or a set.
+
 === What is Database?
 
+_Base:_ Data-base => A structure that holds data.
+
+=> Organized collection of structured information or data, typically stored
+electronically in a computer system.
+
+We typically also have a DBMS (Database Management System) that helps us interact
+and manage said database. There's also _systems_ that are interconnected to the
+database that provide different functionalities around **data**. All of this group
+of system and subsystems, are still referenced as a Database, or Database system.
+
+Example:
+
+When going to the Dentist for an appointment, and a recepcionist looks up your
+name, more than likely this is on a file written somewhere, in said document there's
+tons of info in regards to you. Name, Last Name, Drugs prescribred, age, gender.
+
+All of this info can be extrapolated and put in a database, the data, the underlying
+information will be the same, but the value, the important piece of abstracted
+knowledge, can change its form and become electronic, and be represented in
+`Tables` and `Columns`. Each column can be of a certain type, and can house
+a specific piece of data that brings together a greater whole, and we can have
+more than one table leveraged in order to represent all of the data that the
+traditional _real-world_ process employs.
+
+Many traditional file systems, move into Databases or tend to do so. And it doesn't
+matter how many tables or columns are employed to represent the original process,
+as a whole, everything is referred as a database (_system_)
+
+_Why not just a Spreadsheet?_
+
+- This all depends on convenience and how all data is stored.
+- Who can access the data.
+- How much data can be stored.
+
+Spreadsheet is used is great for a small group of people, that also don't have
+to do a whole lot of complex data manipulation.
+
+Databases => Designed to hold a much greater amount of data, and in organized
+amounts. (Terabytes of data). Databases => Allow multiple users to connect to
+them, and run queries that also can become highly complex yet with an almost
+human readable high level query language.
+
 === How Data is Stored?
+
+_This is not referring to saving data to HDD in binary_.
+
+This is how data is stored within the database.
+
+. Data is stored within tables (the basic unit of storage)
+. Structured Query Language (SQL). In order to query data in a structured manner,
+we need to save said data in a structured way. (We normalize the data through tables)
+. **Tables are not databases**. See the database as a folder, and there are files
+inside of a folder, the tables are these **files**, all data is written into them.
