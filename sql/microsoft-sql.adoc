@@ -1204,8 +1204,106 @@ We will be looking into all these features and details further in the course.
 
 === Download and Install AdventureWorks Database
 
+This is a sample database used for learning purposes and to test different
+features that Microsoft SQL Server provides.
+
+You can Google it like: `AdventureWorks sample database`, and under a Microsoft
+Docs page, you should be able to see a table with tons of download links. Depending
+on your database version you should download the respective backup. (Also be sure
+to download the **OLTP** version).
+
+- Once you download that, move the `bak` to the backups folder on our machine.
+- Log into the SMMS application. (It would be recommended to login with Windows
+Authentication though, it has more auditing around it.)
+- And now to restore the backup:
+	- Right click under `Databases`
+	- Restore Backup
+	- Select `File`
+	- Search for the backup that should be under the `BACKUPS` folder
+	- Once you select it, the folders for both `DATA` and `LOGS` should be automatically
+	mapped to the ones we set at the installation step
+	- Click `Restore`
+	- Once the restore is complete, you can look at the architecture of the database
+- This test database has `Tables`, `Views`, `Stored Procedures`, `Security`
+
+Let's run our first `SELECT`.
+
+- New Query
+- Be sure you double-clicked the database and chose `New Query`, or in any case:
+	- `use AdventureWorks2019`
+	- go
+
+[NOTE]
+====
+On SMMS you don't have to write semi-colons as you would in MySQL, Oracle. You
+can just put `go` at the next line.
+====
+
+Okay, this is _cool_, didn't know you could do that with SQL Server. You can literally
+Drag and Drop a table into the `Query Window` and it will immediately write/render
+that table's name (a full access to it). So you can literally write queries with
+motions. That's _cool_.
+
+So the first query we will run is
+
+`SELECT * FROM [HumanResources].[Employee]`
+
+And this should render a all the records from the table at the bottom. You can
+play around and do selects to all other tables to get a feel for it too!
+
 === Download and Install AdventureWorks 2022 Database
+
+So with each new Microsoft SQL Server, Microsoft creates a new backup that has
+differences in its architecture. So depending on your version you will see
+a different structure.
+
+_NOTE:_ Okay this is... interesting. But basically, for the most advanced features,
+we will leverage 2022 and its AdventureWorks sample. (Why is that? No idea, still
+hopefully we still get the chance to lab all those lessons, unless I want to run
+another install for 2022).
+
+- The backups that are provided for AdventureWorks are actual backups of AdventureWorks
+that are free and used for learning and labbing.
+- `Device` is the option with which you can point to the path at which a backup
+is saved.
+- When restoring a backup for a Database that doesn't exist. Then SMMS will take
+care of both creating the database itself, and then putting all the values that
+are respective.
+
+[IMPORTANT]
+====
+There's a button on the `Restore` screen stating `Script`. This will actually
+generate SQL that takes care of the restore of a backup. You can run the command
+or just press buttons with the GUI. (Two alternatives)
+====
+
+Of course, _make sure the data is there_. Run a couple of `SELECT` statements and
+stuffs.
 
 == Database Fundamentals and Design
 
 === Welcome to Database Fundamentals and Design
+
+Let's recap a bit:
+
+- Section 1: Data, Databases and Relational Data Base Management System
+- Section 2: VM, Windows Server Installation and managing Lab VM
+- Section 3: Download, Install and Configure MSSQL Server
+
+_What will we cover?_
+
+- What is Data?
+- What is Database?
+- How Data is Stored?
+- What is Table, COLUMN and ROW?
+- What is a Key?
+- What is a Primary Key, Foreign Key, Unique Key, etc?
+- What is a Transaction and ACID properties?
+- Database normalization AND different forms of Database Normalization
+- Create your first Database, Table and Populate table with data...
+
+=== What is Data?
+
+=== What is Database?
+
+=== How Data is Stored?
