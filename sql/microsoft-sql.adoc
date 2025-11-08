@@ -1371,3 +1371,178 @@ This is how data is stored within the database.
 we need to save said data in a structured way. (We normalize the data through tables)
 . **Tables are not databases**. See the database as a folder, and there are files
 inside of a folder, the tables are these **files**, all data is written into them.
+
+=== What is a Table, COLUMN and ROW?
+
+A database is made of many components, one of those is **Tables**. Without them,
+we wouldn't have much actually, tables are the essential structure in which data
+is stored.
+
+- There can be more than one table
+- The data is stored in these tables, tables are like _placeholders_
+- A table should have a **unique name**
+- The number of tables is limited by the number of objects allowed in the RDBMS.
+For example Microsoft SQL Server has a limit of more than 2 billion tables (which
+is kinda impossible to reach)
+- MySQL has no limit
+
+**What is a Column?**
+
+A set of data values, all of a single type, in a table. E.g., Age, name, Department,
+salary.
+
+- Each column tells you what type of data is going to be saved in that column
+	- The name should imply what type of data is going to be saved
+- A column may contain all sorts of data types, text values, numbers, or even pointers
+to files in the system
+	- You can put dates, even currency specific types, decimals, precision
+	- **IMPORTANT:** The column names should be unique
+- SQL Server => You technically have 1024 columns. It's not practical to have as many
+though, 30 - 40 columns are extreme cases. This is where normalization comes into
+picture.
+- There should be _at least one column in a table_
+- Field = Column.
+	- However, some developers might refer to a Field as the intersection of a
+	Row and a Column.
+
+**What is a Row?**
+
+Collection of fields that make-up a record.
+
+E.g., We have a row that tells data such as `EmployeeNo, Name, Age, Department,
+Salary`.
+
+- A row is also called a _record_
+- A row should be unique (when all of its values are combined)
+- A table can contain 0 or more rows. When there are no records, the table is
+referred to as _an empty table_
+- The number of rows is only limited by the storage capacity of the machine (unlike
+Excel as an example)
+
+=== What is a Key?
+
+Tables store a lot of data in them, most of the time these records are unsorted
+and unorganized. If you want to filter data, you can try and make usage of some
+column's value, but if those values are repeated, you immediately will run into
+an issue such as records that you don't want popping up as results.
+
+To avoid all these issues, **Keys** are the solution, this is a way of making a
+record truly unique, and reference it by that unique **value**.
+
+- A key is a data item that exclusively identifies a record.
+- E.g., You have a table of students, and there are more than one "John" students,
+you can pinpoint to the one you really care about by using his `StudentId`
+- Key can be a single attribute of a group of attribute (composite key)
+- Keys are also used to generate relationships amongst different tables, tables
+most of the time are connected to each other and that is through the keys, for
+that purpose you use a _foreign key_.
+
+[IMPORTANT]
+====
+A key is an important component of a table. And it's used to exclusively identify
+a record whenever we are trying to query for it.
+====
+
+=== What is a Primary Key, Foreign Key, Unique Key, etc?
+
+First, let's run a quick exercise. In a table with no concept of keys introduced
+yet, what column would be a good key?
+
+**Candidate Key:** An attribute or set of attributes that uniquely identifies a
+record. (Many columns cannot be used alone to try and uniquely identify a record,
+hence those wouldn't be good candidate keys)
+
+In a table such as:
+
+[cols="1,1,1,1"]
+|===
+|StudentId | Name | Class | DOB | Email
+
+|1001, John, 1st Year, 01-08-2008, john1@gmail.com
+
+|1002, Roger, 2nd Year, 01-08-2013, roger@gmail.com
+
+|1003, Michael, 3rd Year, 02-02-1993, michael@gmail.com
+
+|1004, John, 3rd Year, 02-03-1992, john@gmail.com
+|===
+
+Candidate keys, could be `StudentId` and `Email`. But nothing more than that,
+_why?_ Because they are unique amongst records. Any other value can be clash
+easily, (you can already see two johns there, and there could be people with the
+same birthday, and perhaps same name and same birthday)
+
+- Tables can have multiple candidate keys
+- Amongst the set of candidate keys, **one** is chosen as a **Primary Key**.
+
+_NOTE:_ When naming tables, DBAs tend to name tables with **Camel Case**. E.g.,
+`studentInfo`. This is but a convention, and in real world, you will definitely
+see all manners of conventions. But it's good to know that there is a sense
+of "convention" and people tend to follow that.
+
+- Primary is a set of one or more fields (columns) of a table that uniquely
+identify a record (row) in a database table.
+- A table can only have **one primary key**, and you should pick one _candidate
+key_ as that.
+- A primary key should be picked only if its value is rarely or never changed
+- A `primary key` cannot be `NULL`
+- Primary key fields contain a clustered index
+
+**Secondary Key** => All candidate keys that were **not selected as primary keys**,
+you could use them as ways of identifying a record, but again, _in practice they
+are not the primary key_. Sometimes they are referred as **alternate key**.
+
+**Uniqe Key:** Set of one or more attributes that can be used to uniquely identify
+the records in a table. They share the same attributes as **primary keys**, however
+these columns can have `NULL` values. A unique field containst a _non clustered
+index_.
+
+**Composite Key:** A combination of one or more attributes can make up a "primary
+key". A composite key can be a candidate for a `primary key`. E.g., StudentId +
+Email can become a composite key.
+
+**Foreign Key:** A field in a table that is a **primary key** in another table.
+
+E.g.,
+
+.studentTable
+[cols="1,1,1"]
+|===
+|StudentID, Name, Class
+
+|1001, Diego, 3rd Class
+
+|1002, Richard, 1st Class
+|===
+
+.invoiceTable
+[cols="1,1,1"]
+|===
+|StudentID, InvoiceID, Cost
+
+|1001, 1, 3000
+
+|1002, 2, 3500
+|===
+
+As you can see, we have _two tables_ and on the second one, we have the `StudentID`
+as a column. This is actually a reference that ties the record in the `invoiceTable`
+to a student record in the `studentTable`.
+
+- A foreing key is used to generate a relationship between two or more tables.
+	- The way to trace back all the way to another table is to pick the foreign
+	key column value and search it in the respective table
+- A foreign key can be duplicated, and it can have `null`
+
+[IMPORTANT]
+====
+The concept of keys plays a very important role when designing databases. They can be
+of much help when running queries, and good design on them can make life easier
+when managing a database.
+====
+
+=== What is a Relational Database and Relational Database Management System (RDBMS)?
+
+=== What is a Transaction and ACID properties?
+
+=== Database Normalization AND different forms of Database Normalization
