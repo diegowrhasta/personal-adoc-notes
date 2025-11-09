@@ -1543,6 +1543,191 @@ when managing a database.
 
 === What is a Relational Database and Relational Database Management System (RDBMS)?
 
+Relational Database = Type of database, based on the _relational model of data_.
+
+The idea is to store and provide access to data points that are related between
+each other. To ensure the data is always accurate and accessible, relational
+databases follow certain integrity rules.
+
+Logical data structures => Means that we abstract things, and are separated from
+the actual physical hardware. The relational data model was designed to resolve
+multiple data structures that in old times were used arbitarily by engineers.
+These structures were verbose, complex, and hard to maintaint. So the idea of
+the relational model with its **Table** structure was a way more intuitive, simple,
+and extendable approach to data storage.
+
+_Relational databases_ => They have **Relations** as the key concept between them.
+Keys are the columns that manage to connect/relate different records from different
+tables.
+
+A relational database management system (RDBMS) is a software that allows you to
+manage a RDBS. Most RDBMS use the SQL Language to access the database. Meaning that
+regardless of what RDBMS you are using, the language should be pretty similar,
+meaning your knowledge can be transferred over pretty easily.
+
+**Advantages:**
+
+- Enhanced data security (authorization, access control can support encryption that
+is strong). You can even configure what data is accessible to who. So for businesses
+that require control of the data and its access, Relational is good
+- Retain Data Consistency => Because of the ACID properties, data can be assured to
+be in a consistent form
+- Better Flexibility and Scalability => Updating can be done independently, that
+is because modifications can only be made once, you change one place (one table)
+and that value will then ripple across all other data access points
+- Easy Maintenance => You can regulate, fix and backup data pretty easily. And
+that is because there are automation tools that do all of this easily
+
 === What is a Transaction and ACID properties?
 
+Transaction => In day to day to live, we often here "Transaction" in DBMS, this
+is a single logical unit of work which accesses and possibly modifies the content
+of a database. A transaction accesses the data with **write** and **read** operations.
+
+A transaction groups SQL statements so that **ALL** of them are comitted, or **ALL**
+of them are rolled back (means they are undone).
+
+_When do you rollback transactions?_ When there is a **failure**.
+
+ACID => Concept, or acronym to the 4 properties of a transaction in a database
+system.
+
+Atomicity
+Consistency
+Isolation 
+Durability
+
+If you follow these four properties data can remain consistent and accurate on
+a database, the data should be become corrupt in case of some failure. And
+lastly, because of ACID, we can focus on the application logic instead of
+failures, recovery and sync of data. (_So the idea is to abstract more, and let
+developers do more of other value adding tasks_).
+
+==== Atomicity
+
+This means, that a transaction needs to be an atomic unit of work. Meaning, either
+**all of the operations are executed** or **NONE**. So if one part of the query
+fails, then everything else will immediately fail, in case you encounter an error,
+none of the changes will be commited.
+
+==== Consistency
+
+The database must remain in a consistent state after **any transaction**. So
+a transaction needs to ensure that it adheres to **integrity constraints**. That
+way the data should remain _consistent_. The data has to remain "correct". When
+trying to add/modify a value to a column, depending on its constraints.
+
+So if a column can't be negative, this constraint should be enforced, and fail
+a transaction if trying to do such a thing.
+
+==== Isolation
+
+The transaction will be carried out, as if it was **the only transaction** in
+the system. Meaning that one transaction should not be changed, influenced or
+changed by another concurrent transaction (but this is bs, innit? Deadlocks, stuff that clashes
+does happen, specially in _production_).
+
+_So in a perfect world, a transaction should wait for another transaction to act
+on a record before trying to manipulate any of its data_. In order to avoid
+inconsistency, databases put locks on records, that way one transaction has a
+sort of **reserved spot** until its done with its operations.
+
+=== Durability
+
+Once a transaction is comitted and applied, then its changes are kept **permanently**
+in the database. Hence databases should make use of Hard Disks, that way if the
+power goes out, then when coming back online, the data should still be there,
+the transaction's changes should remain, be _durable_.
+
+[IMPORTANT]
+====
+ACID is just a theoretical way of looking at it. It's a great start, concept and
+core values to have. But in practicity you run into all sorts of scenarios and
+weird things that do prove the rules that they are not so _black-and-white_. You
+have to make concessions, and sometimes just accept that guidelines or rules
+inevitably end up broken due to specific business requirements or scenarios,
+or perhaps there are other issues at hand, and you should be prepared to deal
+with those issues.
+====
+
 === Database Normalization AND different forms of Database Normalization
+
+_Why do we need normalization?_
+
+To avoid redundancy on data, (having a table with records that save the same
+data for different columns). We are not really optimizing the usage of storage
+space, we **waste disk space**. Maintenance also becomes harder, say you want to
+update the details of a customer, with a bad structure, you would end up having to
+go to all sorts of places and iterate across tons of records to change each one
+in order to keep data consistent. That's **BAD**, you should always aim to have
+_one place_ that can get updated, and then all of that info remain consistent to
+any of its relations.
+
+==== Normalization
+
+Process that organizes the data in the database in order to reduce data redundancy
+and increase the data integrity.
+
+- It's a systematic approach of decomposing tables to eliminate data redundancy
+(repetition) and undesirable characteristics like Insertion, Update and Deletion
+Anomalities
+- This is a multi-step process that puts data into tabular form, and aims at
+removing all manner of redundant data from relation tables.
+- This works with a series of _Normal forms_.
+- Although other levels of normalization are possible (1NF, 2NF, 3NF), the third
+level is the highest level considered to be necessary for almost all applications,
+_so if you go above that, then you are just trying to show off_.
+
+**1NF**
+
+- A relation is in this normal form, only if **it contains atomic values**. Means
+it has a value that cannot be divided. Also, if there are no _repeating groups_.
+
+So, in order to normalize with 1NF, look out for rows that have repeated values
+in its columns, and after that, inside each value, check whether you are saving
+_more than one value_ in a column, that is bad, you should probably put each value
+in a separate column or perhaps making another table to keep tabs on these multiple
+values that could be qualified as a specific field.
+
+**2NF**
+
+- If it's in 1NF, and **all partial keys dependencies are removed**. When an
+attribute depends only on a _part_ of a primary key, and not the whole key, we are
+**bad**. In _English_. If you have a record that does indeed reference a key,
+but also info about this key is getting repated with each record, then that means
+that this is a **partial key dependency**. You should separate such a case
+in **2 different tables**. That way you only keep references to keys, and on
+each separate table said kays can have all the attributes they want.
+
+**3NF**
+
+- If it's in 2NF, Non-Primary Keys columns shouldn't depend on the other non-
+Primary key columns.
+- No transitive functional dependency
+
+Okay, in _English_. Basically your columns, should not depend between each other.
+E.g., A `courseCode` column, depends on the value of a `majorCode`. Firstly,
+**you can't make either of these fields a primary key**, cuz changing one of
+its dependencies can immediately break the records way of being referenced by
+other records. And even if you don't have a direct dependency between two columns,
+if there's a **third** column thrown into the mix, and it has a dependency,
+the _third column_ indirectly will also become dependant on the dependences of its
+own _first-class dependency_. To avoid all of this **non-sense**, you should separate
+the table columns into different tables, and basically just assign their own
+primary keys, that can then be later referenced on the other table.
+
+_In short:_ Always, look out for maintainability, look for problems that might
+arise with the design decision you make, (normalization is done at the design
+stage anyways). Normalization should help a lot with a good design. After you
+identify a problem for a **ETC** EASIER TO CHANGE later situation, then split
+things into smaller tables, try to reference keys always, avoid dependencies
+between columns, and avoid data redundancy. **That's the essence, the key to
+normalization**.
+
+=== Create your first Database, Table and Populate table with data
+
+=== Quiz 3: Database Fundamentals and Design
+
+== Introduction to SQL Commands
+
+=== Welcome to Basic SQL Commands
