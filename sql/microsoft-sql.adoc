@@ -1726,8 +1726,172 @@ normalization**.
 
 === Create your first Database, Table and Populate table with data
 
+Okay, let's actually get our hands dirty. Just boot up the VM. Don't forget the
+Passw0rd DUDE :D.
+
+_Note:_ It's better to use the Windows Authentication to log into the SQL Server
+instance.
+
+_Note 2:_ Also don't forget about update management, you should update, test that
+in lower environments, and once everything seems in order **THEN** update prod.
+
+We will now create our database from the group up, you can do it with a script or
+with the GUI. (Which apparently it's easier, _yeah no_). Anyway, once you right
+click Databases and select "Create Database", in the wizard you will pick a name
+and later you will choose an **Owner**. A good practice is to either leave the owner
+as `Default` or add `sa`. Don't put a single user for it (in practice this is just
+not true, what if we want granular control with service accounts?)
+
+When configuring the DATA database and the LOG database, you have several parameters
+you can fine tune depending on the use case. But the initial file size for `DATA`
+for example, we will set as `64 MB`. **Autogrowth**, is a setting that we can fine
+tune depending if we are on PROD or DEV, you can even limit the size of the database,
+this is also dont on lower environments, and mostly when the need arises that wants
+for you to re-use a server for multiple other applications so other databases and
+you are organizing how much will **this** database actually take in disk. In PROD
+however we should keep it as `unlimited`. With this setting, the moment we reach
+the maximum, any insert will start throwing an error. We will set its limit to 1
+GB due to our VM having limited resources.
+
+There's also the option to change the `Path`. However, we already set the default
+path and that gets applied, (still you have the choice of changing to another
+_path_).
+
+- We also get to configure the LOG database, which will be covered in detail later,
+but it's basically really useful when restoring a database after a failure or
+outage.
+	- We will also limit the LOG to half a GB
+
+- If we head down to `Options` now, we will get a plethora of things to configure,
+these will be covered later, but just for now let's explain extra things:
+	- Recovery Mode: Full or Simple allows you to go back in time and restore the
+	database at **one** point in time. E.g., A banking database, a failure is
+	detected, a user registered a value that was invalid in a table. We can go
+	back to a minute before that catastrophe (Only in Full Recovery Mode) which
+	in turn also keeps a lot of LOGS. In our case, our database will be simple,
+	so we use the **SIMPLE** option
+	- We can just press "OK" and then the wizard will make sure of running all
+	queries under the hood to get the database up and running with all the configurations
+	we set out.
+		- But an extremely powerful tool is the "SQL Script" button, if you press
+		this and select the "In new Query Window" option, then you will be put in
+		a SQL Query Window with all the scripts that will be run in order to create
+		the database and its configurations.
+
+There's a whole structure to the SQL Query and many parts to it. You can run all
+the queries with `Ctrl + E`. Now, a basic way to use the SQL Query Window is select
+everything, select nothing and run with `Ctrl + E` or just press the `Execute`
+button. _The best practice is select what you want to be run and run it_.
+
+From the different options you can make out the recovery mode, the autogrowth,
+all of that. At first, if you don't see a database, then **refresh**.
+
+We will now create a table with the GUI. `Right Click on Tables > New Table`.
+
+The columns we will create are:
+
+- firstName, varchar(50), nullable
+- lastName, varchar(50), nullable
+- dob, datetime, nullable
+- ID, int, not nullable
+
+If you choose to close the window now, it will ask you if you want to run this
+creation, alongside the table name, we will put it as `personalInfo`
+
+After refreshing, you should be able to see the table, also its columns, a note
+here, the order of columns in the GUI is not really important. We can create a
+script for existing tables also, SCRIPT Table as => CREATE. This will then show
+you all the SQL that was run in order to create the table, it's pretty handy and
+you should always look at this, in production and real life, GUI is way less practical,
+and deployments and configurations done through an Infrastructure/Server team will
+always rely on scripts, TEXT files is just a powerful way of transmitting files,
+versioning, and overall acquiring information while reading.
+
+Oh, right, on the wizard you don't get an option to set a primary key, HUH. So
+after we create our table, we actually don't have a PK yet. Yo can make edits
+to an existing table by `Right Click > Design`. You can then select the box
+to the left of a column and "Set as Key". Once you try to close the window
+it will ask you to run stuff.
+
+Once you run, you can again try to generate a `CREATE` SQL script. You will see
+how it should have a new statement that's all about making the ID column the
+**primary key**. Now, if you wanna autogenerate an `INSERT` you can use the
+`Right Click > Script Table as > Insert To`. This will generate a template you
+can use for inserting data, for our purpose we will just write our info there to
+insert, if the query has any syntax error the window will let us know, and stop
+us from trying to run a malformed query, until we fix the syntax then we are
+protected against that possible mistake.
+
+**Notice that this is only syntax, if a value is wrong or whatever that falls on us
+to double check**. Once you run the insert you should see `1 row(s) affected`.
+
+Now if you wanna see the data of the table, `Right Click > Select Top 1000 rows`.
+Or you can write `SELECT * FROM personalInfo`. Either approach works fine.
+
+[NOTE]
+====
+In SQL Server we tend to separate statements with `GO` not with semicolon. Although
+it's supported and you should be fine.
+====
+
+You can also edit values with `Right Click > Edit Top 200 Rows`. With this you will
+get a GUI to edit values in wizard. After all your changes, if you use the **keyboard**
+with `TAB` then the changes to the rows are automatically applied. But _please
+don't use this approach_. It's there, but it's best to use INSERT or UPDATE statements.
+The GUI is **too error prone**.
+
 === Quiz 3: Database Fundamentals and Design
+
+What is the primary purpose of a database? 
+
+- To store and organize data
+
+Which term is used to describe a collection of organized data? 
+
+- Database
+
+In a relational database, what is a column often referred to as?
+
+- Field
+
+What is the smallest unit of data in a database table?
+
+- Field
+
+Which of the following is an example of a non-relational database model?
+
+- MongoDB
+
+In a relational database, what does a row represent?
+
+- A record
+
+Which SQL keyword is used to retrieve specific data from a database?
+
+- SELECT
+
+What does RDBMS stand for?
+
+- Relational Database Management System
+
+What is the purpose of the "WHERE" clause in a SQL query?
+
+- To filter the rows based on a condition
+
+Which term is used to describe a unique identifier for a row in a table?
+
+- Key
 
 == Introduction to SQL Commands
 
 === Welcome to Basic SQL Commands
+
+This section will be about the basics of SQL Commands. We will learn about
+a SQL statement, types of SQL statements (how they get used and examples, we will
+run labwork to see how they perform as well)
+
+=== What is a SQL Statement and types of SQL statements
+
+=== DML Statements with examples
+
+=== DDL Statements with examples
