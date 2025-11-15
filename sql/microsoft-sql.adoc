@@ -1892,6 +1892,207 @@ run labwork to see how they perform as well)
 
 === What is a SQL Statement and types of SQL statements
 
+[IMPORTANT]
+====
+Forgot where I placed this note, so I'll keep writing it as long as I need. If you
+restart your PC, you need to start two services to use QEMU on Linux:
+
+- `sudo systemctl start libvirtd`
+- `sudo virsh net-start default`
+====
+
+SQL = Structured Query Language. Used to communicate with a database. It's this
+language that we use to communicate with the database. _Actually_ according to
+ANSI (American National Standards Institute), it is the standard language for
+**relational database management systems**.
+
+We use SQL statements to perform operations on data, such as update on a database,
+retrieval from database. Also create users, grant permissions to users and all sorts
+of stuff like that.
+
+**Most common RDBMS**, like MariaDB, MySQL, Oracle, all use SQL. However, they
+also have **extensions** to the base language. Queries, keywords, or functions that
+are only specific to **that** RDBMS.
+
+However these statements are the ones that we can be sure exist in _most_ if not
+_all_ database relational systems. And we can do almost everything we will need
+with them:
+
+- Select
+- Insert
+- Create
+- Update
+- Delete
+- Drop
+
+These are the basic commands, **_universal_**. There might be a difference in
+syntax, but the purpose and functionality should still fall within the usual
+standards.
+
+Some examples:
+
+[source, sql]
+----
+USE AdventureWorks;
+SELECT * FROM Sales.SalesOrderHeader
+WHERE [OrderDate] BETWEEN '1/1/2021' AND '4/31/2021'
+
+USE AdventureWorks;
+UPDATE Sales.SalesOrderHeader SET OrderDate = getdate()
+WHERE [OrderDate] = '1/1/2021'
+
+USE AdventureWorks; <.>
+DROP TABLE Sales.SalesOrderHeader
+----
+<.> We rarely do these kind of statements and in this structure, at least in
+production/real-life scenarios. But, still, it's good to know a bit about the
+different things that are possible within all of this.
+
+All these statements perform different operations, but if you try and read them
+like normal english, you should be able to make a pretty good educated guess
+as to what the statement is doing.
+
+We actually saw different type of SQL statements. There's a classification:
+
+- DML (Data Manipulation Language) = SELECT, INSERT, UPDATE, CREATE
+- DDL (Data Definition Language) = CREATE TABLE, CREATE DATABASE, ALTER TABLE
+- DCL (Data Control Language) = GRANT ACCESS
+- TCL (Transaction Control Language) = These are statements that help with ROLLBACK
+and SCOPING
+
 === DML Statements with examples
 
+Data Manipulation Language = As its name implies, it's a subset of the SQL universe
+focused on manipulating data. Actually most of the most common statements are under
+this category, SELECT, INSERT, UPDATE, DELETE, etc.
+
+_We use these statements, to insert, delete, update, create records in a database_.
+
+**SELECT statements**
+
+A statement used to get records from a table, _with or without conditions_
+
+- SELECT * FROM student - Gets all records of a student table
+- SELECT * FROM student WHERE rank > 5 - Gets all records with the condition where
+student's rank is greater than 5
+
+**INSERT statements**
+
+Used to insert a set of values into a database table. INSERT statement is used
+with `VALUES` as a pair of sorts.
+
+- E.g., `INSERT INTO Student(Rank, StudentName, Mark) VALUES (1, 'Abbas', 450)`
+
+With this statement, a record will be inserted into the Student table, and looking
+at the structure, we provide all the columns we want to insert a record into,
+followed by the actual values that are mapped **respectively**.
+
+**UPDATE statements**
+
+Used to update an existing value on a table, _based on a condition or not_. Usually
+we make updates with `some kind of condition`.
+
+- E.g., `UPDATE student SET StudentName = 'Abbas' WHERE StudentName = 'Imran'`
+
+[IMPORTANT]
+====
+In the previous statement, if we didn't specificy a condition, then as a result we
+will be updating the whole table on that specific column to a specific target value.
+In real world scenarios, this could be catastrophic, hence **always keep in mind**
+if your update has the correct condition set for it.
+====
+
+**DELETE statements**
+
+Used to delete an existing record in a table. This is usually based on a condition,
+and it follows the same idea as UPDATE actually, _if you don't want the statement
+to delete everything within a table, please **add a condition**_.
+
+- E.g., `DELETE FROM Student WHERE StudentName = 'Abbas'`
+
+This will delete the complete row that satisfies the condition. (If there are many
+records all of them will be deleted, **keep that in mind**)
+
 === DDL Statements with examples
+
+Data Definition Language, this type of language deals with database schemas and
+descriptions. They basically help declare **how** data should reside in a database.
+
+- `CREATE, ALTER, DROP, TRUNCATE`
+
+**CREATE statements**
+
+Used to create a new table, database, user in the database. This can be used to
+create other objects like stored procedures, functions, and others...
+
+This helps defines objects and create them in a database.
+
+- E.g., `CREATE TABLE Student (Rank Int, StudentName varchar(50), Mark Float)`
+
+_Personal comment:_ Okay this is pretty succint and clean, didn't know you can
+group them together like that for a CREATE TABLE_
+
+So yeah, you can declare the name of a table, and then all the columns alongside
+their type.
+
+**ALTER statements**
+
+This is used to _change_ an existing object. These can add a column, modify, drop,
+rename, rename an index, change the name of a database. Its scope is actually
+**really big**. It can be used to modify most if not all of the database objects
+that are out there in SQL Server.
+
+You use this to **modify an already existing object**.
+
+- E.g., `ALTER TABLE Student ADD (StudentAddress varchar(100))`
+
+Pictures this use case: We have an already running system and it has a Student
+table, with records that are of course precious to us. We can't just drop the
+table and lose all of that for a modification that we want to make (adding a new
+column). `ALTER` comes in pretty handy to yes, mutate the table's structure with
+a new column, but keeping the records in it.
+
+**DROP statements**
+
+Used to drop objects in a SQL Server. Remove a table definition. _NOTE: Don't
+forget that when you drop a table definition all of its data also is deleted (dropped)_
+
+You can drop index, trigger, constraints, permission specifications for a table.
+
+**NOTE:** These statements are generally regarded as kinda dangerous, so really
+think twice and how you are using them to manipulate a database structure.
+
+- E.g., `DROP TABLE Student`, `DROP DATABASE AdventureWorks`.
+
+**TRUNCATE statements**
+
+Removes all rows from a table, without logging the individual row deletions.
+
+_Remember how we talked about `DELETE`?_ Well `TRUNCATE` is similar, but the
+**key** difference is that DELETE statements are logged in the database. Technically,
+because there's a log, we can actually roll-back that execution if something happened.
+
+But a `TRUNCATE` won't register any logs. Once we run this statement, **there's no
+way to recover DATA**. _We could also save time since the logging overhead is not
+there_.
+
+[IMPORTANT]
+====
+In real life world scenarios, DBAs tend to use `TRUNCATE` when the performance of
+the deletion is time-sensitive/critical, to the point that we can't afford all the
+logging overhead of a `DELETE`.
+====
+
+_Another difference:_ `DELETE` has the abilities to select a row we filter (condition)
+so that specific rows are affected, however `TRUNCATE` is pretty simple. (You simply
+delete everything at once)
+
+- E.g., `TRUNCATE Student`
+
+=== DCL Statements with examples
+
+
+
+=== TCL Statements with examples
+
+=== Quiz 4: Introduction to SQL Commands
