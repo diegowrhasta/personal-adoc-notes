@@ -2091,8 +2091,253 @@ delete everything at once)
 
 === DCL Statements with examples
 
+**Data Control Language**
 
+- It defines the control over the data in the database, e.g., `GRANT, REVOKE`,
+wich are used to grant access or revoke access from a user.
+
+**GRANT Statements**
+
+GRANT is used to grant SQL `SELECT, UPDATE, INSERT, DELETE`, and other privileges
+on tables and views.
+
+- e.g., `GRANT UPDATE ON ORDER_BACKLOG TO JONES WITH GRANT OPTION`. This statement
+for example, **yes** it does allow `JONES` to do updates on `ORDER_BACKLOG`, **and**
+it also lets him `GRANT` this same permission to others. (So you see that this is
+extremely granular, or well, can be).
+
+- `GRANT SELECT ON TABLE Q.STAFF TO PUBLIC`. This statement acts upon a **Group**
+actually. Any person that is part of that group, can now do `SELECT`s on the
+`Q.STAFF` table, but no one can gran that same permission to others.
+
+**REVOKE Statements**
+
+This is used to cancel previously granted or denied permissions.
+
+- E.g., `REVOKE DELETE ON employees FROM anderson`. Here, we take away the permission
+to `DELETE` from `anderson` on the `employees` table.
+- E.g., `REVOKE ALL ON employees FROM anderson`. Here we take away **all possible
+permissions on the `employees` table from `anderson`.
 
 === TCL Statements with examples
 
+**Transaction's Control Language**
+
+- Used to manage the transactions in the database
+- Used to manage the changes made by DML statements
+- It also allows all statements to be grouped together into logical transactions,
+meaning that tons of statements can be executed as _one transaction_.
+
+**COMMIT Statements**
+
+- This command is used to permanently save any transaction in the database
+- When we use COMMIT in any query, then the changes made by that query will be
+permanent and visible
+- e.g.,
++
+````
+BEGIN tran d
+UPDATE emp SET empName='D' WHERE empid = 11
+commit tran d
+````
+The way to understand this SQL statement is pretty simple, you create in memory
+a transaction object with an alias (variable name), and then wrap as many DML
+statements as you want, when SQL Server runs all the query, everthing that executes
+inside of a transaction is only **in-memory**, it isn't yet "official", the moment
+we hit a `COMMIT` that's when all those changes that were memory-only are then sent
+to be written to disk.
+
+**ROLLBACK Statements**
+
+- Used to undo the changes made by any command, but only before any commit is done.
+Meaning, the moment info is written to Disk, we **CANNOT** roll that back. That's
+out of this statement's capabilities.
+- If a `COMMIT` has already run, we cannot roll it back
+
+This is a bit verbose, but a good example of how you would leverage a ROLLBACK:
+
+[source, sql]
+----
+DECLARE @BookCount int <.>
+BEGIN TRANSACTION AddBook <.>
+INSERT INTO Books VALUES (20, 'Book15', 'Cat5', 2000)
+SELECT @BookCount = COUNT(*) FROM Books WHERE name = 'Book15'
+IF @BookCount > 1 <.>
+BEGIN
+ROLLBACK TRANSACTION AddBook <.>
+PRINT'A book with the same name already exists'
+END
+ELSE
+BEGIN
+COMMIT TRANSACTION AddBook <.>
+PRINT'Now book added successfully'
+END
+----
+<.> Not explained in the course, but this is akin to programming, we can declare
+variables in an SQL statement, this declares an `int` variable named @BookCount
+<.> And here we start logic by marking it under a transaction named `AddBook`
+<.> We then run some insert and check after the insert if we get **two rows with the
+same name**, meaning there actually already existed another record with that same
+name (for that same book)
+<.> In case yes, we already had that book in the database, we rollback the named
+transaction, and also print a nice message.
+<.> In case no, we inserted the first record for that book, then we commit the
+transaction cementing it to be written to desk, on top of writing a nice message
+
+So yeah, I can definitely see the use cases here, it's weird that we don't use
+these more often though, good leveraging of transactions can save you a lot of
+headaches to be fair.
+
+**SAVEPOINT statements**
+
+- `SAVEPOINT` is used to temporarily save a transaction so that you can roll back
+to that point whenever neccesary
+	- So, you can choose to scope statements with a transaction, commit them,
+	but after a certain point, due to requirements or something else, you are
+	not sure of how things will pan out after, hence you choose to mark this
+	as a `SAVEPOINT` and based on the result of the next group of statements you
+	can either go back to the beginning (where the `SAVEPOINT` started) or continue
+	executing forward.
+- Savepoint names must be distinct within a given transaction.
+- After a savepoint has been created, you can either continue processing, commit
+your work, roll back the entire transaction, or roll back the savepoint.
+	- So, kinda cool, and I guess savepoints are created always inside `TRANSACTION`
+	I guess? then they become like a second layer of restoration points depending
+	on the use case and logic.
++
+Another verbose example, but good to illustrate what these statements do:
++
+[source, sql]
+----
+UPDATE employees SET salary = 7000 WHERE last_name = 'Banda'
+SAVENPOINT banda_sal <.>
+UPDATE employees SET salary = 12000 WHERE last_name = 'Greene'
+SAVEPOINT greene_sal
+SELECT SUM(salary) FROM employees
+ROLLBACK TO SAVEPOINT banda_sal <.>
+UPDATE employees SET salary = 11000 WHERE last_name = 'Greene' <.>
+COMMIT <.>
+----
+<.> Okay, so a good "formula" so that you don't forget. Is to literally after
+some statements ran, you go and do a `SAVEPOINT <name>` you are literally placing
+a save file at this point in time for the database's **STATE**
+<.> Perhaps after some operations, you realize that numbers don't add up, or you
+just made a mistake, so you can invoke the "loading" of the save file with `ROLLBACK
+TO SAVEPOINT <name>`. This essentially _rollsback_ all state changes done after
+said `SAVEPOINT`. And with that idea in mind you can now run new logic that adheres
+to something that's _"correct"_.
+<.> As you can see this UPDATE would then differ from the one that was done before
+but was rolled back due to it being out of the scope of the specific `SAVEPOINT`
+<.> Lastly, you can commit all the changes made up until that point.
+
+This `SAVEPOINT` concept definitely feels nieche, never heard or saw it ever being
+used to be honest. But then again, maybe I just wasn't exposed to environments
+that leveraged the concepts in interesting or clever ways.
+
 === Quiz 4: Introduction to SQL Commands
+
+Which of the following is not a type of SQL statement?
+
+- SELECT
+- INSERT
+- MODIFY [X]
+- DELETE
+
+What is the purpose of the SQL statement "INSERT"?
+
+- To insert new records into a table
+
+Which SQL statement is used to modify data in a database?
+
+- UPDATE
+
+What does the SQL statement "SELECT * FROM employees;" do?
+
+- Selects all columns from the "employees" table
+
+What is the purpose of the SQL statement "ALTER TABLE"?
+
+- To modify the structure of an already existing table
+
+Which SQL statement is used to retrieve unique values from a column?
+
+- SELECT DISTINCT [X]
+- SELECT UNIQUE
+- SELECT UNIQUEVALUES
+- SELECT DIFFERENT
+
+What does DDL stand for in SQL?
+
+- DATA DEFINITION LANGUAGE
+
+Which of the following SQL statements is considered a DDL statement?
+
+- SELECT
+- INSERT
+- CREATE TABLE [X]
+- ALTER
+
+Which DDL statement is used to remove a table from the database?
+
+- DROP TABLE [X]
+- DELETE TABLE
+- REMOVE TABLE
+- ERASE TABLE
+
+What is the purpose of the SQL statement "GRANT" in DCL?
+
+- To give privileges to users
+
+What does TCL stand for in SQL?
+
+- Transaction Control Language
+
+Which of the following SQL statements is considered a TCL statement?
+
+- SELECT
+- INSERT
+- COMMIT [X]
+- UPDATE
+
+Which TCL statement is used to roll back a transaction in SQL? 
+
+- ROLLBACK [X]
+- UNDO
+- CANCEL
+- REVERT
+
+What is the function of the SQL statement "SAVEPOINT" in TCL?
+
+- To mark a point in a transaction to which you can later roll back to
+
+What does DML stand for in SQL?
+
+- Data Manipulation Language
+
+What is the purpose of the SQL DELETE statement?
+
+- To remove records from a table
+
+Which of the following statements is part of Data Control Language (DCL)?
+
+- GRANT
+
+Which SQL statement is used to revoke previously granted permissions?
+
+- REVOKE
+
+In SQL, what does the DENY statement do in terms of permissions?
+
+- Revokes permissions from a user or role
+
+What is the purpose of Data Control Language (DCL) in SQL?
+
+- To control access and permissions
+
+== Query and Manipulation of Data using SQL
+
+=== Welcome to Query and Manipulation of Data using SQL commands
+
+=== CREATE TABLE(s) and Temp Table(s)
+
+=== What is a View?
