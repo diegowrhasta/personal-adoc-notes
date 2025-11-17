@@ -2338,6 +2338,184 @@ What is the purpose of Data Control Language (DCL) in SQL?
 
 === Welcome to Query and Manipulation of Data using SQL commands
 
+We will look at:
+
+- SELECT statements
+- Expressions, conditions, and Operators
+- WHERE Clause, ORDER BY Clause, GROUP BY Clause
+- Select from two or more tables - JOINS
+- Different types of JOINS
+- What is subquery and how to design and use subquery
+- INSERT statement in detail
+- UPDATE statement in detail
+- DELETE statement in detail
+- Difference between DELETE and TRUNCATE statement
+
 === CREATE TABLE(s) and Temp Table(s)
 
+What is a Table?
+
+Database objects that contain all the data from the database. We can have multiple
+tables, and every bit of information/data is stored within the tables.
+
+- Tables are logically organized in a row-column format
+- Each row represents a unique record
+- Each column represents a field in the record
+- MSSQL uses 1024 columns as a max (but 30 are at most applicable to real life)
+
+**CREATE TABLE Statement**
+
+````
+CREATE TABLE [database_name.][schema_name.]table_name
+(
+	pk_column data_type PRIMARY KEY,
+	column_1 data_type NOT_NULL,
+	column_2 data_type
+,
+table_constraints);
+````
+We should specify the name of the database in which the table is created.
+We need to specificy the schema to which the table belongs to, if we don't, it
+will fallback to `dbo` which is the default schema for any MSSQL Server database.
+We need to specify the table name.
+Each table should have a primary key consisting of one or more columns. Typically
+you list primary keys first and then other fields. (It's not mandatory to have a
+primary key, but a good practice is to have a primary key always, and there's disadvantages
+to not having one).
+
+As we know a database holds many objects inside of it. Tables, Procedures, Triggers,
+Views, and **Schemas**, amongst others.
+
+`SCHEMA` is a logical group of database objects that are related between each other.
+It's but a logical collection that we can use to separate ideas.
+
+When declaring a PRIMARY KEY we have to specify it in-line in the case of one column
+primary key cases, but if we have to specify more than one column as a primary key
+this will have to be done as a table constraint.
+
+- Each column has an associated data type, this is the most important part. We
+**need** to specificy the type of value for the column.
+- A column can have different constraints such as `NOT NULL` and `UNIQUE`. So the
+statements after the `data_type` are called constraints
+- `CREATE TABLE` is huge and complex, many options are available with it, and depending
+on the use case you can do further research and find all sorts of nieche things.
+
+Here's one example:
+
+[source, sql]
+----
+CREATE TABLE sales.visits(
+	visit_id PRIMARY KEY IDENTITY (1, 1), <.>
+	first_name VARCHAR(50) NOT NULL,
+	last_name VARCHAR(50) NOT NULL,
+	visited_at DATETIME, phone VARCHAR(20),
+	store_id INT NOT NULL,
+	FOREIGN KEY (store_id) REFERENCES sales.store (store_id) <.>
+);
+----
+<.> An identity column is basically a column that auto-increments on each insert,
+you can set the "step" for it also, so that it increases at a rate of 1, or something
+else.
+<.> Constraint, this states that this table (sales.visits) is connected to `sales.store`
+through a `store_id` column that in the other table goes by the name of `store_id`
+
+**What is Temporary (temp) Table**
+
+When we create a table, then that gets immediately saved to disk. It is persisted.
+
+**However,** there are use cases in which we don't want to persist a table, we might
+need it temporarily.
+
+- A **temporary table in SQL**, exists only for a limited period of time in the
+SQL Server
+- A temporary table stores a subset from a normal table for a certain period of
+time
+- Temporary tables are particularly useful when you have a really large set of
+data in a table, and you are constantly interacting with a specific subset of
+that table.
+
+E.g., You have a students table, and you only need to do queries for students that
+study in class 10. Do you want to query 2 million records everytime? What if we
+can just move 2000 records to a smaller table, without saving it in disk. That
+is a **temporary table**, that we use for a bit, and once we are done processing
+we simply drop this table.
+
+That's how the concept of a temporary table came to be. (You filter data once,
+and then leverage it for operations). Just as an extra bit of info that will be
+studied later, the `tempdb` is where temporary tables live, but any data stored
+within this database is lost on restart. So, it's a bit like an in-memory database.
+
+[source, sql]
+----
+SELECT BusinessEntityID, firstname, lastname
+	into #TempPersonTable
+	from [Person].[Person] WHERE title = 'mr.'
+
+CREATE TABLE #TempPersonTable (
+	BusinessEntityID int, Firstname nvarchar(50), lastname nvarchar(50))
+	INSERT INTO #TempPersonTable
+	SELECT BusinessEntityID, FirstName, LastName
+	from [Person].[Person]
+	WHERE title = 'mr.'
+)
+----
+If you add a hash sign before a table name, you mark that table as a temporary
+table (will be saved in tempdb). Meaning this will disappear when server is
+restarted (or you can also drop the base manually in the middle of your query)
+
+As you can see there are two ways of creating tables. One is the `SELECT - INTO`
+approach, and another one creates a table with `CREATE TABLE` and then inserts
+into it with a `INSERT INTO - SELECT`. Either form is okay.
+
+Let's now lab all this theory.
+
+- When you create a table and you want to reference another table with a
+FOREIGN KEY constraint, the target table **HAS TO HAVE SAID REFERENCED COLUMN
+AS A PRIMARY KEY**. Otherwise this will fail.
+- When creating a temporary table, that temporary table lives for **THAT CURRENT
+SESSION**, if you were to open a different session and try to create the very same
+temp table, you wouldn't get hit with an error, and that is because a different
+session has no knowledge of that temp table.
+	- Of course, you can DROP that table as any normal table
+
 === What is a View?
+
+- In SQL => Like a virtual table that contains data from one or multiple tables.
+We can look at that table from a perspective. VIEW does not hold data at all,
+it doesn't really exist physically in the database.
+- It's a collection of properties, extrapolations from different sources of a
+database that can be easily queried through a name
+- A view has a unique name, you can't have two views with the same name
+- It contains a set of SQL queries that are pre-defined and used to fetch data
+from the database
+- It contains database tables from single or multiple databases
+
+We can create a view with endless possibilities, the sense of direction/logic
+should be given by the requirement that is leading us towards writing a VIEW
+that retrieves all the necessary data we need.
+
+There are many ways of writing a VIEW:
+
+- A GUI (ew brother)
+But the use case in this example is interesting:
+What if we wanted to get from a person its personal info, (Title, firstName, lastName)
+and the phone number and name (or type) of the phone number.
+
+Okay, the GUI is interesting since it has a pretty nice design with all the primary
+needs and ways to shape your view.
+
+The neat part is that everything you click on, and tune with the GUI can generate
+an SQL. The GUI actually just generates the SCRIPT. We follow the same (kinda weird
+pattern) as before. We can try to close the View editor, and it will prompt us to
+save the object. We will accept that and give it a name.
+
+And with a named view stored, we can just do a `SELECT *` on that newly created
+view's name. That way you don't have to ultra write all JOINS and statements you
+have, already abstracted under a name a specific shape of the data, no need to
+write the whole thing yourself when this is stored and easly callable.
+
+=== SELECT Statement in detail
+
+=== Operators, Expressions and Conditions
+
+=== WHERE Clause, ORDER BY Clause, HAVING BY Clause, GROUP BY Clause
