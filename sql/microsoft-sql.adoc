@@ -2516,6 +2516,111 @@ write the whole thing yourself when this is stored and easly callable.
 
 === SELECT Statement in detail
 
+Purpose of a database: Saves information, to retrieve and give it a meaningful form.
+And get an insight into what's going on with that data. We make guests, we perform
+analysis and make decisions.
+
+And so, **SELECT** is probably the most important thing to understand in RDBMS.
+
+SELECT expressions
+FROM table_name
+[WHERE clause]
+[GROUP BY clause]
+[HAVING clause]
+[ORDER BY clause]
+
+Code in brackets is **optional**.
+Words in **capital letters** are all keywords or _reserved words_.
+
+When we are putting column names after `SELECT` we can specificy which columns
+we are going to select. We don't have to list **everything** if we don't need it.
+
+If we want to list all the columns: `SELECT *` this is a _select star_.
+
+_Small note:_ The order of columns doesn't matter at all.
+
+Let's now demo a bit
+
+- We will select things from `AdventureWorks` since this is an already setup database.
+
+[IMPORTANT]
+====
+MSSQL Server is **NOT CASE SENSITIVE**
+====
+
+- Depending on if you are using the respective database, you will get intellisense
+and/or errors for queries you try to run
+	- There are different ways to select a database, both on GUI or with the `USE`
+	SQL statement. Be sure of the context in order to run commands appropriately
+- A good practice is to put with capitals all the SQL keywords so there's a visual
+separation between information from objects and the languages reserved lingo
+- The GUI even tells you how slow a query is, depending on use case, we might
+identify a bottleneck based on a query we run
+- When we select specific columns and not all of them, queries tend to "accelerate"
+- With `*` you get ALL ROWS. But if you want a subset, you can leverage `TOP x`
+- There's a button to do a `SELECT TOP 1000` if you want to avoid writing SQL (don't)
+
 === Operators, Expressions and Conditions
 
+If we want further control over the data, we get access to tons of other features.
+
+**SQL Operators**
+
+- This is the way to refer to the symbols we use to perform mathematical and logical
+operations in SQL
+- There are three types of SQL Operators
+
+Arithmetic Operators
+
+- Used to perform mathematical calculations for SQL statements
+
+Relational Operators
+
+- Used to find relations between two columns. Meaning to compare the value of
+two columns with SQL statements
+
+Logical Operators
+
+- Used to perform logical operations on the given expressions in an SQL statement
+
+Expressions
+
+- An expression is a combination of one or more values, operators and SQL functions
+that evaluate to a value
+- These SQL expressions are like "formulas" written in query language
+- You can use these to query a database for specific data
+
+Types of Expressions
+
+- SQL Boolean Expression: A query that fetches **one result at a time**
+`SELECT * FROM dataflair_employee WHERE age = 26;`.
+- SQL Numerical Expressions: Used to perform mathematical operations on the stored
+data, e.g., We want to get employees whose age multiplied by two is greater than 50,
+then select rows.
+- SQL Date Expressions: Basically, we leverage dates, and their formats to then
+select based on criteria (before a date, after a date). A Date will always have 3
+pieces: Year, Month, Date.
+
+**Conditions**
+
+A condition specifies a combination of expressions and logical operators, this
+should return a boolean value. (AND, OR). We use them to chain multiple combinations
+of expressions plus operators.
+
 === WHERE Clause, ORDER BY Clause, HAVING BY Clause, GROUP BY Clause
+
+These are really important and critical.
+
+**WHERE Clause**
+
+Query writing **is an art**. And the most important tool is `WHERE` and that's
+because it helps us sort the data, and order the data.
+
+- We use this specific clause to specify a condition used to fetch data from a single
+table, or perhaps when we join multiple tables.
+- If a given condition is satisfied, then it only returns results that match the
+condition. So we eliminate data we don't need on the SELECT statement
+- This is not used only in SELECT, it's also used in UPDATE, DELETE statements.
+
+**ORDER BY Clause**
+
