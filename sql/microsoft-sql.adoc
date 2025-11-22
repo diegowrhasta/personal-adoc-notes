@@ -2751,6 +2751,70 @@ operated under the `GROUP BY`.
 
 === Select from two tables - JOINS
 
+Why do we need to select from two or more tables?
+
+- Can't we dump all the data on a spreadsheet and sort things there?
+R: Yes we can, but it would be incredibly time-consuming, tedious, and prone to
+errors.
+
+The **real** power of SQL, however, comes from working with data from multiple tables
+at once.
+
+- Relational databases are designed to be joined
+- Each table in the database contains data of a specific form or function
+
+_E.g., Some data might have info on a customer, different dimensions to him,
+and then we might have another table that's larger that stores the transactions for
+this customer. Price, quantity, different qualities_. Now, a customer can have thousand
+of transactions (E.g., Amazon, Ebay). The universe of things that you can buy is
+in theory limitless, so a lot of records per purchase are bound to appear, we
+wouldn't want to repeat customer info alongside the transaction info, would we?
+Having too much overlapping data between tables is **wasteful and can negatively
+impact system performance**.
+
+- But that doesn't mean we don't care about the linkage or relationship between
+each table.
+-- Analysis performed on a single table, generally is not that insightful, it's
+when we query multiple tables that we truly get true insight into the data that's
+being stored in a database.
+
+That's where `JOINS` come into the picture, and help up connect information from
+different tables.
+
+**How JOIN works**
+
+- When we join two tables, we are linking them together via a selected characteristic.
+
+Generally, you will join tables on IDs, Primary Keys that turn into foreign keys
+when placed in foreign tables. _Why IDs?_ Because they should be truly unique.
+If we try to join on a characteristic that is shared by more than one record,
+the database will not be able to truly connect records since there will be a
+clash and wrong info might result from a select.
+
+_Hence we should join on the basis of IDs that are unique_.
+
+- Let's create a table (Employee)
+- Let's select the table
+- Let's insert some test rows there
+- We'll join on the ID basis
+- We'll join on the EmpName basis
+
+We can see that if we try to join a non-unique column, **we get wrong data** and
+that's because the database can't know for sure to which of the respective row
+we want to connect to, so overall, we don't get "errors" but we get data that is
+just not true.
+
+_Tips:_
+
+- If there are columns with the same name on both tables, you have to be specific
+-- You can put alias to the tables like `a`, `b` to access them more easily. Now
+that doesn't mean you should put awful alias names, always alias them to something
+short but that it make sense (initials of each word is a good starting point)
+
+We can then apply all the clauses that we saw before, it's building on top of
+the clauses, conditions, groupings, havings, and then adding that layer to selects
+with JOINS.
+
 === Different types of JOINS
 
 === What is a Sub Query?
