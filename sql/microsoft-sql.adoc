@@ -2624,3 +2624,133 @@ condition. So we eliminate data we don't need on the SELECT statement
 
 **ORDER BY Clause**
 
+- Used to sort the data in ascending or descending order, based on one or more columns.
+- MSSQL Server uses ASC order by default
+
+````
+SELECT table_name
+[WHERE condtion]
+[ORDER BY column1, column2, ... columnN][ASC | DESC]
+````
+
+The way order will work is to order by each column as if in layers. E.g.,
+Order by `column1`, once that's sorted, order by `column2`, and so on...
+
+**GROUP BY Clause**
+
+- One of the most important clauses next to `SELECT` has to be `GROUP BY`
+- This is used to arrange identical data into groups
+
+_E.g.,_ We have a table of employees, and we want to find out the number of employees
+born on each year from 1992 to 2000.
+
+- We can group the employees by year, and then count all the records on each group.
+- Another use case would be like "group customers by country"
+- Often we use `GROUP BY` paired up with aggregation functions (COUNT(), MAX(), MIN(), SUM(), AVG())
+so that we group the result-set by one or more columns
+- `GROUP BY` should always precede `WHERE` in a `SELECT` and it should precede an
+`ORDER BY`
+
+````
+SELECT column1, column2
+FROM table_name
+WHERE [conditions]
+GROUP BY column1, column2
+ORDER BY column1, column2
+````
+
+A **really important thing to keep in mind** is that you should have the same
+number of columns in the `SELECT` as in the `GROUP BY`
+
+**HAVING Clause**
+
+- `HAVING` is the way we can apply `WHERE`-like logic but with `GROUP BY` result-sets
+- The `WHERE` clause places conditions on the selected columns
+- Whereas the `HAVING` clause places conditions on groups created by the `GROUP BY`
+clause
+- The `HAVING` clause must follow the `GROUP BY` and must precede an `ORDER BY`
+
+````
+SELECT column1, column2
+FROM table1, table2
+WHERE [ conditions ]
+GROUP BY column1, column2
+HAVING [ conditions ]
+ORDER BY column1, column2
+````
+
+In order to express equality you have:
+
+- `=` Equals
+- `!=` or `<>` Not Equals
+
+You can write comments with `--` which are single line comments, and multiple lines.
+Comments are pieces of SQL that will be ignored when run. Comments are really useful
+to note down data as a notebook, convenient.
+
+When we want to run queries against `varchar` columns, we have to put literals between
+single quotation marks `WHERE Class = 'hello'`.
+
+Another selections are made based on `Dates`. So, we have to know how to select
+by a date format: `WHERE ModifiedDate >= '2013-11-8 00:00:00.000'`. And you can
+also do `<= '2013-11-8 00:00:00.000'`.
+
+When selecting varchar columns, we have the `LIKE` operator that paired up with
+wildcard notation: `LIKE 'MAT%'` will attempt to partial match the column values
+on a basis of **starts with**, **ends with**. Depending on the position of the `%`
+sign, then the partial match will correspondingly match.
+
+A way to aggregate all the column values of a table can be done with `MAX` which
+will return the max value of all the records that are being selected. By default
+the names of these aggregated columns are not meaningful, but if you use **alias**,
+you can do something like `MAX(Rate) as MaxRate`.
+
+_Complex Queries:_ Are actually just queries that combine more conditions through
+`AND` and `OR` statements. The results satisfy more and more conditions that get
+aggregated. Making the selection more and more specific.
+
+Depending on what you want, you can select records that satisfy two conditions
+at once, or that only satisfy specific conditions. Query writing _is an art_.
+
+If you want to select multiple values you can make use of lists and the `IN`
+statement. Depending on the type of column this could be an equivalent to something
+like `AND Id > 500` => `IN (500, 501, 502)` or not
+
+[NOTE]
+====
+Remember, that `null` is an actual value, it's not "empty".
+====
+
+You can equal no `null` by doing queries with clauses such as `IS NULL` and `IS NOT NULL`
+
+**You can refine your queries as much as you want, it's solely dependly on your skills
+and the understanding of the database architecture you have in hand**.
+
+A way to "measure" the quality of a query is that it gets results optimally, and
+with the minimum amount of verbosity.
+
+When operating with dates, sometimes you don't want to write the whole literal string,
+so you can leverage some functions:
+
+````
+SELECT * FROM [HumanResources].[EmployeeHistory] WHERE Year(ModifiedDate) >= '2014' ORDER BY ModifiedDate DESC
+````
+
+This will simply compare the year specifically, if you want to work with months
+you can leverage `Month()`.
+
+**NOTE:** When using aggregator functions paired up with `GROUP BY` the aggregators
+are "ignored" from having to be stated inside the `GROUP BY`. But any other column
+has to match.
+
+`GROUP BY` when being used with multiple columns, behaves the same as `ORDER BY`,
+it will make groups, and inside those groups, other groups will be applied.
+
+If you are using `HAVING BY`, be sure that you have that column that is being
+operated under the `GROUP BY`.
+
+=== Select from two tables - JOINS
+
+=== Different types of JOINS
+
+=== What is a Sub Query?
