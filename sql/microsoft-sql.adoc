@@ -2817,4 +2817,195 @@ with JOINS.
 
 === Different types of JOINS
 
+- INNER JOIN
+- LEFT JOIN
+- RIGHT JOIN
+- FULL JOIN
+
+**INNER JOIN**
+
+- This selects all rows from both tables as long as the condition is satisfied.
+- Default join when we don't specify anything with the `JOIN` keyword. (i.e.,
+if we write `JOIN` it will be taken as an `INNER JOIN`)
+
+Syntax:
+
+````
+SELECT table1.column1, table1.column2, table2.column1
+FROM table1 INNER JOIN table2
+ON table1.matching_column = table2_matching_column
+````
+
+**LEFT JOIN**
+
+- This returns all the rows on the left side of the join which have matches on
+the right side table.
+- The rows for which there is no matching row on the right side, will contain simply
+`null`.
+- This join is also known as `LEFT OUTER JOIN`
+
+Syntax:
+
+````
+SELECT table1.column1, table1.column2, table2.column1
+FROM table1 LEFT INNER JOIN table2
+ON table1.matching_column = table2_matching_column
+````
+
+**RIGHT JOIN**
+
+- Similar to LEFT JOIN, but the difference is that it returns all the rows that
+are on the _right side of the join_ with their matches on the left side table's
+rows
+- The rows that have no matches will be filled with `null`
+- This join is also known as `RIGHT OUTER JOIN`
+
+Syntax:
+
+````
+SELECT table1.column1, table1.column2, table2.column1
+FROM table1 LEFT INNER JOIN table2
+ON table1.matching_column = table2_matching_column
+````
+
+**FULL JOIN**
+
+- This is a combination of a `LEFT JOIN` and a `RIGHT JOIN`
+- Result-set will contain all the rows from both tables
+- The rows for which there is no match will be filled with `null`
+
+Syntax:
+
+````
+SELECT table1.column1, table1.column2, table2.column1
+FROM table1 FULL JOIN table2
+ON table1.matching_column = table2_matching_column
+````
+
+When making joins, if you use the `SELECT *` syntax it will output all the columns
+from both tables. But you can just select specific columns of any of the two tables.
+
+You need to understand how you are writing a query, and then apply the different JOIN
+that is necessary in order to get the data you want. Depending on what side of the
+JOIN a table is you will need to change between LEFT or RIGHT JOIN. Even something
+such as a FULL JOIN can be useful in specific use cases, but it all depends on you
+figuring out which join will get you the result you are looking for.
+
+[NOTE]
+====
+Understand that JOIN at its core is simply a way of connecting two tables based
+on a specific column's value. These connection columns should be unique, otherwise
+clashes might throw our selected records into disarray.
+====
+
 === What is a Sub Query?
+
+- Inner query, or Nested query is a query embedded within another query, specifically
+in the `WHERE` clause.
+- Used to return data that will be used in the main query as a condition to further
+restrict the data to be retrieved
+- Subqueries are not restricted to `SELECT` statements, they can also be used within
+all manner of other clause types, alongside all manner of operators
+
+Subqueries are useful in scenarios that we have to get a value from the database
+for each specific row and then apply some sort of filtering condition. A JOIN
+will aim at outputting **multiple records** whereas a susbquery is executed for
+each specific row, in order to SELECT some value from the database based on said
+row, and then apply filtering.
+
+**Rules to follow**
+
+- Subqueries must be enclosed within the parenthesis
+- Commonly, a subquery can only select **ONE COLUMN**, unless we have multiple
+columns to compare to (from the main query) we should always limit it to one
+- We **cannot** use an ORDER BY in a subquery (but the main query can have it)
+- Subqueries that return more than one record, can only be used with `multiple value
+operators` such as `IN`
+- We cannot use `BETWEEN` within a subquery
+
+SUBQUERY:
+
+````
+SELECT column-names
+	FROM table_name
+	WHERE value IN (SELECT column-name
+	FROM table_name2
+	WHERE condition)
+````
+
+SELECT ID
+FROM Customer
+WHERE ID IN (SELECT ID FROM Customer
+WHERE SALARY > 4500)
+
+==== About Schemas
+
+A side note, nonetheless, schemas are a very interesting concept within databases
+that are used for different reasons, in the case of the AdventureWorks database
+it uses schemas to separate by sub-domain different tables.
+
+It should make easier for us looking up, and understanding how a data model is
+architected.
+
+_Since the default schema is `dbo` if you don't specificy it, queries will try
+to use tables in said schema_.
+
+Also, if you **fully qualify** the table name, you will inevitably run into
+using a database and a schema within it.
+
+==== Practical example notes
+
+When working with subqueries, I think the best way to simplify it is by saying that
+we are simply selecting from a table, and then running checks against each row by
+doing a second query, the way to connect should be (most of the time) by selecting
+the primary key (ID) of the main query's table with the sub query's table, and in
+the subquery run the specific conditions and extra checks you want to apply to this
+other table that somehow relates to the specific record at hand.
+
+=== INSERT Statement in detail
+
+Probably the most important DML statement in SQL.
+
+- It let's you add one or more rows to a table or a view in a SQL Server database
+- Primary DML statement out there, along DELETE, MERGE, UPDATE
+- You can use INSERT to add data that you specifically define
+- You can also INSERT data that you select from another table or view
+
+**Basic Insert Statement**
+
+- In a basic INSERT statement you must specify the name of the target table and
+the data values you want to insert to a table
+- INSERT INTO table_column (column_1, column_2, ... column_n) VALUES (value_1, value_2, value_3)
+- You can also do multiple inserts tied into one clause:
+
+````
+INSERT INTO table_name VALUES (1, 'John', 34), (2, 'Doe', 33), (3, 'Morgan', 32)
+````
+
+Depending on the order for the column names, then the corresponding values should
+align.
+
+**Identity column**. These columns should be autogenerated by the database, so
+when inserting you can skip declaring the Identity column (usually an ID) and
+just insert everything else. The database will still pick up on the insert event
+and autogenerate the respective value. If you have setup default values for a
+column it will also insert the default value.
+
+Sometimes, you don't want to insert things manually either, you can then SELECT
+data from a table or a stored procedure/view, and then dump it into a table.
+
+[NOTE]
+====
+Sometimes we get requests to update a large table, or some other operation that
+might be a bit risky and it might take a long time. We can take a back up of a
+table in that case.
+====
+
+````
+SELECT * INTO marketing.customers FROM sales.customers
+````
+
+This statement will create a new table, and all of its structure inspired from
+the source table, and all of its records will be copied over as well.
+
+
