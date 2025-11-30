@@ -3008,4 +3008,31 @@ SELECT * INTO marketing.customers FROM sales.customers
 This statement will create a new table, and all of its structure inspired from
 the source table, and all of its records will be copied over as well.
 
+The inserting from a `SELECT` is something I never saw before, and it's pretty
+cool, cuz it opens a lot of options to make backups, or to just slice away data
+from a table and parse it onto another table:
+
+````
+INSERT NameOnlyTable (FirstName, LastName)
+SELECT FirstName, LastName From SalesStaff WHERE StaffID > 3
+````
+
+See how this can open up endless possibilities since we can apply all the other
+operators we have learned so far, so we can slice data with tons of freedom.
+
+````
+SELECT * INTO SalesStaff_bkb FROM SalesStaff
+````
+
+And this query can be run **without having a `SalesStaff_bkb`** table created.
+Such a query is really powerful and really handy. Again _I never saw this in
+theory or used practically_. But knowing you can do something like this is so
+useful and just, **_cool_**.
+
+=== UPDATE statement in detail
+
+=== DELETE statement in detail
+
+=== Difference between DELETE and Truncate Statement
+
 
