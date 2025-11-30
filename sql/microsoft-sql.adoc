@@ -3031,6 +3031,84 @@ useful and just, **_cool_**.
 
 === UPDATE statement in detail
 
+SQL `UPDATE` is used to modify existing records in a table. It's the one of the
+primary modification.
+- An `UPDATE` always should contain a `SET` and we can update multiple rows
+at a time.
+- We can use `WHERE` to determine specificity of the `UPDATE`
+- We can use the `FROM` clause to identify tables or views
+
+````
+UPDATE table_name SET column1=value1, column2=value2, columnN=valueN WHERE condition
+````
+
+E.g., `UPDATE SalesStaff SET SQuota = 500000`, `UPDATE SalesStaff SET SQuota = SQuota + 50000`,
+`UPDATE SalesStaff SET SQuota = SQuota + 50000, SYTD = 0, SLastYear = SLastYear * 1.05`
+
+These multiple examples show how you can update **all rows** from a table, or apply
+a sort of _"sum logic"_, as well as how we can update multiple columns at a time
+(from all rows).
+
+But how can you be more focused? I.e., How can you update only a specific set
+of rows, (in most use cases we want to limit the number of rows we update).
+
+- To limit the rows we are going to update by using the `WHERE` clause. The scope
+of the `UPDATE` immediately gets reduced by applying conditions
+
+````
+UPDATE SalesStaff SET TerritoryName = 'UK' WHERE TerritoryName = 'United Kingdom'
+````
+
+Sometimes we want to actually **retrieve data from other tables** and use those
+selected values to update the **target table**.
+
+E.g., `UPDATE SalesStaff SET SalesQuota = sp.SalesQuota FROM SalesStaff ss INNER
+JOIN Sales.vSalesPerson sp ON ss.FullName = (sp.FirstName + '' + sp.LastName)`
+
+As you can see, we can combine `UPDATE` with a `SELECT` that has been joined,
+it's a really interesting way of combining different clauses to then fulfill
+specific use cases that we have in mind.
+
+[NOTE]
+====
+We will look into views later, but we can literally select specific columns from
+a view and then create a table plus inserting those selected column values into
+a new table
+====
+
+[source, sql]
+----
+SELECT
+FirstName + ' ' + LastName,
+TerritoryName,
+TerritoryGroup,
+SalesQuota,
+SalesYTD,
+SalesLastYear,
+INTO SalesStaff
+FROM Sales.vSalesPerson
+----
+
+_NOTE:_ Notice how there's even a naming convention here with `vXXX`. Prefixing
+a `v` should let anyone reading the name know that this is a **VIEW**.
+
+_NOTE 2:_ Using this `SELECT INTO` is so useful to create test tables or backups
+on the fly, so please make use of it. It's really cool.
+
+Another thing worthy of note, `JOIN` is _flexible_. Meaning that it can join not
+just on `ID`s it can also join on "random" combinations and so on:
+
+[source, sql]
+----
+UPDATE SalesStaff SET SalesQuota = sp.SalesQuota
+FROM SalesStaff ss JOIN Sales.vSalesPerson sp ON ss.FullName = sp.FirstName + ' ' + sp.LastName
+----
+Notice how we are basically building the `FullName` value on the right side of the join,
+since we want to feed info from the `vSalesPerson` view, yet we don't have a direct
+way of joining by an ID (because we didn't clone an ID in the first place). But this
+just goes to show that even if mistakes were made, or things weren't taken into account
+at first, you can still salvage what you can by being a bit more creative.
+
 === DELETE statement in detail
 
 === Difference between DELETE and Truncate Statement
