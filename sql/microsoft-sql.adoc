@@ -3111,6 +3111,113 @@ at first, you can still salvage what you can by being a bit more creative.
 
 === DELETE statement in detail
 
+DELETE is probably one of the most used clauses of the DML, the most important thing
+to keep in mind is. **ALWAYS REMEMBER TO SPECIFY WHERE CLAUSES**. Always use DELETE
+statements within transactions.
+
+That way, the desired result will be achieved. _Be really careful with DELETE,
+UPDATE_. Check the query multiple times, run queries on lower environments, verify
+the results are the expected ones, and **THEN** run the `DELETE` on PROD.
+
+_Basic DELETE statement_
+
+`DELETE table_name`
+
+This statement deletes **all the records** in this table. You can then add an optional
+`FROM` => `DELETE FROM table_name`. The result is the **same**.
+
+_Note:_ `UPDATE` works at a **column level**, however on `DELETE` we work at a
+**row level**.
+
+The `WHERE` clause can be used to add constraints to the `DELETE` we are trying to
+run, that way we delete a **subset** of rows from a table. Another way to slice
+a dataset is by combining the `TOP` clause with `DELETE`
+
+````
+DELETE TOP(20) PERCENT FROM SalesStaff
+````
+
+This is an example of taking the first 20 records of the SalesStaff table and then
+deleting them. Statements such as this one are seldomly used in _production_, since
+most of the time there data is sensitive and we prefer to use `WHERE` to pinpoint exactly
+the records that should be deleted. But on lower environments, we tend to run things
+such as `DELETE` mixed-in with `TOP`
+
+Sometimes we run DELETEs that leverage subqueries:
+
+````
+DELETE SalesStaff WHERE StaffID IN (SELECT BusinessEntityID FROM Sales.vSalesPerson
+WHERE SalesLastYear = 0)
+````
+
+[NOTE]
+====
+Loopup tables are special types of tables that help us reference data that might
+live in other tables or other databases but with good _locality_
+====
+
+With lookup tables and `JOIN` statements combined we can also do DELETEs that are
+really specialized:
+
+````
+DELETE SalesStaff FROM Sales.vSalesPerson sp INNER JOIN dbo.SalesStaff ss ON sp.
+BusinessEntityID = ss.StaffID WHERE sp.SalesLastYear = 0
+````
+
+As you can see we are simply going to do an `INNER JOIN` with another table based
+on an specific column, and we are then filtering based on a criteria that revolves
+around `SalesLastYear`.
+
+_NOTE:_ The job of a DBA is not to create tables all the time, but it's imperative
+to **know** the syntax, so at the beginning of one's learning journey it's good
+to write all queries yourself to familiarize yourself with the syntax
+
+We can lab tons of the statement we have seen so far, but here's a really interesting
+use case:
+
+[source, sql]
+----
+BEGIN TRAN <.>
+DELETE FROM SalesStaff WHERE CountryRegion = 'United States' <.>
+
+COMMIT <.>
+ROLLBACK TRAN <.>
+----
+<.> You can think of this as a **marker**, the moment you run this line, all the
+following SQL statements will be bubbled inside of this transaction.
+<.> Just as an example we are encasing inside a transaction our `DELETE` statement
+<.> Whenever we are inside of a transaction and we hit a `COMMIT` then all the
+SQL statements that are inside the transaction are written to disk, in other words,
+**persisted**.
+<.> If we weren't to write a `COMMIT` we can always perform a `ROLLBACK TRAN`, in
+essence if we have a running transaction before this statement, this will take all
+the statements that ran and will effectively **undo them**. That way, we get these
+checkpoints that we can "rollback" into.
+
+Transactions keep **in memory** any clauses that we choose to encase.
+
+The ultimate way to `DELETE` that is weird is this:
+
+[source, sql]
+----
+DELETE SalesStaff
+FROM Sales.vSalesPerson sp <.>
+INNER JOIN SalesStaff ss <.>
+ON sp.BusinessEntityID = ss.StaffID
+WHERE sp.SalesLastYear = 0 <.>
+----
+<.> As you can see, right after a `DELETE table_name` we are literally tacking on
+a `FROM` that is the initial table.
+<.> We then perform a "normal" `JOIN` as we would with another table, but notice
+here how this right side is actually the original `DELETE table_name` table.
+<.> Lastly, we can also apply `WHERE` clauses to slice and specifiy a specific
+subset rows within this `JOIN`
+
+This syntax is definitely something I haven't seen at all, or at least not as
+often, so it's nice to know it exists, it definitely looks strange at first,
+but I'm guessing if you keep using it and share within a team, I am **sure** that
+this can become widely used, you just need to _get used to it_.
+
 === Difference between DELETE and Truncate Statement
 
 
