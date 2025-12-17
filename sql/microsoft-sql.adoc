@@ -3220,4 +3220,22 @@ this can become widely used, you just need to _get used to it_.
 
 === Difference between DELETE and Truncate Statement
 
+- `TRUNCATE` is used to delete complete data from an existing table
+- This does basically the same as `DELETE`, but it can't take `WHERE`, it can't
+be rolled back (because this doesn't get put in the database log file)
+- `TRUNCATE table_name`
 
+_DELETE vs TRUNCATE_
+
+- DELETE can be really target, TRUNCATE will delete a whole table
+- DELETE is DML, and TRUNCATE is DDL
+- DELETE will delete one row at a time, and log each transaction, TRUNCATE deallocates
+the data pages directly, the deallocation is the one thing that gets logged (a sort
+of batch operation)
+- DELETE is slower than TRUNCATE
+- For DELETE you need at least a DELETE permission, for TRUNCATE you need ALTER
+- _This is really important_ If you DELETE rows from a table, `Identity` columns
+will retain their sequence on subsequent inserts, however `TRUNCATE` takes care
+of resetting the sequence number
+
+**PAGE:** Is the basic unit of storage when it comes to databases.
