@@ -3239,3 +3239,98 @@ will retain their sequence on subsequent inserts, however `TRUNCATE` takes care
 of resetting the sequence number
 
 **PAGE:** Is the basic unit of storage when it comes to databases.
+
+=== What is a Stored Procedure (SP)?
+
+**Really important programming concept.**
+
+- We can "save" queries on the database, and just pass parameters to said query,
+and we get the results. (Instead of passing a whole query over the network).
+- A stored procedure is a batch of statements which are logically grouped and
+stored in the database
+- Stored Procedure is a type of code in SQL that can be stored for future use and
+can be used many times without modification
+- Instead of calling a query you can literally just call a stored procedure
+- You can pass parameters to a stored procedure so that its behavior can be dynamic
+
+_Advantages:_
+
+- **Better Performance:** The procedure calls are quick and efficient, they are
+compiled once and run cached. Every time we run a query an **execution plan** is created,
+however with SP, once we store and compile it, the SP gets saved in an executable
+form that is reused. _We reuse the same execution plan_
+- **Reduce Network Traffic:** Over the network we only pass a procedure name, instead
+of a whole query, calling an SP is _very simple_
+- **Reusable:** Multiple users, and clients can execute the SPs, so we can access
+query data without conflicting with other users, besides, because this is more
+performant, multiple people using it won't be as strainous for the server
+- **Security:** We eliminate direct access to tables, and we can even encrypt the
+source code of stored procedures, we obfuscate table names or other data that
+might be an attack vector
+- **It can be easily modified:** We can easily modify the code in the SP without
+having to restart services or applications. One challenge that can occur when dealing
+with apps is that if we have to change query logic that lives at the application
+level we have to re-compile, re-deploy the whole application layer. However with
+an SP we can change the logic inside the stored procedure, circumventing all that
+work for app, that way the database becomes the point with said logic
+
+````
+CREATE PROCEDURE procedure_name
+AS
+sql_statement
+GO;
+````
+
+- First you have to `CREATE` a procedure, but then in order to run it, we have to
+**CALL IT**: `EXEC procedure_name`
+
+_Parameters:_
+
+````
+CREATE PROCEDURE procedure_name @param1 type, @param2 type
+AS
+sql_statement
+GO
+````
+
+- And when you want to execute a procedure with parameters:
+
+````
+EXEC procedure_name param1, param2;
+````
+
+I.e. `EXEC SelectAllPersonAddress @city = 'New York'`, or `EXEC SelectAllPersonAddress 'New York'`
+
+- There are **two types** of stored procedures _system stored procedures_ and
+_user stored procedures_. Whenever you create a procedure this will be created
+**under** the _user stored procedures_.
+- You can `DROP` a procedure, and then create a new modified version or you can
+directly `ALTER` a procedure.
+
+Calling a **stored procedure** makes our life easier, instead of writing a whole
+query that can actually be _very complex_ in nature.
+
+[source, sql]
+----
+CREATE PROCEDURE SelectAllPersonAddress @city = 'New York' <.>
+AS
+
+BEGIN <.>
+SELECT * FROM Person.Address
+WHERE City = @city
+END <.>
+----
+<.> As you can see you can even declare default parameters, in case the user
+doesn't provide anything, so that we fallback to a default value
+<.> We can mark the chunks of logic with `BEGIN`
+<.> We can mark the end of a chunk of logic with `END`
+
+_Note:_ Parameters are not mandatory to use them, but it makes no sense to declare
+a parameter you are not using _so bear that in mind_
+
+[NOTE]
+====
+It's not really recommendable to encrypt SPs, even though the feature is there,
+it's cumbersome and you need **a really good reason** to encrypt it. Otherwise,
+just avoid it.
+====
