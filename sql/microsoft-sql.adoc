@@ -3334,3 +3334,177 @@ It's not really recommendable to encrypt SPs, even though the feature is there,
 it's cumbersome and you need **a really good reason** to encrypt it. Otherwise,
 just avoid it.
 ====
+
+=== What is a function?
+
+Another programmatic concept in SQL.
+
+**A set of SQL statements that are stored in the database**, we call the function to
+perform a task. There are differences with a _stored procedure however_.
+
+**Functions cannot mutate data, they can only return data (selects)**.
+
+- Why should you write functions? Instead of writing really big SQL tasks, we can
+abstract that complexity behind a function and then just call it (maybe pass some
+parameters) and then get the expected result.
+- We cannot call a stored procedure in a `SELECT, INSERT, UPDATE, DELETE`. However
+we **CAN** call a `Function`.
+
+````
+CREATE FUNCTION [database_name.]function_name [parameters]
+	RETURNS data_type AS
+	BEGIN
+	SQL statements
+	RETURN value
+	END;
+````
+
+- We have **two types** of functions in SQL Server:
+	- Built-in functions
+		- These are ready-to-use utilitary functions that we can use however we
+		see fit, they are also separated by domain-use case:
+			- **Scalar Functions:** Functions that operate on a single value and
+			return a single value. E.g., `upper('dotnet'), lower('DOTNET'), convert(int, 15.56)`
+			- **Aggregate Functions:** These functions operate on a collection of
+			values and return **ONE VALUE** E.g., `max(), min(), avg(), count()`
+			- **Date and Time Functions:** Related to date and time. E.g., `GETDATE(),
+			Datediff(), DateAdd(), Day(), Month(), Year()`. _Note: There are **tons**
+			of functions that we can use, trying to cover all of them is not plausible,
+			but just now that the docs are your friends, and you'll be surprised by
+			what type of functions/things are already available for you to use,
+			so always try to research and try stuff out.
+	- User-defined functions
+		- Sometimes there are needs/requirements for domain-specific functions,
+		things that aren't available to us out-of-the-box, hence we are forced
+		to go and write our own custom **user-defined functions**. These are not
+		restricted to a _user defined database_.
+			- **Scalar Function** These functions return a **single value** as
+			a result of all the actions performed by the function
+			- **Inline Table-Valued Function** This will return a **table variable**
+			as a result of actions performed by the function
+			- **Multi-Statement Table-Valued Function** This is just like the previous
+			type, however the specific difference is that a **table variable must
+			be explicitly declared**, on top of defined whose value can be derived
+			from multiple SQL statements
+
+_**Difference between Functions and Stored Procedures**_
+
+- The function must return a value but in **Stored Procedure** it is optional.
+Even a procedure can return zero or n values
+- Functions can have only input parameters for it whereas Procedures can have input
+or output parameters
+- Functions can be called from Procedure whereas Procedures cannot be called
+from a Function
+- Function **ONLY** accept `SELECT`
+- `PROCEDURES` cannot be used in a `SELECT`
+- `PROCEDURES` cannot be used in `WHERE`, `HAVING`
+- An exception can be handled with a try-catch block in a **Procedure** whereas
+**Functions** _do not have this feature_
+- We can use Transactions with **Procedures**
+
+==== Labbing
+
+Basically the functions that we can use, open a window into calculations and operations
+with the rows we select from a database:
+
+[source, sql]
+----
+SELECT MAX(Rate), MIN(Rate), COUNT(*), SUM(Rate)
+FROM Employees
+----
+
+These are **aggregate functions**, basically from all selected rows, they will
+process the specific column values and spit out **one value**.
+
+We can even use functions such as: `print 'dotnet', print UPPER('dotnet'), print CONVERT(int 15.56), print GETDATE()`.
+
+And many others, (you can even chain together functions: `print DAY(GETDATE())`.
+You can even do stuff like: `MONTH()`, `YEAR()`.
+
+Now, if we create a custom function:
+
+[source, sql]
+----
+CREATE FUNCTION GetFullName(@firstName VARCHAR(50), @lastName VARCHAR(50))
+RETURNS VARCHAR(101)
+AS
+BEGIN
+RETURN (SELECT @firstName + ' ' + @lastName)
+END
+----
+
+And then you can call this built-in function [by prefixing the schema always (e.g.,
+dbo.function_name)].
+
+````
+SELECT dbo.GetFullName(firstName, lastName) as FullName, Salary FROM EmployeeTestTable
+````
+
+As you can see, we can use the function "in-line" in a way that processes columns
+of a row, and then the spitting-out result be its own "column", and then also
+combine that with other columns from a table that we might be _selecting_.
+
+_Table-valued functions_
+
+This type of functions is basically us returning a SELECT or some table structure
+resulting from the operations that run in the function:
+
+[source, sql]
+----
+CREATE FUNCTION fnGetEmployee()
+RETURNS TABLE
+AS
+RETURN (SELECT * FROM Employee)
+
+SELECT * FROM dbo.fnGetEmployee() <.>
+----
+<.> For whatever reason the tutorial doesn't call the function with parenthesis,
+however (_at least in MSSQL 2022_) we do need to call it like this.
+
+_Note:_ As an extra, depending on the `RETURNS` type, the functions will be grouped
+under different groups in the `Programability` folder of the database.
+
+_Note 2:_ Notice how we are prefixing the functions with `fn` this is a great
+convention to keep in mind so that you have order in the functions you create
+and stuffs.
+
+_Multi-statement table-valued functions_
+
+[source, sql]
+----
+CREATE FUNCTION fnGetMulEmployee()
+RETURNS @Emp TABLE <.>
+(
+	EmpId INT, <.>
+	FirstName VARCHAR(50),
+	Salary INT
+)
+AS
+BEGIN
+	INSERT INTO @Emp SELECT e.EmpId, e.Name, 5000, FROM Employee e
+	UPDATE @Emp SET Salary = 20000 WHERE EmpId = 1 <.>
+RETURN <.>
+END
+
+SELECT * FROM fnGetMulEmployee() <.>
+----
+<.> Notice how we are declaring a `TABLE` with a variable name
+<.> And followed to the `TABLE` statement we are declaring all the columns that
+this table will hold
+<.> And this is the **biggest difference between multi-statement and the simple
+table-value functions, and that is we are indeed calling `UPDATE` and even `INSERT`,
+but we are calling those statements for the table variable, **not for any of the
+database tables**, if we tried to act on the former, we would run into an error.
+<.> This is another special syntax to keep in mind, we don't explicitly return anything,
+because we declared the `TABLE` variable at the beginning it is _implicitly understood_
+that said table variable will be returned by the end
+<.> Lastly, as mentioned on the previous example, we need to call the function
+with parenthesis, and also notice how we are doing a `SELECT * FROM`, _this is
+because we are returning a table in the end_, so all the statements, and conventions
+we know for database tables are applicable to this _table-variable_
+
+Function is a great programming objects, and are used _a lot in production environments_
+to make life easier for a DBA, since he can just call functions instead of building
+from scratch always complex SQL statements and stuff like that.
+
+=== What is a Trigger?
