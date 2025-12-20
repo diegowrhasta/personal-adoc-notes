@@ -3508,3 +3508,112 @@ to make life easier for a DBA, since he can just call functions instead of build
 from scratch always complex SQL statements and stuff like that.
 
 === What is a Trigger?
+
+- These are special kinds of stored procedures that are stored and executed on
+the database object, database and server events.
+	- Stored procedure can be called by the user through an `exec` or with a
+	job, it will return a value and perform stuff
+	- However a **trigger** can get automatically executed, _as soon as an event
+	happens_
+	- The easiest to illustrate use case is this: Imagine we want to keep audit of
+	changes to the salary of employees (i.e., we want to know **who changed the salary**),
+	we can create a trigger to be sitting waiting for any changes on the `Employee`
+	table, when this event is detected, the `Trigger` can then in another audit
+	table insert a new record with information in regards to _which user performed
+	this change of an employee's salary_.
+- There are **two types of triggers**
+	- Data Manipulation Language (DML) triggers which basically are running  in
+	response to `INSERT, UPDATE, DELETE` statements
+	- Data Definition Language (DTL) triggres are running in response to `CREATE,
+	ALTER, DROP` statements. We can also run triggers that react in response to
+	some system stored procedures that perform DDL-like operations
+	- **Logon** triggers which fire in response to **LOGON** events
+- The syntax of creation of a `TRIGGER` is designed to be built around the firing
+of events
++
+[source, sql]
+----
+CREATE TRIGGER [schema_name.]trigger_name
+	ON table_name
+	AFTER {[INSERT].[UPDATE].[DELETE]} <.>
+	[NOT FOR REPLICATION] <.>
+	AS
+	{sql_statements}
+----
+<.> As you can see, we attach to a table **and** then we specify which type of
+event on the table this trigger will react to
+<.> This is a special kind of flag that whenever a table is replicated we can take
+the triggers it has along (or not)
+
+Here's an example of an easy trigger:
+
+[source, sql]
+----
+CREATE TRIGGER AfterInsertTrigger ON TriggerDemo_Parent
+	AFTER INSERT <.>
+	AS
+	INSERT INTO TriggerDemo_History VALUES <.>
+	(
+		SELECT TOP 1 FROM TriggerDemo_Parent,
+		'Insert'
+	)
+	GO <.>
+----
+<.> You can replace this as `INSERT, UPDATE, DELETE` this is an `INSERT` example
+<.> This trigger simply inserts a new value into a history table, hence this
+statement is focused around that sole fact. Notice how we are doing a `SELECT TOP 1`
+which will select the most recent inserted row and all of that will be dumped into
+a column of the history table
+<.> A good practice is to always leave a `GO` by the end of statements
+
+_Where can you check out registered triggers?_
+
+You should head down to a **table**, and open up the `Triggers` folder under it.
+(On MSSQL Studio). This reinforces the concept that triggers are attached to
+a table, and react based on events on it.
+
+[NOTE]
+====
+You can also disable triggers, which basically is a _soft delete_ of it. Since,
+even though it will be stored and attached to a table, it won't run as usual.
+====
+
+````
+CREATE OR ALTER TRIGGER EmployeeInsert <.>
+	ON Employee
+	AFTER INSERT
+AS
+BEGIN
+	INSERT INTO Employee_History VALUES
+	(
+		(SELECT MAX(EmpID) FROM Employee), <.>
+		'INSERT'
+	)
+END
+GO
+````
+<.> This syntax with `CREATE OR ALTER` is pretty handy since it turns your creation
+into an idempotent statement, in case the trigger already exists, we will just overwrite
+its definition.
+<.> In here we simply want to know the newest ID that was inserted, the SQL statement,
+here returns a scalar value. This reinforces the idea that the trigger runs **AFTER**
+the specific event we described (in this instance after the _INSERT_)
+
+[NOTE]
+====
+Something mentioned in the course is that a DBA is **not** in charge of writing
+triggers and stored procedures, this is `the task of a database developer`, which
+really got me thinking in the layers on top of layers of specialization that some
+organizations manage. I guess I will follow a bit of the _"theory"_ that **VALVE**
+uses. If you over-specialize, you put barriers on people that keep them from actually
+being truly productive. So you need to strike the perfect balance between the
+"number of roles" your employee should take so that he's truly comfortable and
+productive, instead of slumped with politics and bureaoucracy.
+====
+
+Besides my tirade, the advice is to know the concept, the basics, and know how
+to read these database objects. The DBA **will have to sometimes step-in**, and
+at the very leat _understand_ how to manage an SP, Trigger. On top of troubleshooting
+it.
+
+=== MS SQL Server INDEX
