@@ -3617,3 +3617,85 @@ at the very leat _understand_ how to manage an SP, Trigger. On top of troublesho
 it.
 
 === MS SQL Server INDEX
+
+Any RDBS actually leverages this concept of **INDEX**, so it's good to understand
+it as a principle, and less as a feature of MS SQL Server. What you need to understand
+as the fundamental, most important piece of information is that we use indeces,
+to **boost performance**
+
+_Why do we need an INDEX and what is a Table Scan?_
+
+Let's look at an analogy:
+
+----
+_Imagine you are reading a book about the human body. Each chapter focuses on
+one part of it, the reproductive system, the nervous system, the digestive
+system, etc. How would you find information about the **heart**? if you didn't
+have an index as **all books have**. You would have to read the entire book
+by yourself, or at the very least, ready just about enough so that you can pinpoint
+where is it that the information about the heart is located_
+----
+
+This is, indeed, **time consuming**.
+
+Now imagine we have a **table** and it _has no index_. That by definition is called
+**A HEAP**, a table which is stored with no _underlying order_.
+
+When rows are are inserted into a heap, there is no guarantee as to where the
+pages will be written, if they are written in the same order. It can be in
+position 3, and then it will be in position 5.
+
+And so, with `HEAP`s the database engine _has to do a TABLE SCAN_, it reads the
+whole Table looking for a specific result, once it finds what it's looking for it
+then results, but still _it scans the whole thing_.
+
+- _Small dataset, means that a full table scan is fast_.
+- What if you have 5 million rows? Slowness creeps in.
+
+**INDEX:** This comes to the rescue, since you basically declare specific data
+to become _easily queryable_. Without an INDEX, SQL Server would have to go through
+ALL the rows. That is a **table scan**, which is something you don't want to do
+in a large table.
+
+- You can create an index on a view or a table
+- Indeces are created **on columns**, and the idea is that an index should help
+you look way faster data on those specific columns
+- If you create an index on a primary key and then search for a row based on
+that specific key, SQL Server will first lookup in the INDEX, and _then_ after
+locating it, it will **then try to look _with the index_ in the table for the
+specific row**
+- You can create indeces on most columns in a table or a view
+- The exceptions are primarily those columns with large object (LOB) data types,
+such as image, text, and varchar(max) (_specifically **max**_)
+
+**Structure of an INDEX**
+
+Basically, _and this is a structure that can you get if you read
+https://www.amazon.com/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/1449373321[Designing Data-Intensive Applications: The Big Ideas Behind Reliable, Scalable, and Maintainable Systems],
+called a **B-Tree**.
+
+The easiest way to understand it:
+
+- You have a series of nodes, (hence a tree), that is hierarchical, comes from a
+parent one (root) and separates in two children, those children then get separated
+in their own **two children** and then their children **also have their own two
+children**. And each node holds a small _sub-set_ of values. Example:
+
+- Node 1: IDs from 1 - 200
+- Node 2 (Node 1's Child): IDs from 201 - 250
+- Node 3 (Node 1's Child): IDs from 251 - 300
+- And so on...
+
+If we are looking for a specific `ID` we will then start jumping from one node
+to the other, once we are within the _range_, we will then read the node and find
+the specific _value_.
+
+The **database query engine** will go down from the root to the _leafs_, jumping
+and jumping in this _binary-structure_. It's quite efficient, specifically since
+the **deeper you go**, the **more granular the nodes become**. So you can be
+sure that you can find the object you are looking for in a timely manner, since
+the structure is _cleverly designed_.
+
+=== Clustered, Non Clustered Indexes and Index Design Considerations
+
+
