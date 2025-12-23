@@ -3698,4 +3698,99 @@ the structure is _cleverly designed_.
 
 === Clustered, Non Clustered Indexes and Index Design Considerations
 
+**Clustered Index:**
+
+- When we use this type of index, then the values are all stored at the leaf
+level of the index
+- The _entire row of data_ associated with the primary key value of 123 would be
+stored in that **leaf node**
+- **An important characteristic** is that the indexed values are sorted in ascending
+or descending order
+- _There can only be **one clustered index** on a table or a view_
+- It's **after we attach a clustered index to a table** that all records there
+will become sorted, otherwise they will be ordered as they are inserted
+
+**Non-clustered Index:**
+
+- The **index values and a pointer to the actual row data** are the only things
+that are stored in the _leaf nodes_
+- This means that the query engine must take an additional step in order to locate
+the actual data
+- The pointer's behavior varies depending on what the table that's holding the
+referenced row is, (heap or clustered), if it's a clustered table, then the pointer
+will talk to the `clustered index` to then navigate towards the correct row,
+if it's a `heap` then the pointer will point directly to the **actual row**. Which
+means that depending on the nature of the table, things will be slightly faster,
+or slower
+- We **cannot** sort non-clustered indeces
+- SQL Server Supports up to 999 nonclustered indeces
+- But you shouldn't push to get 999 nonclustered indeces created. They can be
+helpful but also detrimental for performance.
+
+_If the indeces are not properly created, then your `INSERT`, `UPDATE`, `DELETE`
+might end up affected_.
+
+- You can attach nonclustered indeces on a table or view, and you can also put
+an index on **multiple columns**
+
+==== Index types based on configuration
+
+**Composite Index:** Really common type, these are indeces that have more than
+one column attached to them. (_You can put up to 16 columns on an index_), and
+also this index should not exceed the 900-byte limit. Both nonclustered and
+clustered can be composite indeces.
+
+**Unique Index:** This is a special type with the added characteristic of enforcing
+the uniqueness of the values on the index, if you use a composite for this,
+then it will combine all the values as **one** and then check that composed value
+is `unique`, individual values can be repeated in this case.
+
+_Note:_ When we create a `primary key` or a `unique` column, **we automatically
+create a `UNIQUE INDEX` on said column, and based around the respective column.
+
+**Primary Key:** When you create a _primary key_ on a table, then automatically
+that key becomes a `clustered index` based around that specific column.
+
+**Unique:** The moment we attach a `UNIQUE` constraint to a column, then a _nonclustered
+index_ based around that column is attached to the respective table.
+
+**Covering index:** Basically, if you have a specific query, that uses, let's say,
+**three columns**, `firstName`, `lastName`, `salary`. Then we can create a really
+specialized query that **covers** those three columns, the query will then leverage
+_this specific index_ to make its operation faster.
+
+==== Index Design Considerations
+
+_Too many indeces, or bad practices can cause tons of PROBLEMS_
+
+- Indeces take up considerable **disk space**, so you don't want to be going around
+creating an index for every single thing
+- Indeces are automatically updated the moment the **linked columns** are also
+updated, this means it can lead to _additional overhead_ on write operations
+- If you have a table that is _heavily updated_ and **you have to add an index
+to it** then add the least amount of columns possible to said index, that way
+you lessen the chance of having to rebuild the index on every **write**. Also
+**DON'T OVER-INDEX YOUR TABLES**
+- On small tables putting an index is actually less performant than a simple
+`Table Scan`.
+- For clustered indeces, try to keep the length of the index columns as small
+as possible, don't make it bigger than necessary
+- Try to implement indeces on columns that **do not take nulls**, a `null` can
+easily throw indeces into disarray
+- When possible try to implement **unique indeces**
+- For **composite indeces**, a good `trick` is to order the columns that will
+be queried by a _query_ on the same order that said columns are queried.
+- When building queries, specially `writes` try to write them efficiently, don't
+do small queries one at a time, try to use queries that write things _in a batch
+manner, with one statement_
+- Create nonclustered indeces on columns used frequently in statement's predicates
+and join conditions (so WHERE, JOIN)
+
+````
+CREATE INDEX index1 ON schema1.table1(column1)
+
+CREATE CLUSTERED INDEX index1 ON database1.schema1.table1 (column1)
+
+CREATE UNIQUE INDEX index1 ON schema1.table1. (column1 DESC, column2 ASC, column3 DESC)
+````
 
