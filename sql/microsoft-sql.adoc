@@ -3794,3 +3794,175 @@ CREATE CLUSTERED INDEX index1 ON database1.schema1.table1 (column1)
 CREATE UNIQUE INDEX index1 ON schema1.table1. (column1 DESC, column2 ASC, column3 DESC)
 ````
 
+=== Index Fragmentation and Lab for Index
+
+- Index Fragmentation is a common source of database degradation.
+- Fragmentation is when there's a lot of spaces inside of a data page (internal
+fragmentation)
+- When the logical order of pages in the index doesn't match the physical order
+of pages in the data file (external fragmentation)
+- Fragmentation-related performance issues are most often observed when executing
+queries that perform index scans
+- Queries that perform index seeks way not be affected by _high index fragmentation_
+- The index fragmentation is the index performance value in percentage, this can
+be fetched by the SQL Server DMV (Dynamic Management Views), or you can also use
+the GUI. _You basically have the ability to get info on how fragmented your index
+is_.
+
+_In short:_ If you have a data page, and you try to insert data into it, and it
+has empty space, then that **new piece of data** will take place in the empty page,
+but then when reading the data on said page you will have data that is no longer
+sequenced, it's spread across different pages and it bears no logical order, not
+time-wise, nor domain-wise
+
+**Internal Index Fragmentation**
+
+- This occurs when data pages have _too much free space_
+- SQL Server inserts data into 8 KB pages. So when you insert data that is less
+than this, then the page used for that insertion is left with some space blank
+	- If you insert more data for 8 KB, then the remaining info will be sent to
+	_another data page_, now of course, that remaining piece of data might not
+	fit perfectly the subsequent 8 KB page, so you will again run into a page
+	that has some blank space in it
+- When you delete rows, then all the info in data pages from those rows gets
+also "freed" which is _another possible source of fragmentation_.
+- Internal fragmentation causes performance issues when there's an **index scan**,
+why, because even though there's essentially _blank spaces_ in a data page, even though
+it holds no data of value, it still has to navigate the whole page
+	- Performance comes to a halt when SQL Server has to scan many partially
+	filled pages for the data it's looking for
+- The way to understand why it is more _costly_ is simple. Partially filled pages,
+can amount to say **eight pages**. An index scan would have to read 64 KBs worth
+of data pages, instead of said **four pages**, that would be able to hold the same
+amount of data, but without being fragmented
+
+**External Fragmentation**
+
+- This happens we insert or update data that causes for original data that used
+to be on the same data page to be split apart, since it can't no longer fit within
+that specific amount of pages, and the rest of info allocated in another data page
+that might in a completely different memory sector (end of the storage)
+- Random I/O is created, and SQL Server takes more time, since data is no longer
+sequentially stored, it's split apart, and so it needs to read more memory sectors
+in order to put together a full row's pieces of information
+
+_How do you fix/prevent fragmentation:_
+
+- **You can't prevent fragmentation to a 100% degree**, however you can indeed
+do what you can
+- Before trying anything, assess the degree of fragmentation and **then** try to
+attack it from different angles
+- Use the **Dynamic Management Views**, they give us insight into the workings
+of the SQL Server, **one of them** is `sys.dm_db_index_physical_stats`. This tells
+us for every index, the level of fragmentation. **Once you know the level of
+fragmentation**, that's when you can start attacking it:
+
+- **Rebuild:** Rebuild indeces when fragmentation reaches greater than 30 percent
+	- This will lock a table, so **be careful the time at which you try to rebuild
+	an index**. It's best to do it in _off-hours_
+- **Reorganize:** Reorganize indeces between 11 - 30 fragmentation. Way faster.
+- **Ignore:** Fragmentation that's at 10% or below should pose no threat to performance
+
+[NOTE]
+====
+So an index, is something attached to **a table** as we said, so, you can expand
+a _table_ on a database, and look under the **Indexes** folder, and you will see
+listed all manner of indexes that are attached to said table, you get access to
+scripting any of them, and you can also use the GUI to say _drop the index_. It's
+also worth noting that even though you might see lots of weird flags, and settings
+when scripting a `CREATE TO` for example, you can delete most of that, and the values
+will take on **default values**, still, keeping the SQL statement for creation of
+an index as simple as possible is way more readable and helpful
+====
+
+**You can disable an index**. You can just right click and disable said index.
+_What happens here?_ When a query is getting executed, then the index will be
+**ignored**
+
+[IMPORTANT]
+====
+Don't forget, you can only create **ONE CLUSTERED INDEX** on a table. It's only
+**non-clustered** indexes that are able to be attached multiple times to a table.
+====
+
+So indexes should follow a naming convention to help you navigate them more easily,
+that is something like this: `idx_firstName` or `idx_firstName_lastName`.
+
+Secondly, you should be aware of the difference between **an indexed column**
+and an **included column**. You would base an index around **one column**, and
+you can then include other columns within that same index.
+
+_Note:_ All the GUI created indexes can be scripted, **and I would recommend you
+rather use that**.
+
+_Note 2:_ Instead of dropping and re-creating an index you can edit an existing one
+with the GUI and say, _include other columns_ and so on.
+
+When you want to start analyzing _fragmentation_ on an index, you just right-click
+an index and then head to `Properties`, in there a section for `Fragmentation`
+should be available, and you should see all the information you need, on top
+of the concepts we already saw:
+
+- **Leaf level rows**
+- **Maximum row size**
+- **Minimum row size**
+- **Pages**
+- **Page fullness**
+- **Total fragmentation**
+
+That's _easy_ for querying, say ONE index, and stuffs. But if you want the more
+practical, faster approach, you will have to rely on DMV. Which is basically
+something you can query.
+
+[source, sql]
+----
+SELECT
+    s.name AS schema_name,
+    o.name AS table_name,
+    i.name AS index_name,
+    i.type_desc AS index_type,
+    ips.avg_fragmentation_in_percent, <.>
+    ips.page_count <.>
+FROM sys.dm_db_index_physical_stats(
+        DB_ID(),      -- current database
+        NULL,         -- all objects
+        NULL,         -- all indexes
+        NULL,         -- all partitions
+        'LIMITED'     -- fast, recommended for regular checks
+    ) ips
+JOIN sys.indexes i
+    ON ips.object_id = i.object_id
+   AND ips.index_id = i.index_id
+JOIN sys.objects o
+    ON i.object_id = o.object_id
+JOIN sys.schemas s
+    ON o.schema_id = s.schema_id
+WHERE o.type = 'U'             -- user tables only
+  AND ips.page_count > 100     -- ignore very small indexes
+ORDER BY ips.avg_fragmentation_in_percent DESC;
+----
+<.> The fragmentation percentage is a key value that should help you take decisions
+as to where to start solving possible performance issues
+<.> But don't blindly just follow the fragmentation percent, because if you have
+just a couple or even **a pair** of pages holding all the information of the index,
+then there's no real point of trying to "optimize it", so always look at the two
+values, if you have _a lot of rows_ and the _fragmentation percentage is high_.
+**Then you can start analyzing said index further, and yes, start with optimization,
+cleanup and so on**.
+
+Say we saw 39532 pages, and with 50% percentage. What should we do?
+
+**REBUILD**, the fragmentation factor is _really high_. And this is really easy,
+just `Right Click` the index and select **Rebuild**. You can `Script` or run
+the rebuild through `GUI`.
+
+_It is after a rebuild of an index_, that you should see the fragmentation factor
+**DROPPING**. As to _why you should not mind indexes that have high fragmentation
+but low page count_ is because even when you rebuild the index, then the fragmentation
+factor will not drop at all. It's a fight against the current.
+
+Also, if you look at other type of fragmentation levels, say ones below `30%` then
+you can `Right Click` and choose `Reorganize`, after a refresh, _you should see
+the fragmentation factor dropping also_.
+
+
