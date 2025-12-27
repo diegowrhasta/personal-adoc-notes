@@ -3965,4 +3965,179 @@ Also, if you look at other type of fragmentation levels, say ones below `30%` th
 you can `Right Click` and choose `Reorganize`, after a refresh, _you should see
 the fragmentation factor dropping also_.
 
+=== Quiz 5: Query and Data Manipulation of Data using SQL
 
+Which SQL operator is used for pattern matching in a WHERE clause?
+- `LIKE`
+
+What is the result of the expression 5 + NULL in SQL?
+- 5 + NULL
+
+Which SQL function is used to find the highest value in a column?
+- MAX()
+
+What is the purpose of the SQL operator "IS NULL"?
+- Checks if a column has a NULL value
+
+Which SQL clause is used to filter the results of a SELECT statement based on a specified condition?
+- WHERE
+
+In a SQL query, what does the HAVING clause work with?
+- Aggregate functions
+
+Which SQL keyword is used to rename a column in the result set of a SELECT statement?
+- As
+
+What type of join returns all rows from both tables, with NULL values where there is no match?
+- FULL OUTER JOIN
+
+In a SQL JOIN operation, what is the purpose of the "ON" keyword?
+- Specifies the columns to be joined
+
+Which type of subquery returns only one value and is used with operators that require a single value?
+- Scalar subquery
+
+In a SQL subquery, what is the purpose of the "EXISTS" keyword?
+- Check if the subquery returns any rows
+
+What is a trigger in SQL?
+- A rule that automatically executes in response to certain events
+
+What is the primary purpose of the SQL function "COUNT"?
+- To count the number of rows in a result set
+
+What is the main difference between a stored function and a stored procedure? 
+- Stored functions must return a value, while stored procedures do not
+
+What is the purpose of parameters in a stored procedure?
+- To pass values in and out of the procedure
+
+== Microsoft SQL Database Administration and System databases
+
+=== Welcome to Microsoft SQL Database Administration and System Databases
+
+This is a section focused on the usage of Microsoft Server Management Studio and
+the different ways we can manage the database with it
+
+=== Overview of MSSQL Management Tools
+
+We cherry-picked some options when installing MSSQL, there are tons of tools,
+extensions and things that specialize the type of work and features we take from
+this database solution, each of them can be their own world, we will have a look
+at what are the possibilities with the whole suite.
+
+**MSSQL Management Tools**
+
+- `SQL Server Management Studio` This is the GUI we use to create databases,
+run queries, select data. This is an IDE to access, configure, manage and
+develop components of the SQL Server. It lets people from all skill levels to
+use SQL Server. You access SQL Server and you manipulate data, you write your own
+code. It's probably **the most important tool when working with MSSQL**
+- `SQL Server Configuration Manager` This is a tool that focuses more around
+changing protocols in clients, swapping service accounts, server protocols, restarting
+and even client aliases. You can do some of these operations with _SSMS_ but this
+tool has more features and is way more **specialized**
+- `SQL Server Profiler` This is a GUI solution that you can use to monitor the queries
+and traces in order to measure performance, if you have to do troubleshooting,
+you can debug queries that are coming into the database, where it's getting stuck
+and stuff like that. This is a much easier GUI that you can use to perform these
+tasks than _SSMS_
+- `Database Engine Tuning Advisor` is a tool that helps create **optimal** sets
+of indexes, indexed views, and partitions
+	- These features of SQL are not _as easy as ABMs_, and in critical queries we
+	have to create views, indexes, partitions, _tasks really focused on performance_,
+	most of the time we have a query, and using our knowledge of how the database
+	works we can tune said query. But there are _specialized use cases in which it's
+	not so simple, so we rely on a tool such as this one_. It literally identifies
+	for a SQL query what type of index, or thing will boost its performance
+- `SQL Server Data Tools` provide an IDE for building solutions for the Business
+Intelligence components: Analysis Service, Reporting Services, and Integration
+Services. To create a report from a report server, or an SSI package using an
+integration service, we can do most types of tasks with `SSMS` but the **proper**
+tools to do these things are under `SQL Server Data Tools`. Up until SQL Server
+2012 they actually came together with MSSQL Server, but they are now separated,
+and you have to choose to install it together if you choose so.
+- `Data Quality Client` talks to the `DQS` or _Data Quality Services_ that help
+maintain the quality of data by enabling multiple tasks, but that are mostly based
+around **data cleansing operations**, you can also in turn monitor various aspects
+of how things are looking as these cleansing operations run
+- `Connectivity Components` are installed to communicate clients and servers,
+as well as network libraries for DB-Library, ODBC, and OLEC DB
+	- DB-Library stands for Database Library, which is an API for accessing Microsoft
+	SQL Server.
+	- ODBC stands for Open Database Connectivity, a standard API for accessing
+	database management systems
+	- OLEC DB stands for Object Linking and Embedding, Database is designed to
+	provide access to a variety of data sources, _both relational and non-relational_
+	- All of these are **drivers** that help communicate across databases
+
+**Note:** The lesson is imparted with MSSQL 16, and so some assumptions and explanations
+are rooted into that specific setup. Like the fact that there are two folders that
+get created with this version:
+
+- Microsoft SQL Server 2008: This is probably for backwards-compatibility, in
+here there's yet not much of anything is inside of this folder
+- Microsoft SQL Server 2016: Under this folder you get **tons** of programs that are
+available, all the reporting, engine, and tons of other tools are here.
+
+Say you open the SQL Server Profiler, this is a program with which you can create
+**Traces**, you can connect to the SQL Server, and then just run the trace based on
+specific credentials and for specific events/things. Building traces can be
+_an art of itself_ since you can fine-tune as much as you want and filter as
+much as you want of information, you can literally start running queries, or
+just using the database and then see `logged` in the profiler all of thes actions.
+
+There's _too much information_ however at times, hence becoming a profiler artist
+comes in handy to filter out useless pieces of info you don't need, and focusing
+on the real insightful data that will help you understand better about how the
+database is behaving. You can in here see the duration of queries, and many
+other insights.
+
+[IMPORTANT]
+====
+If you run traces it will take a toll on the performance of the SQL Server, so
+be careful, it's recommended to run that on a second instance, and only query
+the specific objects you are interested in, besides, once you are done with your
+debugging, you **should shut the profiler down**
+====
+
+Another tool we have is **SQL Server Import and Export**, this focuses around exporting
+data from the **database** into `other formats`. These can be csv, or other RDBMS
+(Oracle, MySQL), it's interesting how there are all these tools that are _highly
+specialized_ for specific tasks.
+
+_Note:_ Actually, it is with all the previously mentioned **drivers** that we
+get access to do all these operations to transform data, they will connect to
+the database instance, extract data, transform it, and then export it in a format
+you see fit [E.g., To a CSV it will even give you all sorts of wizard screens to
+fine tune how you want the output to look like, what data to extract (you can do
+a full database dump, or a table dump, or even write a query to dump)], the tool
+is so cool it can even give you previews of how the output will look like. Once
+you run that process **once** you can even save this whole operation as an
+`SSIS Package` which can be saved to a database. The reason to do this is that
+then this whole export process becomes a sort of **object** within MSSQL, you can
+attach jobs to it, so that they run the SSIS package, for example, making things
+way more easier for you.
+
+[IMPORTANT]
+====
+What is the job of a DBA? It is not just monitoring databases, the health and
+stuffs. It's also ensuring that all jobs, all tasks, whatever might have schedules
+and are neede to be running, **do in fact run when they should (daily, monthly, yearly**)
+====
+
+_Another good word of advice:_ If you have to make something more than one time,
+**create a job/tool that does it for you**, **automates it for you**. _Less-prone
+to errors, because when doing things manually, you CAN indeed mess up_.
+
+**SQL Server Installation Center** You can re-use the installation center we used
+for installing SQL Server for the _first time_, you can perhaps perform maintenance,
+upgrade something, install more features, configuration checking. It's a tool that
+is there for you to use, _however_, be aware that sometimes you **need the installation
+media for specific tasks, not _everything is possible_ but a lot IS**.
+
+_NOTE:_ Apparently the job of a DBA, _is mostly based around being extremely proficient
+at using SSMS_, so the focus _at least of this course_ will be around it, but it's
+good to still now that **there's a sea of tools and possibilities out there as well**
+
+=== Exploring SQL Server Management Studio (SSMS)
