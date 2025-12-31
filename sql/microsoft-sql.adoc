@@ -4141,3 +4141,312 @@ at using SSMS_, so the focus _at least of this course_ will be around it, but it
 good to still now that **there's a sea of tools and possibilities out there as well**
 
 === Exploring SQL Server Management Studio (SSMS)
+
+This is an application developed by **Microsoft themselves**, that way you can
+administer other the components from MSSQL. It's a centralized management platform
+for any SQL Server requirements. It's a suite, aimed at letting you do amazing
+things with SQL Server.
+
+- Creating jobs
+- Debugging
+- Reports
+- Querying
+- Create databases, tables, authorizations, permissions
+
+_You can do anything that you can do with SQL Server_, it's an all rounder tool/application.
+
+. **Connect** to a remote/local server, SSIS, SSRS and Analysis Service
+. Explore server properties and its objects
+. Explore databases and its objects (management)
+. New Query / Query Parsing / Execution / Results of Execution Plans
+. Monitor SQL Server using Activity Monitor / sp_who2 / SQL Logs
+. DBA Admin tasks (backups, Logins, Jobs, Maintenance Plans, etc)
+
+**Let's lab**
+
+[NOTE]
+====
+Didn't know abouts this, so when you open up SSMS the first window that pops-up
+in order to set to which database to connect, actually under the `Server type`
+dropdown will show you other services you can connect to (other _servers_), **that's
+how you actually access these other features, or well _at least that's one way to
+access them with SSMS_
+====
+
+When selecting a database server to connect to, it's not just _write a name_ you
+can also use the **Browse** window, which allows you to see a tree view of servers
+that might be already saved, and even a `Network` window can be used to _automatically_
+find all SQL Servers that might be discovered in the network the machine is. If
+we are connected in a **domain** and other SQL Server instances are in said domain,
+then they get _auto-discovered_. So, the _write the name_ is actually the `last resort`.
+
+_Most of the time, we rather use Windows Authentication to use the studio_.
+
+_You can right click a server and then run reports on it_. There are **already**
+built-in reports that you can just run with the click of a button.
+
+_Note:_ Stuff like memory consumption, top transactions by lock count, and so on.
+
+_Note 2:_ There's apparently `powershell` integration with MSSQL Server apparently.
+That's _kinda crazy_.
+
+If you right-click the server icon and then click on `Properties` you get all sorts
+of windows with all sorts of information as well, really easily available. **But**,
+you need to be aware of something **really important**. _All of the information that
+you see on the GUI, is actually queryable, there's a query that can spit out the
+same information_ (E.g., `print @@servername`)
+
+_Another example:_ You can go into a `Memory` tab, and then adjust how much memory
+is a specific database going to use. But, the real quicker, is that as many knobs
+you turn, as many inputs you fill, you can alwys press the `SQL` button at the top,
+and all of that "setting" can be put in a query form. _And let's not forget about
+the power of text-based format/code/data and how it gets along **so well with
+versioning**_. You can literally run a `query` that can adjust the memory of
+a database.
+
+- You can set the server to **only be accesible with Windows Authentication or
+a hybrid**
+- You can also set logs to capture successfull **and** failed logins
+- There's also sections for compliance purposes, that help when you want to
+keep your database _auditable_
+
+And interesting concept comes into the front the more you start poking and playing
+around with all the knobs and switches SSMS. This is:
+
+- Server Settings: These are settings that go beyond just the Database service,
+they might deal with filesystem concerns, logging concerns, compressing concerns
+even.
+- Database Settings: These are all really domain-specific to the database service.
+
+For example, in **compression**, you can literally flip a switch so that any backup
+that you make (after you apply the setting) is a compressed backup, the reason as
+to _why you would want that_ it really depends on you **brother**. But most of the
+time, really big databases, that are backed up frequently, or sent over to somewhere
+else, _compressing is a great solution to avoid spending too much time_.
+
+_You can even configure the default paths to which Data, Logs, Backups will be saved
+to_. Why do we have this setting here? Because, you can change whatever defaults
+are here, and the next time you create a database, it will take **these settings**
+as the base for where it will store its things. (Really quick example: You install
+a new drive with more storage, and you want everything now getting saved to
+that new drive, _it's always about your need and requirement_)
+
+**Important yet complex**
+
+Under the _Advanced_ section, you get access to these settings:
+
+- Cost Threshold for Parallelism = Default 5, one of the most missed configurations
+when looking at performance for SQL Server. This means that when SQL estimates the
+**cost of a query**, (_the unit of cost in databases, is always **time**, since
+it's critical_). If a _query takes too much time_. We refer to that as **it is
+a costly operation, it is a costly query**. Now what does the **5** mean? That
+whenever SQL Server analyzes a query, tries to build an execution plan, the moment
+it determines a query will take longer than **5 seconds**, it will automatically split
+the query into parallel streams in an effort to make the query _return faster_.
+Perhaps from longer than 5 seconds, the query can run in 1 second.
+- Degree of parallelism = This depends how many CPU cores are employed to run
+the split queries in parallel and so on. SQL Server is smart and will scan that
+and set a default value. But you can definitely **fine tune everything**
+
+After that, there are tons of features that SSMS has, you can script the **database**
+for instance, which really isn't table data nor even structure. But the barebones
+database setup.
+
+Besides that:
+
+- You can take a database offline = No one can connect to it, it's live, still running
+but cut off from communication
+- You can do a backup
+- You can do a restore
+- Import Data
+- Export Data
+
+**Security:** Place to create new users, and assign rights to them. (The tab within
+one specific database). There's also a _Security_ tab but at a server level.
+Which means that you have logins at these two different **levels**, so don't confuse
+a database user with a server user. This layer of granularity is pretty handy since
+you can really build distributions of permissions for each database, and for each
+user.
+
+[IMPORTANT]
+====
+The _right way to do creations, inserts, updates_ is **not with the GUI**, it has
+to be with queries. Not really practical
+====
+
+_What is the purpose of a query?_ We want to select, insert, update, delete, truncate
+**something**.
+
+_SQL Server, nor any programming language cannot think for themselves._ We need to
+specify **exactly what we want**, right name, right syntax. This is called _**query
+parsing**_. Whenver you are trying to run a query, the IDE, and the database then
+after will **tell you if you have an error**. So there's this extra functionality,
+that SSMS offers us to **literally select a query that we have written and run it
+through query parsing**.
+
+This will _not actually run the query_, it will just check if it's a valid query.
+The SQL Parser is the one that checks and then notifies if the query is valid
+or not.
+
+When it comes to **selecting** data, SSMS offers a million options of how we can
+transform that selected data into simple clipboard table-row content, perhaps we
+also add the headers, or we export that into a CSV file. _Or you can even just generate
+SQL Reports through the **reporting service**_. The sky is the limit and you get
+to choose what to use and how.
+
+Okay, I **had no idea this was a thing**, and it's so useful. Say we are working with
+huge queries, that are like 200 lines or even bigger. If there's a syntax error
+somewhere the error message states almost always will state something like `Syntax
+error on LINE X`. Now it's easy to pinpoint that with small queries, but what if
+we had the same line numbers that we have on coding editors/IDEs? You can enable
+that pretty easily by going to:
+
+- Tools > Options > Text Editor > Transact-SQL > General > Line Numbers (checkbox)
+
+If you enable it, on the query editor windows you will now get to see line numbers
+which just makes life like _so much easier_ when it comes to pinpointing perhaps
+and error _on some line_.
+
+_Extra note:_ A great QoL upgrade (I'll admit as much) is that if you run multiple
+queries that return multiple results, then all the outputs stack respectively.
+
+_Extra note 2:_ You can also choose how you want the output of selects, in the
+typical grid fashion, or full on text, and stuffs.
+
+=== Exploring SQL Server Management Studio (SSMS) (part - 2)
+
+**Execution Plans:** When we write any query in MSSQL Server, then an execution
+plan is always generated, it can boil down to a graphical representation of
+_everything that the query will do_, it's the `query optimizer` in charge of
+that. Now, it's in the name, whenever we run a query, that query is run by the
+`optimizer` and he makes sure that the query is configured/setup in a way that
+takes **the least amount of time**. And in so, an _execution plan is created_,
+and this lays out **all the operations that will take place in order to get
+our results from the query**
+
+If you want to visualize the execution plans it's literally a switch/click of
+a button before you run queries. In the pannel up above search for an option 
+(to the right of the `Execute` button) that says "Include actual execution plan".
+This should be highlighted and after highlighting if we run a query, we **should
+see a new tab** next to the result and message tabs with a diagram, that you
+can click, hover over and see all sorts of statistics about the execution plan.
+
+A quick test can be run by running a query as simple as this:
+
+[source, sql]
+----
+SELECT * FROM Employee <.>
+
+SELECT * FROM Employee
+WHERE EmpID = 79 <.>
+----
+<.> This does a `Clustered Index Scan`, a `scan` is literally going through
+**all the records**
+<.> This does a `Clustered Index Seek`, you know which row of a group of rows
+is the one you want and you display only **that one**
+
+If you run both queries together, you will see that each of their respective
+execution plans **are visible**, the info stated up above is just what the
+execution plans stated
+
+_There's a lot of info you can extract from the execution plans_. For example
+on the `Seek vs Scan` operations, you can see how many rows were read, and
+one of them will only read **one** instead of the whole table's rows.
+
+When writing queries, it's extremely important to see `execution plans` as these
+sort of tools and extra bits of info that help us troubleshoot and understand
+better what our queries will do. **WHY?** Because that way if we have a query that's
+slow or that's presenting problems now, _we can then see exactly **what is it**
+that it's the bottleneck_
+
+Just like the thing we used for the _query parsing_, we have the same idea in this
+**realm of execution plans**. We can choose to "not run, but map out an execution plan
+for a query", it's more of an _estimation_, since the query optimizer _will try
+its best by looking at all the information it has on that table/indexes/and so on_
+and spit out **what it thinks it will cost**. And that will differ from the option
+we ran before which actually draws the execution plan alongside the result of the
+run of said query.
+
+_Small Note:_ You can choose to turn on-off Intellisense (I don't know why you would
+want to turn off this key feature, but off you go)
+
+`View > Object Explorer Details` is another type of view you can use to see the
+different databases, tables, information of schemas and other stuff on them. It's
+a _"different way of viewing all the objects that the database has"_. You can right
+click the header of the default view and you can add _new columns_ you choose what
+info you want displayed, some interesting options are: `Data space used (KB)`,
+`Row count`, `Owner`, you can even see the creation dates for tables and databases.
+You can even **copy the table info into an excel sheet**, it definitely has _tons
+of features_. A really easy-and-quick way to get all of this information.
+
+The idea (_for a DBA_) is to know about the tools he has, to automate as much as
+he can, and leverage all the tools and processes that already there figured out,
+in place with that very same idea in mind (making things easier, info gathering
+faster), **why?** because that will impact the velocity and productivity of
+your team, and in turn **the business**.
+
+_Monitor SQL Server_
+
+[IMPORTANT]
+====
+There are hundreds of things that you can do with the tools that you have on
+MSSQL, if we were to talk about _every single feature and detail_ it could take
+weeks if not months.
+====
+
+Something you have to interiorize as a learner in tech, and in this case MSSQL,
+is that you have to also do your own research, _do your homework_ most courses,
+and most things in general will introduce you just about enough so you can move
+around in the tools, environments that you are trying to learn. They show you
+the ropes, but it's after that initial push that it's on you to find and delve
+deeper into the things you are interested in/are being asked of you. But there
+is just so much information, specially on things like MSSQL Server, it has more
+than 30 hours at this point, so most veteran DBAs and people still don't know
+all of its extent to 100%. So don't expect or think you need to _now it all_,
+cuz it's probably not worth the effort, nor _humanly possible_.
+
+**NOTE:** You don't have to memorize everything, the skill you need is to be
+able to research, and teach yourself what you need.
+
+A **really cool pannel** is the `Activity Monitor`, that you can easily access
+by: `Right Click on the root of the tree view on the left panel > Activity Monitor`.
+You should be able to see to the right a whole screen with some graphs, but also
+many sections that give you a better understanding as to what processes are running,
+most expensive queries, and stuff akin to that. A **control panel** that really
+quickly should help you understand the current health of the database, and perhaps
+identify issues that are lurking there (or that are active at that moment)
+
+_Note:_ If a query is really expensive, and it's running a long time, we can see
+it logged there in that very same control panel.
+
+[NOTE]
+====
+Really useful command to see active connections `sp_who2 active`. This will show
+in a table view all the active connections, (most of them will be BACKGROUND)
+connections that the server uses for its own internal processes, but you can easily
+make out the active connections from people like _us_ who are trying to query the
+database and so on. If you remove `active` you will get to see more connections
+perhaps, most of which might be stale, or leftover from previous connections,
+some are just _dormant_ though, they come back online when the time is right.
+====
+
+A **really useful feature** is the screen to visualze the MSSQL Server logs,
+just right click the main Database seed from the tree view, and expand the
+`Management > SQL Server Logs` options.
+
+These are all files, (that live in the folder that we setup initially for `LOG`),
+yet SSMS offers a neat interface that reads them and presents them in a nice
+useful UI.
+
+_You can recycle logs, that way you free up space_, you can configure auto-recycle
+in MSSQL Server, that way upon your own parameters, after a specific period of time
+logs get deleted.
+
+**Backups:** Always needed, necessary. Just right click a database `Tasks > Backup`,
+You can even setup "Maintenance Plans" that through a GUI you can configure and
+automate backups.
+
+You can also setup **Jobs** that run on a scheduled time, so that you automate
+really repetitive tasks with the database.
+
+=== Exploring SQL Server Configuration Manager
