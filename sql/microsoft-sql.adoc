@@ -4450,3 +4450,96 @@ You can also setup **Jobs** that run on a scheduled time, so that you automate
 really repetitive tasks with the database.
 
 === Exploring SQL Server Configuration Manager
+
+This is another feature that gets installed with the default settings. This manages
+the services associated with SQL Server, we can also configure network protocols
+that SQL Server uses, as well as the network connectivity configuration that the
+SQL clients use.
+
+_Basically,_ The SQL Configuration Manager, is a GUI used to setup the services
+which are associated to SQL Server, (logons, automatic startups, start up parameters),
+then (TCP/IP, ports used) all of these can be configured from this module.
+
+**You get SQL Server Configuration Manager** by default after you install SQL
+Server. Both the `Configuration Manager` and the `SQL Server Management Studio`
+uso **Windows Management Instrumentation** (WMI) to interface with the server
+and change configurations there.
+
+If you search for (if you are on SQL Server 19 for example), `Sql Server 2019
+Configuration manager`, you will get a red icon program showing up, and you should
+be able to open the configuration manager from there. This is a screen with a
+tree view at the left, in said tree table you can see options like:
+
+- **SQL Server Services:** In here you can see all instances of SQL Server that
+are installed in the machine, so if you had more than one instance, you should see
+both a `Server` and an `Agent` line item. It is in this screen you can start, stop,
+restart the SQL Server and its agent.
+
+[NOTE]
+====
+A nugget of advice, if you restart/start SQL Server, and it loads up fairly quickly,
+we good, but if it stays **stuck** 99% of the time means that there's an error
+and you have to troubleshoot it so that the database service can start.
+====
+
+If you `Right Click > Properties` any of the SQL Server instances, then you will
+see a window with tons of information, on interesting tab is called `Log On`, this
+is a really useful pannel if you want to change or granularize the access that
+specific accounts have over a database instance.
+
+**Example:** If you want to start separating by different service accounts for
+each instance, you can choose to do so by changing the `Log on` and inputting the
+account name and the password.
+
+There's also `Service` with metadata about our instance, but with a specific
+entry called `Startup Mode`. This can be set as Manual, Automatic. The best option
+to pick (specially this is the case when on a server that we know is focused entirely on just
+have MSSQL running on the background). It's **recommended** to use `Automatic`, that
+way the **moment you start the server**, you won't have go into the configuration
+manager to manually install the database server.
+
+[IMPORTANT]
+====
+Remember that MOST if _not all_ configurations that we apply on a specific point in
+time **will not be replicated** or _be seen_ unless we restart the SQL instance
+====
+
+**FILESTREAM:** Remember that this is for files that are _outside_.
+
+_Another cool option is_ **Always on high availability**. Literally one checkbox
+check, and we have baked in the behavior of:
+
+- Our main instance of SQL Server for whatever reason runs into an issue and
+is rendered unable to serve the clients
+- We immediately redirect the traffic into another instance that should be
+there in the background in order to take place of the leader.
+
+**Startup Parameters:** This tells SQL Server _what is needed to start the server_.
+
+You can work the same way with the `Agent` service, and also, the more you read the options,
+the more you realize how there are disabled/grayed-out options that won't be
+_that easy to change_ because they might be too critical or something akin to that.
+
+==== SQL Server Network Configuration
+
+Most communications are done with TCP/IP. And you can `Right Click TCP/IP Line Item`.
+It will open up a window full of data you can read. _The default port for MSSQL
+is 1443_. Hence, we **have to enable this port for inbound and output**, otherwise
+no communication will be possible for MSSQL purposes.
+
+[NOTE]
+====
+We sometimes have to keep in mind **cybersecurity**. That is because default ports
+exist _for convention purposes_, that is **public available knowledge**, if a
+malicious actor **knows that we are running SQL Server**, he will immediately start
+scanning and trying to break through those default ports. So a good measure is to
+change said default port, _**This is highly dependent on your circumstances though,
+it's not a golden rule, but just a nugget of info to always have in the back of
+your head**_. Say, if you are building internal applications that are walled-off
+the internet because it's an intranet, _it really doesn't make sense to put that
+much effort in that_.
+====
+
+Another thing to also keep in mind is the fact that **even if you change the port**,
+you will have to restart the server so that said port starts getting used for
+MSSQL communications.
