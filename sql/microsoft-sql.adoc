@@ -4543,3 +4543,62 @@ much effort in that_.
 Another thing to also keep in mind is the fact that **even if you change the port**,
 you will have to restart the server so that said port starts getting used for
 MSSQL communications.
+
+=== MSSQL System Databases, DO's and DONT's of System databases
+
+**Types of databases**
+
+- User Databases = Databases created by a user which has the permissions for
+database creation, any changes and operations within them **will not affect the
+functioning of MSSQL whatsoever**, another name for these types is _user defined
+databases_
+- System Databases = Databases which are needed for MSSQL Serevr to operate. Unlike
+**user databases**, these are **key components of the SQL Server**. They are
+key data, metadata that is connected to the specific MSSQL Instance
+	- Most of these databases are created **when we install the MSSQL instance**
+	- If you lose a system database (e.g., master), then the SQL Server instance
+	**will start acting up** or overall, just _not work_. The service **will go
+	down**. (_**These databases are critical**_)
+	- These databases maintain and collect information about the SQL Server
+	service. (login, databases, linked servers, reports)
+
+**MSSQL System Databases**
+
+- **Master:** Core system database that manages the SQL Server instance
+- **TempDB:** Temporary database to store temporary tables (#temptable), table
+variables, cursors, work tables, row versioning, create or rebuild indexes sorted
+in TempDB
+- **MSDB:** Primary database to manage the SQL Server Agent configuration
+- **Resource:** Hidden, we can't access it, it stores physically all of the SQL
+Server system objects
+- **Model:** Template database for all user defined databases
+- **Distribution:** Primary database to support SQL Server replication
+
+**Do's and Dont's**
+
+- **Data access:** When you are using an object _within_ the system databases,
+or feature, Microsoft tends to move around the names or specific behaviors,
+so be really careful about **migrations**, because if you move from an old
+version to the next _and specially if it's a big jump_, you might run into
+issues (there's also a distinction between `discontinued` and `deprecated`
+features).
+- **Changing objects:** Do not change system objects.
+- **New objects:** Do not create new objects in the system database. Create
+a user defined database, (e.g., `DB_ADMIN`) and you can save all the scripts,
+SPs, Triggers, whatever in there.
+- **Sneaking a Peek:** You can always read the code for all the system databases,
+for whichever purpose that might be.
+- **Dropping objects:** If by _any reason_ you need to drop system databases (auditing,
+compliance), you **have to document this decision**, and _be very careful_, because
+dropping any of the system objects can have repercussions ranging from really
+small details to really critical, potentially catastrophic consequences
+- **Backups:** Be sure to have a consistent backup, not only of the `user databases`,
+also the `system databases`. _There are scenarios in which your system databases
+end up corrupted, and if you backed them up, you can bring the instance back to
+life_
+- **Scope:** If you have multiple instances running _on a server_, **each instance
+will have their own set of system databases**. They will be independent, so any
+change on one system database from one instance, **will not affect any of the
+other databases**.
+
+=== What is the master Database?
