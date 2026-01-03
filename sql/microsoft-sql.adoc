@@ -4602,3 +4602,128 @@ change on one system database from one instance, **will not affect any of the
 other databases**.
 
 === What is the master Database?
+
+This is the main database required for SQL Server to **function properly**.
+
+- Records all the **system level records**, name, login information, user information,
+database information, path to databases. **Everything gets stored in `master`**.
+	- A big repository to save all the info about that particular SQL Server
+	instance
+	- If you have several instances, **each one will have its own master database**
+- In SQL Server, _system objects_ are in the `Resources database`, which is a
+hidden database, we can't access it as simple users. However the `master` database
+routes to the metadata in this hidden database.
+	- No one can make a change in `master` unless we know what we are doing, even
+	then, Microsoft decided to move really sensitive information into `Resources
+	Database`
+- **If** for some reason we delete the `master` database or something happens to
+its info, the SQL Server instance might not be able to boot-up sometimes
+- **Remember that we get generally two files** `mdf` and `ldf` files, which are
+database and log files respectively (master.mdf, mastlog.ldf), by default they
+have an `autogrow` setting to 10% until disk is full
+
+**Restrictions on master database**
+
+- Adding files or filegroups (master will only have **one file**)
+- We can **only do a full backup of a master database**
+- We cannot change the `collation` of the `master` database
+- `master` is owned only by `sa` (System Administrator), **can't be changed**
+- We cannot create a full-text catalog, or full-text index
+- We cannot create triggers on system databases
+- We cannot drop these system databases
+- We cannot drop the `guest` user from these databases
+- We cannot enable **data capture** on these databases
+- Cannot participate in database mirroring
+- We cannot remove primary filegroup, primary data file, or log file
+- We cannot rename the database or primary filegroup
+- We cannot set the database to OFFLINE, otherwise everything will go down and
+we won't we able to access MSSQL Server
+- We can't make this database `read-only`
+
+**Recommendations**
+
+- **Always have a `master` database backup**
+- Back up `master` as soon as you do any of these operations:
+	- Create, modify or drop any database
+	- Change server or database configuration values
+	- Modify or add logon accounts
+
+You should **NOT** create user objects in the `master` database, otherwise you
+will have to make _even more backups_. _A rule of thumb is to make a weekly/daily
+backup of master_.
+
+_NOTE:_ Do not set `TRUSTWORTHY` to ON. This is a setting that you can set on
+databases to avoid security checks, for `master` never turn it on. It's a vital
+database, so the **proper security checks** _should be in place_.
+
+**What to do if the master database becomes unusable or unavailable**
+
+- Restore `master` from a backup
+- If you can _actually start the server instance_, you should be able to run a
+`restore` from **master**, from a full database backup
+- Rebuild **master** completely (this is if the SQL Server instance is not coming
+online) (complex, beyond the scope of the course)
+
+You can just `browse` the **System databases**, _as you would with any of the user
+databases_. It also has basically all the same structures and features as the
+other databases. (However, if you check out its `properties`, you will notice
+how it has many options greyed out)
+
+You can even see the physical paths at which the database and log files are stored
+on disk.
+
+[NOTE]
+====
+Do not try to do anything to the `master` database. Don't try to mess with it,
+you can do as you please with user databases. If **you have to** make a change
+in _master_, test your change, do it in lower environments. So, **don't touch
+it in 90% of use cases**
+====
+
+If you **search further** when it comes to `master` you will see that under `Tables`
+there's only like _4 databases_. Which will immediately lead you to believe:
+_Well, if everything about the instance is saved into the `master` instance,
+**where is it**?, so few tables, and empty?_.
+
+Well, you would be wrong to be looking for info there, _you have to head to the
+Views_ section of the database, as we mentioned before, all the information is
+actually **walled-off in the Resources Database**, which is invisible, yet we
+can poll all of the data from there **through all these views that `master` has**.
+There are actually TONS of views, and you can see TONS of information if you
+poke _long enough_
+
+Some really useful views under `master` are:
+
+- sys.databases = Just a list of all the databases that are registered in the instance
+- sys.database_files = Actually lots of information about the databases, both from
+physical disk paths, but also status
+- sys.dm_os_process_memory
+
+_Even the instructor of the course tells us that **even though he has experience**,
+every time he logs into an SQL instance and starts working with the `master` database,
+the views always teach him something new when working.
+
+_NOTE:_ And so, since it's so big, it is basically a given that you have to learn
+things on your own, that you have to try stuff out yourself.
+
+==== Breaking the instance by editing master
+
+We can dig the location of the file for the `master` database, and we can try
+to edit its name (the easiest way to break the SQL Instance).
+
+First, stop the SQL Service, otherwise it will have a lock on the file. Then
+edit the file name, **then** start the service again, it should take _longer than
+usual_ and it should in the end throw an **error**. You can hit the properties of
+the instance and see the `Startup Parameters` section of info, you will see how
+it's pointing directly to master, **AND** you will see the path to the logs.
+
+(Don't forget you can access this through the Configuration Manager)
+
+If you access the ERRORLOG file, and open it with `notepad` we will see how
+it states that it _can't find the master file_. It's what we expect, and you can
+see with this really small example how you troubleshoot, read logs and find the
+reason for the error. You don't just _stand there/sit there_ not knowing what
+to do, you realize that you know where to start looking, you learn to read the
+error messages, the error logs. _Never forget about this, **NEVER**_.
+
+=== What is tempdb Database?
