@@ -4727,3 +4727,201 @@ to do, you realize that you know where to start looking, you learn to read the
 error messages, the error logs. _Never forget about this, **NEVER**_.
 
 === What is tempdb Database?
+
+Another **critical** database for the correct functioning of the MSSQL Server
+instance. It is a **global resource** available to all users that are connected
+to the SQL Server instance.
+
+- It holds **lots of user objects that are explicitly created**, temporary tables,
+temporary indexes, temporary stored procedures, table variables, tables returned
+in table-valued functions, and cursors
+- **Internal objects that the database creates:**
+	- Work tables to store intermediate results for spools, cursors, sorts, and
+	temporary large objects (LOB) storage
+	- Work files for has joins or hash aggregator operations
+	- Intermediate sort results for operations such as creating or rebuilding
+	indexes, or certain GROUP BY, ORDER BY, UNION queries
+	- _All of these operations_ land us with results that come as **side effects**,
+	results that **aren't the final results** but some intermediate results that
+	are later used to **GET TO THE FINAL ONES**
+- We also store the **version stores**, which is basically a collection of data
+pages that hold the data rows that support features for **row versioning**
+
+[cols="1,1,1,1,1"]
+|====
+|File | Logical Name | Physical Name | Initial Size | File Growth
+
+| Primary Data
+| tempdev
+| tempdb.mdf
+| 8 MB
+| Autogrow by 64 MB until the disk is full
+
+| Secondary data files
+| temp#
+| tempdb_mssql_#.ndf
+| 8 MB
+| Autogrow by 64 MB until the disk is full
+
+| Log
+| mastlog
+| mastlog.ldf
+|
+| Autogrow by 64 MB to a maximum of 2 terabytes
+|===
+
+- The number of secondary data files depends on the number of (logical) processors
+on the machine
+- As a general rule, if the number of logical processors is less than or equal
+to eight, use the same number of data files as logical processors. (Example, 8
+cores, 8 ldf files)
+- If the number of logica processors is **greater** than eight, _still use eight
+files_
+- **tempdb contention**, this is a concept (I'm still yet to know where to see this,
+or how to diagnose this), that a query you ran is _"stuch in the tempdb"_, this means
+that the bottleneck is the **temp files**. The best course of action is to start
+creating _more tempdb files_ so that contention is alliviated. Add _4 more_, and
+monitor again, if the query still is ending up affected by `contention` add 4
+more. It's trial and error until the query performance reaches an acceptable level
+of performance **for your use case**
+
+**Restrictions of tempdb**
+
+In short, the same restrictions that apply to `master`, although it's not just
+that, it's **way more restrictive** actually, I'm guessing it's that way since
+this is just a database to store intermediary objects, you shouldn't be messing
+with this stuff too much, in most use cases we wouldn't have to care that much
+about it. All the info in there is volatile, and shouldn't be payed much attention.
+
+==== Optimizing tempdb performance in SQL Server
+
+- The size and physical placement of the tempdb database can directly affect the
+performance of a system
+- If possible, use `instant file initialization` to improve the performance of
+growth operations for data files
+	- Basically this is a different "way" of reclaiming space in disk after it
+	is deemed that a sector of memory is "free". For _whatever reason_ we first
+	reclaim the space by **filling in with zeros** and then writing data,
+	but in this mode, we skip the filling in of zeros, and we just **WRITE**
+	directly.
+- Pre-allocate space for all tempdb files by setting the file size to a large
+value enough to accomodate the typical workload in the environment
+	- The autogrowth process is **time consuming**, so if we have the files already
+	big, or _big enough_ so that we don't incur in autogrowth, we can get some
+	quick wins
+- Data files should be of equal size within each filegroup, because SQL Server uses
+a proportional-fill algorithm that favors allocations in files with more free space
+	- This means that SQL Server when looking at _which tempdb file to write_
+	it will always look for the file that has more free space, if you have **one
+	file that's way bigger than the others** to SQL Server it will look as that
+	file **always has more free space**. And it will stop writing to other tempdb
+	files, _which will tank performance_
+- Set the autogrowth to a bigger number than the defaults (so that we can reduce
+the number of autogrow operations)
+- Put the tempdb on a fast I/O subsystem
+- Put the tempdb in **its own drive**, a disk that is completely separated from
+the **user databases**
+
+==== Moving the tempdb database
+
+- Determine the logical file names and their location on the disk
+- We need to change the location of _each file_ by using the `ALTER DATABASE`
+- Stop and restart the instance of SQL Server
+- Verify the file change
+- Delete the tempdb.mdf and templog.ldf files from the original location
+
+**In the lab environment** we can just head down to the system tabes and
+`Right Click > Properties`, that way we can see the tempdb details, and in there
+we will be able to get info on **where** are the tempdb files stored physically
+in our disk.
+
+We should also be able to see the option to add more files on the tempdb, and as
+part of the lab section of the lesson we did that, we added 2 more temp files,
+even though our VM only has `2 processors`. And we should fill in all the details
+respectively (although we also changed the size to 128 MB), and we made the previously
+`8 MB` files also be 128 MB. It's worth noting that _you can click the `script`
+button at the top of the window to see all the queries that will run under
+the hood_.
+
+It's definitely a personal preference, but you should be aware that you can either
+choose a query or the GUI to make all of these operations.
+
+[NOTE]
+====
+Also, don't forget that we are doing all of the lab work in **one machine** and
+**simulating the different paths for the different databases on different folders**.
+But the ideal case is to separate them in **their own drives**
+====
+
+_A DBA should be able to do all of these operations, and understand them at a
+fundamental level as easy as breathing_
+
+==== Testing tempdb and theory
+
+A quick way to prove the theory we have been learning so far is to create a
+temporary table and examine the `Temporary Tables` node under the `tempdb` database:
+
+````
+CREATE TABLE #myTempTable (ID INT IDENTITY(1, 1), Stuffing VARCHAR(100))
+
+DROP TABLE #myTempTable
+````
+
+Before running the `DROP` you can create the temporary table, and if you refresh
+the `tempdb` database, under the `Temporary Tables` folder, you should be able
+to see this new table added, (with a _weird name_ to be precise). Even though
+you might be connected to another database, or whatever, under the hood, what is
+in fact happening is that the table physically lives in the `tempdb` database.
+
+_Remembering:_ Temporal databases will only live as long as the session that
+created them lives. So in theory, the moment that client disconnects all temporary
+things created by him should also be dropped. **HOWEVER**, in practice, it's best
+to drop the temporary things you created after your whole transaction succeeds,
+_and even if it fails, you should properly clean up as well_
+
+Let's try to move the `tempdb`, you usually do this when we are running out of disk
+space, so we have to now move it to another disk, or computer.
+
+We can use the GUI as we did before to get the files, however we can also use
+a query:
+
+[source, sql]
+----
+SELECT name, physical_name AS CurrentLocation
+FROM sys.master_files
+WHERE database_id = DB_ID(N'tempdb') <.>
+----
+<.> This takes a name, and then immediately tries to find the ID corresponding
+to that string value
+
+That way we can copy and paste the path for the `tempdb` files, head one level
+above, create a new folder `SQL_TEMPDB_NEW` or something like that. And we will
+change the pointer to **this new folder** instead of the old one.
+
+There's also a QUERY for that:
+
+[source, sql]
+----
+ALTER DATABASE tempdb
+MODIFY FILE (NAME = tempdev, FILENAME = 'C:\SQL_TEMPDB_NEW\tempdb.mdf') <.>
+
+ALTER DATABASE tempdb
+MODIFY FILE (NAME = templog, FILENAME = 'C:\SQL_TEMPDB_NEW\templog.ldf')
+----
+<.> This will be a base so that we modify all the temporary files (remember there
+was one by default and then two more that we created before). **HUGE NOTE:** It's
+only the first _non-numbered_ tempdb file that has a `.mdf` extension all subsequent
+files have a `.ndf` extension.
+
+After you apply all the `ALTER` queries you might think that the files will be created
+in the new path, and everything will be good. Even if we run the same query to
+check for the location of the temp files we will see that it now points to
+our new location. But **NO**, you have to restart **SQL Server**, the previous files
+are still in use, it's only after a restart that SQL Server rewires to the new path,
+and indeed **creates the new files as we instructed**. It's after this _restart_
+that we can head down to the old path and actually **delete the files** if we
+want to. (since they are no longer being used by a process)
+
+=== What is msdb TABLE
+
+
