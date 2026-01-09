@@ -4924,4 +4924,144 @@ want to. (since they are no longer being used by a process)
 
 === What is msdb TABLE
 
+- Is a system database, used by **SQL Server Agent** used for schedulig jobs and
+alerts. Although other services also make use of it such as SQL Server Management
+Studio, Service Broker, Database Mail 
+	- SQL Server Engine = Everything that we did up until this point was living
+	in this context
+	- SQL Server Agent = Jobs, Backups, Restores, Database Mail, Service Broker,
+	everything gets saved in `msdb`. SQL Server Agent runs based on this database
+- SQL Server automatically maintains a complete online backup-and-restore history
+within tables in `msdb`
+- By default, `msdb` uses _simple recovery model_. When a database is with this
+mode, we don't save all the transactions in the transaction log, however in
+_full recovery model_, every single transaction gets **saved**. Means we can
+roll-back in time.
+- If we are taking backups and using history tables, **it is recommended to set
+the `msdb` mode to `full recovery`** also, be aware that if you upgrade or install
+a new instance, the default mode will **always** be `simple recovery mode`, or
+if we rebuild the system databases with `Setup.exe` even.
 
+**Physical Properties of msdb database**
+
+[col="1,1,1,1"]
+|====
+|File | Logical Name | Physical Name | File Growth
+
+|Primary data
+|MSDBData
+|MSDBData.mdf
+|Autogrow by 10 percent until the disk is full
+
+|Log
+|MSDBLog
+|MSDBLog.ldf
+|Autogrow by 10 percent to a maximum of 2 terabytes
+|===
+
+**Restrictions of msdb database**
+
+- The default collation of the server will be used by `msdb`
+- Can't drop the database
+- Can't drop the `guest` user
+- Can't participate in database mirroring
+- Can't put offline
+- Can't be put as READ_ONLY
+
+Like **any database**, there's a concept of _recovery_. And a **good DBA** should
+keep backups periodically of MSDB, and in case of really bad failures or errors,
+the main idea is to **recover as much data as possible**, better than _no-data_
+is _some data_.
+
+**Restoring msdb database**
+
+- Backup msdb
+- Get the version of destination server
+- Get the version of source server on which the backup was created
+- Match the versions of the source and destination servers
+- Ensure exclusive access to the database
+- Restore msdb
+
+**LAB**
+
+We access `msdb` the same as `master`, the same as `tempdb`, through the `System
+databases` tree branch.
+
+In there if you `Right Click > Properties` and head to `File` you get all the options
+to modify the behavior of how the data file and the log file behave. And as everything,
+we have the option to **GENERATE A SCRIPT**, any action you take in the GUI can
+be then put into a QUERY.
+
+- _We can restore this database as any other_
+
+You can head down to `System Tables` and see different tables that are really
+interesting and useful if you know what you are doing:
+
+- `dbo.backupset` = This is a log of the backups, any backup you take, you restore
+it will be logged here.
+- `dbo.sysjobs` = Another table that shows all the SQL jobs registered in the
+database.
+
+You can head way below the tree view to the left, until you find the `SQL Server
+Agent`. Right Click > Steps. You can see what it does, by default there's but
+_one SQL Jobs_.
+
+[NOTE]
+====
+Image this use case: Every day, we need to run a query to get some data, and email
+it to a user. We can leverage all the features that SQL Server offers. We can
+create a SQL Server Job so that the querying is automated, and we can then save
+that into a file, and send that through mail to the requesting user (SQL Server Mail)
+====
+
+We can create a job to perform a task on a daily-basis, on a specific task. The
+information (metadata) about the job is on `dbo.sysjobs`
+
+**EXTRA:** You can even get information on the schedule of jobs, running history:
+`dbo.sysjobshistory`.
+
+`msdb` has all the information about jobs, backups, restore events. When looking
+deeper into it, we will see how to create our own jobs. All info related to them
+should live in `msdb`
+
+**Backups tend to be saved as `.bak`**
+
+==== Small lab on restoring msdb
+
+Imagine you delete the sysjobhistory, you have lost all info of what the hell happened
+with the jobs. _Imagine we took a backup of msdb before this awful change_.
+
+Now we can restore it following specific steps:
+
+- We need to stop the `SQL Server Agent` because he's constantly querying this
+database, we need exclusive rights to it.
+- We can double check if the backup is compatible with our server version:
+`SELECT @@VERSION`
+	- And we can then run a query to scan a file and see the metadata it holds:
+	+
+	````
+	RESTORE HEADERONLY
+	FROM DISK = N'C:\SQL_BACKUPS\msdb_beforedelete.bak''
+	GO
+	````
+	+
+	We can double check if both the backup and both our SQL Server instance are
+	the same version. _Note: We can look at `SoftwareVersionMajor, `SoftwareVersionBuild`,
+	`SoftwareVersionMinor`, and match that to whatever `SELECT @@VERSION` spits, if
+	they are the same, we can **confirm the restore will be successful since the
+	backup and server are compatible**
+- We can restore with a `query` but also with a `GUI`.
+	- For now we will use the GUI, just `Right Click > Tasks > Restore`, in there
+	MSSQL is smart enough to recognize a backup file for it, but if we don't
+	have it availble, we can select `Device` and search for it in the file system
+	- Also, _even though I shut down the Agent_ the restore was failing because
+	apparently the database _was under use_. You can select the second tab of
+	the restore window and check the `Close existing sconnections`, that way
+	we make sure we get exclusive access to the database, and no one else is
+	getting in the way and blocking the restore
+
+After that a simple "RUN" should suffice (DON'T FORGET YOU CAN SCRIPT EVERYTHING,
+SO EVEN THE RESTORE CAN HAVE ITS SCRIPT GENERATED AND YOU CAN USE THAT AS A BASE
+TO BUILD ONE OF YOUR OWN AND ANALYZE IT)
+
+=== Other system Databases (model, distribution)
