@@ -1454,17 +1454,33 @@ hence those wouldn't be good candidate keys)
 
 In a table such as:
 
-[cols="1,1,1,1"]
+[cols="1,1,1,1,1"]
 |===
 |StudentId | Name | Class | DOB | Email
 
-|1001, John, 1st Year, 01-08-2008, john1@gmail.com
+|1001
+|John
+|1st Year
+|01-08-2008
+|john1@gmail.com
 
-|1002, Roger, 2nd Year, 01-08-2013, roger@gmail.com
+|1002
+|Roger
+|2nd Year
+|01-08-2013
+|roger@gmail.com
 
-|1003, Michael, 3rd Year, 02-02-1993, michael@gmail.com
+|1003
+|Michael
+|3rd Year
+|02-02-1993
+|michael@gmail.com
 
-|1004, John, 3rd Year, 02-03-1992, john@gmail.com
+|1004
+|John
+|3rd Year
+|02-03-1992
+|john@gmail.com
 |===
 
 Candidate keys, could be `StudentId` and `Email`. But nothing more than that,
@@ -4748,7 +4764,7 @@ in table-valued functions, and cursors
 pages that hold the data rows that support features for **row versioning**
 
 [cols="1,1,1,1,1"]
-|====
+|===
 |File | Logical Name | Physical Name | Initial Size | File Growth
 
 | Primary Data
@@ -4944,8 +4960,8 @@ if we rebuild the system databases with `Setup.exe` even.
 
 **Physical Properties of msdb database**
 
-[col="1,1,1,1"]
-|====
+[cols="1,1,1,1"]
+|===
 |File | Logical Name | Physical Name | File Growth
 
 |Primary data
@@ -5065,3 +5081,182 @@ SO EVEN THE RESTORE CAN HAVE ITS SCRIPT GENERATED AND YOU CAN USE THAT AS A BASE
 TO BUILD ONE OF YOUR OWN AND ANALYZE IT)
 
 === Other system Databases (model, distribution)
+
+Another set of databases that are critical for the functioning of the SQL Server.
+
+==== Model System Database
+
+- The `model` database is a sketch, a template of a database, and the idea is that
+whenever we create a database in MSSQL Server, it will take the first information
+about information from the `model` database. It's cool, _so that's how we get
+an initial working database already operational even though it needs tons of
+components and setup_.
+- `tempdb` is created every time SQL Server is started, the `model` database must
+always exist on a SQL Server system. So `model` is persistent, instead of the
+`tempdb` that gets deleted on every restart
+- Some of the settings of `model` are also used for creating a new `tempdb` during
+start up, so the `model` database must always exist on a SQL Server system
+- Newly created user databases will use the _same recovery model as the `model`
+database_
+
+**Usage**
+
+- When a `CREATE DATABASE` statement is issued, the first part of the database is
+created by copying the contents of the `model` database
+- The rest of the new database is then filled with `empty pages`
+- If you modify the `model` database, all databases created after said change will
+**inherit** them.
+	- E.g., You could set permissions, options, tables, functions, stored procedures
+		- That way you have `pre-loaded` structures for every subsequent database
+
+[cols="1,1,1,1"]
+|===
+|File | Logical Name | Physical Name | File Growth
+
+|Primary data
+|modeldev
+|model.mdf
+|Autogrow by 64 MB until the disk is full
+
+|Log
+|modellog
+|modellog.ldf
+|Autogrow by 64 MB to a maximum of 2 terabytes
+|===
+
+**Restrictions**
+
+- We cannot add filegroups
+- We cannot change the collation
+- We cannot change the owner
+- We cannot drop the `guest`
+- We cannot enable data capture
+- We cannot bring OFFLINE
+- We cannot set it as READ_ONLY
+- We cannot _create encrypted objects_, and even if somehow do, these objects
+**will not be passed over to the other databases**
+
+==== Resource System Database
+
+- Is a read-only database that contains all the system objects that are included
+with SQL Server
+- `sys.objects` and all other objects similar to this, **physically are saved
+to the `Resource System Database`. It's actually the primary repository
+- However, on the `sys` schema of all databases, all these objects appear
+**logically**
+- The Resource database does not contain user data or user metadata
+- The Resource database makes upgrading to a new version of SQL Server an easier
+and faster procedure
+	- That is because, we used to have to `DROP` objects, _recreate them_, and
+	other stuff. But **now** because of the resource datafile, we can simply
+	**copy the single resource database file to the local server**, _easy upgrade_
+
+**Physical Properties of resource database**
+
+Since this is _read-only_, the properties are indeed different
+
+- The physical filename is `mssqlsystemresource,mdf` and `mssqlsystemresource.ldf`
+- These files are located in _<drive>:\Program Files\Microsoft SQL Server\MSSQL<version>.<instance_name>\MSSQL\Binn\
+and **should not be moved**. If you do mess around too much with this database,
+**the instance will not start**, it's _really sensitive_
+- Each instance of SQL Server has one and only associated `mssqlsystemresource.mdf`
+file, and instances do not share this file. _Each instance will have its Resource
+database_
+- SQL Server cannot back up the Resource database (because as we mentioned before,
+_it's hidden_)
+	- **However**, we can indeed do backup _manually_, the file is `binary`,
+	so you can simply backup the file at the filesystem level
+- Backup is only possible manually
+
+**Accessing the Resource Database**
+
+This `Resource` database should not be modified unless a Specialist from Microsoft
+comes in (which is like, never).
+
+- The ID of the Resource database is always 32767
+- Other important values are the version number and the last time the database
+was updated
+
+**Lab Notes**
+
+- So there was a really good example of troubleshooting and understanding what
+happens when we can't get a lock on a database perhaps.
+	- This happened after adding a table to the `model` database, adding some
+	records to it, and then trying to create a simple `Test` database. It was
+	really strange, _however_ the course showed how we can use `sp_who2 active`
+	to list all the active connections, and if we open a new query window, and
+	try to run the `CREATE TABLE` and then on the other window run the stored
+	procedure, we will see how a `SUSPENDED` connection shows up, and it also
+	shows under a table an ID for a connection that is blocking it. Which in
+	the course it was some weird connection that was there
+		- In my case, it was strange, it prompted me that the session running the
+		`sp` was blocking the create, _which makes no sense_.
+		- Apparently `sp_who2` is not _that reliable_, so you can use a table that's
+		on the system tables (remember this lives in the `Resource` database)
+
+This is a better query that shows _"ghost connections"_ that we can properly kill:
+
+[source, sql]
+----
+SELECT
+	request_session_id AS [SessionID],
+	DB_NAME(resource_database_id) AS [Database],
+	request_mode AS [LockType],
+	request_status AS [Status]
+FROM sys.dm_tran_locks <.>
+WHERE resource_database_id = DB_ID('model') <.>
+----
+<.> Special attention should be brought up here, whilst standing on **any database**,
+we can query the `sys` databases, remember that all of them point to the same
+`physical resource`
+<.> And in here we are leveraging `DB_ID` and sending a database name to it so
+we get the actual ID to match to the `resource_database_id`
+
+It was **finally** with this query that I saw `2 connections` with a lock, the
+one I used with `sp_who2` and another `54` connection. So, I killed it as that
+session deserved it: `KILL 54`. After this, I could run the creation of a table
+just fine:
+
+````
+USE master
+GO
+CREATE DATABASE Test
+````
+
+As a _safety measure_ I also made sure to switch to `master` that way, we are sure
+the current window is not somehow still connected to `model`
+
+_So after all this mess_.
+
+If we refresh the instance, we should see the new database, and if we expand its
+tables, **we should also see the table that we created on the model database already
+there, and with the same data**. This is a `prototype` pattern. COOL
+
+And so if we head down to:
+
+`Program Files\Microsoft SQL Server\MSSQL13.MSSQLSERVER\MSSQL\Binn\`
+
+We should be able to visualize `mssqlsystemresource.ldf` and `mssqlsystemresource.mdf`,
+which are the logs and data files respectively.
+
+- If you go into the `Views > System Views` of the freshly created database,
+we would be able to see all sorts of `sys.` views on top of some other extra views,
+they are there already set for you to use. But remember **NONE OF THIS IS ACTUALLY
+COPIED OVER TO THE NEWLY CREATED DATABASE**, all of these views are being piped
+from the same path that is the `Resource` database.
+
+**Some extra useful functions**
+
+- `SELECT SERVERPROPERTY('ResourceVersion')` = Another way to checkout the SQL
+Server version for the resource database
+- `SELECT SERVERPROPERTY('ResourceLastUpdateDateTime')` = Another way to check out
+in long date format **when** was the resource database updated in any capacity
+- `SELECT OBJECT_DEFINITION(OBJECT_ID('sys.objects'))` = This is a way to retrieve
+an SQL query of how the specific `sys.objects` objects got into the current database
+
+_EXTRA_
+
+There are two extra databases: Distribution, Report Server. These are used for
+replication or SSRS respectively. _We will discussing them later_.
+
+=== Quiz 6: Microsoft SQL Database Administration and System databases
