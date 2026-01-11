@@ -5260,3 +5260,64 @@ There are two extra databases: Distribution, Report Server. These are used for
 replication or SSRS respectively. _We will discussing them later_.
 
 === Quiz 6: Microsoft SQL Database Administration and System databases
+
+- Which of the following is NOT a system database in Microsoft SQL Server?
+
+master
+tempdb
+reportsdb (*)
+msdb
+
+What is the purpose of the "tempdb" database in SQL Server?
+
+R - To store temporary data, such as temporary tables and variables
+
+Which system database contains information about database backups and restore
+operations?
+
+master
+model
+msdb (*)
+tempdb
+
+What is a recommended practice regarding the "master" database
+
+R - Avoid making any changes to the "master" database
+
+What is a best practice for managing the "tempdb" database
+
+R - Create multiple data files for "tempdb" to improve performance
+
+What is a recommended practice for managing the "msdb" database?
+
+R - Regularly back up the "msdb" database
+
+What should be avoided when working with system databases?
+
+R - Modifying system tables directly
+
+Which of the following is a recommended practice for managing the transaction
+log of system databases?
+
+R - Regularly back up the transaction log
+
+What should be avoided in the "msdb" database?
+
+R - Storing system-wide configuration settings
+
+Which of the following is true about the "master" database?
+
+R - It stores information about all user databases, logins, and system settings
+
+== Deep Dive into MSSQL Working
+
+=== Welcome to Deep Dive into MSSQL working
+
+- Overview of MSSQL Management Tools
+- What are Pages, Extents, Page Architecture and PFS?
+- MSSQL Architecture
+- MSSQL Database Architecture
+- Operation and working of Transaction Log
+
+=== What are Pages, Extents, Page Architecture and PFS?
+
