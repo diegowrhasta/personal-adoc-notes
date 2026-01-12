@@ -5321,3 +5321,160 @@ R - It stores information about all user databases, logins, and system settings
 
 === What are Pages, Extents, Page Architecture and PFS?
 
+These concepts are associated with **storage of data**
+
+**What are Pages and Extents basics**
+
+- A page is a basic unit of data storage in SQL Server. This is the fundamental
+unit of data storage.
+- An extent is a collection of **eight physically** contigous pages.
+- **Extents** help efficiently manage pages, because if SQL Server were to
+manage pages _one by one_ it would be too much overhead
+- If you know about the architecture of pages and extents you would design and
+develop databases with performance in mind (you can create databases that will
+perform optimally, specially for environments that are managing tons of data)
+
+**What is a Page**
+
+- Fundamental unit of data storage in SQL Server is the page
+- The disk space allocated to a data file (.mdf or .ndf) in a database is logically
+divided into pages numbered contiguously from 0 to n.
+	- `.ndf` files are _extra files that we can use to divide further apart the
+	data_.
+	- **DATA FILES HAVE PAGES**, log files DO NOT.
+- Disk I/O operations are performed at the page level. SQL Server reads or writes
+whole data pages
+	- If you have a book and there are paragraphs, SQL Server's performance
+	is done at the I/O level.
+- SQL Server's data pages are always the same size, 8 Kilobytes.
+- Most pages contain actual rows of data which were stored by users; these are called
+**Data pages** and text/image pages (for special cases)
+- **Index page** are special kinds of pages that simply have index references about
+where the data is
+- There are system pages that store metadata about the organization of data (PFS,
+GAM, SGAM, IAM, DCM, BCM pages)
+	- The metadata includes information such as _where things are being saved_,
+	_how are things being saved_
+
+**Page Architecture**
+
+- In SQL Server, the page size is 8-KB => 8192 Bytes
+- SQL Server has 128 pages per megabyte
+- Each page begins with a 96-byte header that is used to store system information
+about the page
+	- Information includes page number, page type, the amount of free space on the
+	page, and the allocation unit ID of the object that owns the page
+		- Instead of calculating the free space, and other stuff on a page, SQL
+		Server doesn't have to search or process, he can simply query the specific
+		data
+- Data rows are put on the page serially, starting immediately after the header
+	- Row offset (96 bytes)=> An entry per each row on the page. These are pointers (memory
+	addresses) of where the row data is physically in the page. It points to the
+	position of the first byte of each row.
+- Thus, the function of the row offset table is to help SQL Server locate rows on
+a page very quickly
+- The entries in the row offset table are in reverse sequence from the sequence
+of the rows on the page
+
+**What is an Extent**
+
+- Base unit of **space** and how it's managed
+- SQL manages state in the form of `Extent`'s, this is _easier_, because managing
+per-page would be too taxing, too cumbersome.
+- 64 KB = 1 Extent (because it has 8 pages (which are 8 KB))
+- There are two types:
+	- **Uniform** extents are owned by a single object; all eight pages in the
+	extent can only be used by the owning object
+	- **Mixed** extents are shared by up to eight objects. Each of the eight
+	pages in the extent can be owned by different objects
+	- MEANING: Basically pages that have all of a "table's" data, the same table's
+	row let's say, they are `Uniform`. But if fragmentation takes place, and
+	then on a extent different rows information starts scattering across multiple
+	extents, so that the information is no longer from one sole place, then they
+	become `Mixed`
+- Starting with SQL Server 2016, the default for most allocations in a user database
+and tempdb is to use uniform extents
+	- (This is a design choice in MSSQL)
+
+**Tracking Free Space**
+
+- **Page Free Space (PFS)** is a module that records the allocation status of
+_each page_, this means, it tells us where an individual page has been allocated,
+and the amount of free space there is on each of these _allocated pages_
+- The PFS has 1-byte for each page, this byte can represent the different types
+of information:
+	- Whether the page is allocated
+	- If the page is empty
+	- If the page is 1 to 50 percent full
+	- If the page is 51 to 80 percent full
+	- If the page is 81 to 95 percent full
+	- If the page is 96 to 100 percent full
+- After an extent has been allocated to an object, the SQL Server Database
+Engine uses the PFS pages to record which pages in the extent are allocated
+or free
+	- So MSSQL and PFS work together to come to a conclussion as to the status of a 
+	page's allocation.
+- This information is used by SQL Server all the time whenever it needs to allocate
+a new page
+
+**Labbing**
+
+The way to sort of test and poke around these concepts in SSMS, is by:
+
+- Creating a database
+- Changing the page allocation method to mixed (because remember that after 2016
+uniform is always used): `ALTER DATABASE DbTest SET MIXED_PAGE_ALLOCATION ON`
+
+And after that we can create a table, and insert records into it. (Best to create a
+table with a structure that holds 8000 chars (so 8000 bytes)). And then you can
+call in the whole column with `REPLICATE('a', 1000)`
+
+However the most important query to sort of see page allocation info is:
+
+[source, sql]
+----
+SELECT ht1.c1, ht1.c2, p.file_id, p.page_id, is_mixed_page_allocation
+FROM HeapTable1 AS ht1 CROSS APPLY sys.fn_PhysLocCracker(%%physloc%%) AS p INNER JOIN sys.dm_db_database_page_allocations AS dddpa
+ON p.file_id = dddpa.allocated_page_file_id AND
+p.page_id = dddpa.allocated_page_page_id
+----
+
+This will then show each row of the table (_in this case the HeapTable1 table_),
+and then show its `file_id`, `page_id`, and the type of page allocation said row
+has `is_mixed_page_allocation => 1, means YES (true)`
+
+In here we can note down the page id of where the row is being stored, (e.g., Page ID: `319`)
+
+After this we can actually "turn on" a trace to capture some information of the
+MSSQL Server, this is a query: `dbcc traceon(3604, -1)`
+
+This specific command is used to **redirect trace flag output to the client (SSMS
+results window) rather than just the error log, and to apply that setting **globally**
+across all connections
+
+- Trace Flag 3604: This flag tells SQL Server to send the output of certain `DBCC`
+commands directly to the query window or client application
+- The `-1` is a **Global** switch, this means that **for the existing and all future
+connections** this flag will be turned on
+
+[NOTE]
+====
+DBCC stands for **Database Consistency Check**
+====
+
+And _after_ putting the trace on, we can run the page command for `dbcc`:
+
+`dbcc page(dbtest, 1, 1, 3)`
+
+After running this query, then we can go all the way down on the strange yet quite
+detailed output, and search for the page id we retrieved earlier:
+
+(1:319) - xxxxxx
+
+And the info stated here it will state how full said page is, and its allocation mode.
+_Since I inserted tons of rows, then the page shows `95_PCT_FULL`, so the page is
+about to be completely filled.
+
+All of this information and metadata visualization is possible **thanks to `PFS`**
+
+=== MSSQL Architecture
