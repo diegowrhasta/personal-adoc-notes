@@ -5678,4 +5678,131 @@ all of that complexity**
 
 === MSSQL Database Architecture
 
+- When we create a MSSQL database, SQL Server maps the database over a set of
+operating system files that store the database objects
+	- As we know whenver we create a database, it creates two files a data file
+	and a log file (`.mdf`, `.ldf`)
+- So, physically, a SQL Server database is a set of two or more operating system
+files
+	- _But there are also cases in which the number of files grows can be bigger
+	beyond just partitioning of the two different types_
+- Each database file has two names:
+	- **A logical filename:** This is the name you reference in Transact-SQL
+	statements
+	- **A physical filename:** This is the name that you can view in the operating
+	system directory tree
+- SQL Server database files can be stored on either FAT or an NTFS filesystem
 
+SQL Server allows you to have **three types of files**, based on the _main two_
+the `Primary data file` can be partitioned across `secondary data files`
+
+**Primary Data file**
+
+- This is the initial default file
+- It contains configuration information for the database, pointers to the other
+files in the database, and all of the database objects
+- Every database has **only one primary data file**
+- The preferred filename extension is `.mdf`
+- Although you can store user objects within the main data file, **it is not
+recommended**
+	- You should have more than one datafile, secondary data files should be
+	used for user objects
+
+**Secondary Data file**
+
+- Optional, and used to hold user database objects
+- You can create one or more secondary files within the database to hold the user
+database objects
+- The recommend filename extension for a secondary file is `.ndf`
+- Secondary data files can be spread across multiple disks
+	- A really good use case to leverage this concept of secondary data files,
+	is that one disk is starting to get full, and you can't expand it, but
+	the database will still grow. You can **attach a new disk** and then create
+	a `.ndf` file for that database, and connect it to the database. This way
+	you start spreading your data across multiple drives, performance also
+	improves by doing this. So overall it's a good thing, but it comes with
+	challenges (_as everything_) since it's no longer one sole place in which
+	everything lives, but a distributed approach
+- These files are useful as the database's additional storage area
+
+**Transaction log file**
+
+- Another file that is created by default on database creation
+- It holds information on all the database modification events, every single
+query that modifies data is written here, and that is mainly because after a
+system failure, the transaction log can be used to restore a checkpoint
+- We can have one or more transaction files
+- Multiple transaction log files **does not improve database performance as the
+SQL Server database engine writes log information sequentially**
+- The recommended filename extension for transaction logs is `.ldf`
+
+**Filegroups**
+
+- You can group secondary data files logically for administrative purposes
+	- Logically means that things are _seen as one whole_, even though the
+	files might be in different drives
+- The administrative grouping of data files is called `filegroups`
+- By default, the SQL Server databases are created with one filegroup, also
+known as the default filegroup (or primary filegroup) for the database
+- The primary database is a member of the default filegroup and can add secondary
+database files to the default filegroup, **but this is not a recommended practice**
+- It is recommended to create separate filegroups for your secondary data files
+- This is known as a secondary filegroup (or user-defined filegroup)
+- The SQL Server database engine allows you to create one or more filegroups,
+which can contain one or more secondary data files
+- Transaction log files do not belong to any filegroup
+- **Why do we need to create this?** They can be backed up or restored separately,
+or they can be brought online or taken offline separately
+	- The way to use filegroups is **highly dependent** on your environment,
+	business rules, requirements, time. But just think of them as this concept,
+	this structure that can group together information (based around secondary
+	data files), that help dividing the _"universe"_ of data into smaller chunks,
+	this makes doing backups easier and faster, since you are not processing all
+	the data but a smaller portion of it, you can bring filegroups offline, online,
+	and you focus on smaller chunks that is easier to understand, easier to manage,
+	easier to maintain.
+
+**Lab**
+
+By doing the following tasks:
+
+- Create a database
+- Go to `Properties > Filegroups`
+	- And in here we created three groups: `FG_2019`, `FG_2020`, `FG_2021`
+- We then went again into `Properties > Files`
+	- We created three files and associated them to the filegroups respectively
+- We can head down to the filesystem and check if we have three `.ndf` files,
+**we should**
+- We then have to do a bit of repetitive tasking here:
+	- We can set a filegroup as the `default`, so that anything that we create
+	(by executing queries), post saving this.
+	- So we can create three tables `Orders_2019`, `Orders_2020`, `Orders_2021`
+	and switch the default filegroup as we create each table so that they get
+	assigned respectively
+- However, through a query you can specify if you want a table created in a specific
+filegroup:
+
+[source, sql]
+----
+CREATE TABLE Orders_2019 (
+	OrderId int PRIMARY KEY,
+	ProductName nchar(10)
+) ON [FG_2020] <.>
+----
+<.> The key is on the `ON [FILE_GROUP_NAME]`. If you don't specify this `ON` then
+the table will be automatically assigned to the `default filegroup`. So again, queries
+win when it comes to conciseness, and portability of instructions
+
+_About backups:_
+
+When accessing a databases: `Tasks > Back Up` section, you can actually select
+`Files and filegroups` which is a small radio button at the initial tab, and in
+there you get the choice of selecting if you want to just do a backup of specific
+filegroups. So once you have setup these structures, it's _so easy_ to then leverage
+all of what's already there to create backups of only that specific subset of the
+database, and then move those backup arounds, bring this online-offline.
+
+It's a really neat concept, yet I know that it is quite _"obscure"_ in a way.
+It'd be cool to leverage this in some way.
+
+=== Operation and working of transaction log
