@@ -5478,3 +5478,204 @@ about to be completely filled.
 All of this information and metadata visualization is possible **thanks to `PFS`**
 
 === MSSQL Architecture
+
+- **Internal Workings**
+- **How the Engine works**
+
+[IMPORTANT]
+====
+Microsoft SQL Server is built based on the `client-server` architecture. It fulfills
+requests from clients that communicate with him.
+====
+
+- It starts with the client application sending a request, processing the request,
+and then **sending a response to the client**
+
+==== Three Major Components
+
+- Protocol Layer
+- Relational Engine
+- Storage Engine
+
+This is the story that weaves all of these concepts/components together:
+
+A **client**, begins talking to SQL Server through the `protocol layer`, through
+this the request gets passed on to the `relational engine`, he **grabs the request**,
+and then runs three sequential steps: `Parses the request into an initial query,
+runs that query trough the optimizer, and then the resulting optimized query
+gets passed onto the query executor`, the `storage engine` then gets contacted
+by the `query executor`, the `storage engine` exposes **access methods** to
+talk to two other components: `buffer manager` and `transaction manager`,
+`buffer manager` has **Plan Cache**, **Data Cache**, **Buffer Pool**, and also
+works with `Data File`s. The `transaction manager` works with **transaction logs**. 
+After this _whole journey_ to these inner components that are talking to the disk,
+and sub-processes, the `storage engine` will send back a response to the
+`query executor` and he will then leverage the `protocol layer` to then send back
+a response to the **client**.
+
+**Protocol Layer**
+
+This works with the Server Name Identification (SNI).
+
+The **MS SQL Server Protocol Layer** supports `3 protocols` and all three use
+TDS which stands for _**Tabular Data Stream**_
+
+. `Shared Memory`: This is the first protocol that can be used, and is used whenever
+the Client and the MS SQL server run on the same machine. Both can communicate
+via Shared Memory protocol
+. `TCP/IP`: The internet protocol, SQL Server uses this whenever the client and
+server are **remote to each other**, _on different machines_
+. `Named Pipes`: This protocol is used whenever the client and the server are
+connected through a LAN (same network)
+
+_The most used protocol is TCP/IP_
+
+**Relational Engine**
+
+- Also known as `query processor`
+- It has all the SQL components that determine what exactly a query needs to do
+and how it can be done best.
+	- It will look at a query, try to truly understand what it does, and then
+	provide to it all the tasks, all the info it needs in order to get the
+	expected result
+- It is responsible to get the queries from the user, requesting for said data
+from the `storage engine` vand processing the results that are returned
+	- _It will ensure that a request is understood, and then provide everything
+	it needs, whilst also processing the result of the `storage engine` to which
+	he also needs to establish communication with
+
+**Three Major Components:**
+
+- CMD Parser: Once data gets received from the `Protocol Layer` and it is passed
+onto the `relational engine`, the **CMD Parser** is the first line of components
+that receives this request.
+	- Its main function is to check the query for **Syntactic and Semantic error**,
+	it should ensure that we are about to run, is valid SQL.
+	- At the end, it generates a `Query Tree`
+		- A `Query Tree` is a tree data structure that represents relational algebraic
+		expressions. Tables of the query are represented as `leaf nodes` and the
+		process navigates all the leafs until the `root node` is ran through and
+		all the result starts echoing across the structure from the root to the
+		upper levels
+- Optimizer: Second step of the request's timeline. The work of this component
+is to create an `execution plan` for the user's query
+	- This plan will determine how the user query will be executed
+	- Optimization is done for DML (Data Modification Language) commands like
+	SELECT, INSERT, DELETE, and UPDATE
+	- DDL commands like CREATE and ALTER are not optimized, but they are instead
+	compiled into an internal form
+		- This is because these commands don't really interact with the storage
+	- The query cost is calculated based on factors like CPU usage, Memory usage,
+	and Input/Output needs
+		- (For us, the summarized unit is TIME, time it takes for a query to run)
+	- **THE JOB OF THE OPTIMIZER IS NOT TO FIND THE BEST PLAN** it finds the _cheapest
+	plan_, so the plan that **takes the less time**
+	- There are 3 phases for the Optimizer
+		- Phase 0: Only one practical, workable plan knows as trivial plan
+			- If you want to open a bank account, and a cost of opening the account
+			is 200$, what if there are other 200 banks that might offer a better
+			option? Searching all of the possibilities, and trying to find the
+			**best** will take much longer, so it gets the first plan that can
+			come up as soon as possible after computation, and RUNS with it,
+			it will then try to super-glue, make a man out of this initial
+			query, it's just like an anime protagonist
+		- Phase 1: Search for Simple and Complex Plan
+			- The optimizer will search indexes, columns, all matter of statistics
+			in regards to the columns that are about to be queried and with that
+			in mind compute an execution plan
+			- If the resulting execution plan is not that good, it will broaden
+			its search and start searching for more than one index, more statistics
+			and pieces of info from the tables that are about to be queried to
+			find **the best plan**
+		- Phase 2: Optimizer searches for Parallel Processing possibilities. If
+		not possible, the final optimization is finding all other possible options
+		for executing the query in the best way
+- Query Executor: Calls **Access Methods**
+	- It provides an execution plan for data fetching logic required for execution
+	- Once data is received from the Storage Engine, the result gets published
+	to the Protocol Layer
+
+**Storage Engine**
+
+- The work of the Storage Engine is to store data in a storage system like Disk
+or SAN and retrieve the data when needed
+	- Don't forget that all data is stored in pages that are 8 Kbs, and that
+	we have two types of files (log files, data files). Minimum each, but
+	we can **add multiple files if requirements are there**
+- Three Major Components:
+	- Access Method: It is an interface between the `query executor` and the
+	`buffer manager`/`transaction logs`, it doesn't do anything by itself,
+	it's just an interface that guides the queries to either of these other
+	two components
+		- **Select statements** are sent to the `buffer manager` for further
+		processing
+		- **Non-select statements**, these are passed down to the `Transaction Manager`.
+		This mostly includes the UPDATE statement
+	- Buffer Manager: Manages core functions for different modules:
+		- Plan Cache: There could be an existing query plan, or a `first-time`
+		cache plan. The buffer manager checks if the computed execution plan
+		is in the `Plan Cache`, if the execution plan exists in cache then
+		we are set, **then we use this cached plan directly**, but if it's a
+		`first-time` execution plan, it will then see if it's worth saving the
+		execution plan, and then add it to the `plan cache`, so I'm guessing
+		a _cache aside_ pattern of sorts
+		- Data Parsing: Buffe Cache & Data Storage
+			- Buffer Cache (soft parsing)
+				- The Buffer Manager looks for data in the `buffer data cache`
+				if data is there, then the `sql query executor` uses the data
+				there. Less I/O operations, because data is already there,
+				hence performance _is way better_
+			- Data Storage (hard parsing)
+				- The data does not exist in the Data Cache, hence we have to
+				look for data in the `.mdf` file, it will be I/O file, it gets
+				the data, and then that data gets `cached`
+		- Dirty Page: When we retrieve data from disk, that's `a clean page`,
+		data from disk to memory (in the data cache). **But** if we go and then
+		we modify some row, then the data on the cache, becomes inconsistent,
+		because the `.mdf` file now holds information that differs from whatever
+		the cache/previously-clean page states. At **that exact moment** the page
+		becomes a `dirty page`
+	- Transaction Manager: Invoked when the Buffer Manager determines that the
+	query is `NON-SELECT`
+		- It has a `Log Manager` and `Lock Manager`.
+			- The `Log Manager` keeps track of all updates done to the system via
+			the Transaction Logs
+			- The `Lock Manager`, a module that basically keeps track of all
+			associated data in the `Data Storage` that is currently under lock
+			during any transaction.
+				- This helps with CONSISTENCY. (But as we know, this falls on the
+				hands of the application in practicity)
+		- Small story to weave together how these modules work together and how
+		data flows into disk after a change (and how it feeds into the whole subdomain
+		of the buffer manager):
+			- Log Manager logs all the transactions that will be written to the
+			database (disk) and the Lock Manager starts keeping track of all the
+			records that are being locked down by the transactions that are running
+				- A dirty copy is maintained in the `buffer cache`, a copy of data
+				that is going to be updated is kept in the `log buffer`, all the
+				events update data in the `data buffer`, all pages that become
+				_dirty pages_ are then kept as "marks", and then a process that
+				runs periodically grabs all the dirty pages, and reconciles those
+				changes to disk. _However the pages are kept in disk, on a select
+				it's that these pages are "cleaned up"_. The process to reconcile
+				dirty pages to disk is called `Checkpoint`. And the `checkpoint`
+				happens at a rate of 1 per minute.
+				- The page however is also pushed to the Transaction Log, (in
+				case of failure so that we can recover as much as we can), this
+				is called `Write-Ahead logging`
+
+[NOTE]
+====
+This is but a **brief** overview. And the information is sometimes really advanced,
+some terms, some logic that makes no sense, too much to absorb, too much too handle.
+Even for professionals that work with MSSQL Server for decades.
+What you should take away from all of this is the following: SQL Server is extremely
+complex, _there's a reason as to why it performs so well_. _Why it's in the market
+for so long_, _why it runs millions of transactions at a time_. And that is because
+the internal components are so complex, **one lecture is not enough to fully grasp
+all of that complexity**
+====
+
+=== MSSQL Database Architecture
+
+
