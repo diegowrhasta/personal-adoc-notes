@@ -5806,3 +5806,136 @@ It's a really neat concept, yet I know that it is quite _"obscure"_ in a way.
 It'd be cool to leverage this in some way.
 
 === Operation and working of transaction log
+
+The transaction log is a very important component of the database, specially since
+it's the base component that gets leveraged when recovering from a critical system
+failure.
+
+- The SQL Server transaction log is a single file which usually has an .LDF  file
+extension
+- Although possible to have multiple log files for a database, the transaction
+log is always written sequentially and multiple physical log files get treated
+as one continous circular file
+	- We also mentioned who this file in particular does not benefit at all
+	from breaking it down into multiple files, if anything, performance _might
+	even tank_
+- SQL Server uses the transaction log to ensure that all transactions maintain
+their state even in case of a server or database failure
+- All transactions are written to the Transaction Log before it is written to
+the data files. This is known as **write ahead logging**
+	- Write ahead logging: We are logging the transaction before writing it into
+	the SQL Server data files
+- Every action performed on SQL Server is logged in the SQL Server transaction
+log, multiple entries may be created for a transaction as well as all locks
+that were taken during the operation
+	- So **one transaction**, can span multiple actions that are logged, even the
+	completion of a transaction is logged.
+	- Think of a transaction log as a **run book**, or _steps_ to perform a task
+- Each log entry has a unique number known as the LSN (log sequence number)
+- Enough information is written to the log to allow for a transaction to be either
+re-done (rolled forward) or undone (rolled back)
+	- There will be enough information about the transaction so that we can
+	re-create the transaction (or also drop/roll-back)
+
+**Logical log files**
+
+- Logically the SQL Server Transaction log is divided into multiple sections known
+as virtual log files or VLFs
+- The logical transaction log gets truncated and expanded in units of VLFs
+- If a VLF no longer contains an active transaction, that VLF can be marked for
+re-use
+- If the log needs more space, space is allocated in increments of VLFs
+- The number and size of the VLFs is decided by the database engine and it will
+try its best to assign as few VLFs as possible, that is because it has performance
+implications the more there are
+	- But we can have a hand in the iniital size and the growth increment of the
+	transaction log
+		- We should not increment in small values, that is because more VLFs are
+		created and performance tanks more and more (the least VLFs the better)
+- It is important to size the log correctly and grow it in sufficiently large
+increments
+
+There's this command that you can run to see info on the log files:
+
+- `DBCC LOGINFO`
+
+**Operation and Working of Transaction Logs**
+
+Let's weave together all concepts through a story:
+
+- A user wants to update a row, the request gets sent to SQL Server, it will
+calculate if the information to update is all there in the Data Pages at the
+`Buffer Cache` if not, it will query to disk for the pages that it's missing,
+put them in the **cache** and then start with the modifications. _All of these
+modifications happen at the cache level `remember that`_. Once the operations
+are done, from the `buffer cache` we send the logs over to the `Log Cache`.
+And they sit there until the **Checkpoint** happens and they are grabbed and
+persisted to disk _Note:_ Remember that the checkpoint rate is something the
+SQL Server engine decides and does on its own.
+
+All the steps that take place while updating table-row, are recorded to the Log
+Cache, and then all of those entries are saved to disk, **once the associated
+transaction is marked as comitted**. If there are log entries with a transaction
+that was **never comitted**, then they won't be picked up to be written to disk.
+
+Because of **write-ahead logging**, in case a critical system failure takes place,
+we can read the log and try to rebuild the story up until the log captured something.
+It's a really critical component that helps keeping in a separate place a "cache"
+of operations that trace back all the way to the first transaction that took place
+in the database.
+
+=== Quiz 7: Deep Dive into MSSQL Working
+
+- What is a fundamental unit of data storage in SQL Server?
+
+R - Page
+
+- In SQL Server, how many kilobytes is a data page by default?
+
+R - 8 KB
+
+- How many pages are there in an extent in SQL Server?
+
+R - 8
+
+- What is the purpose of the Page Free Space (PFS) page in SQL Server?
+
+R - It tracks free space in data pages
+
+- In the SQL Server Page Architecture, what does the Data Page consist of?
+
+R - Header, Data Rows, and Page Free Space Information
+
+- Which part of the SQL Server Page Architecture contains information about the
+page itself and its layout?
+
+R - Header
+
+- Which component of MSSQL is responsible for managing storage, retrieval, and
+modification of data?
+
+R - Storage Engine
+
+- In MSSQL architecture, what is the Protocols Layer responsible for?
+
+R - Handling communication between clients and SQL Server
+
+- What is the role of the MSSQL Log Manager in the context of database transactions?
+
+R - Records changes to the database for recovery purposes
+
+- What is the function of the MSSQL Lock Manager?
+
+R - Manages locks to control data access
+
+== MSSQL Backup and Restore
+
+=== Welcome to MSSQL Backup and Restore
+
+We will cover probably one of the most used features in MSSQL by DBAs, it's a
+sea of things to cover, a sea of features that are only on the _backup and restore
+domain_. This is widely used, so knowing about its features and intricacies
+should be _extremely useful to us_
+
+=== Backup of a Database, Importance for DBA and Different Media's used for
+Backups
