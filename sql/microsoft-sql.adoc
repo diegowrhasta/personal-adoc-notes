@@ -5939,3 +5939,270 @@ should be _extremely useful to us_
 
 === Backup of a Database, Importance for DBA and Different Media's used for
 Backups
+
+**What is a database backup?**
+
+Process of backing up the operational state, architecture and stored data of
+database software.
+
+- When we "are taking a backup", not only we save the data which is stored in
+the database, it will save the **architecture**: _tables, stored procedures, functions,
+links_. We are creating a clone of a database, _to use it in case there is a disaster_,
+or if we are going to test some data.
+
+- It is accomplished by replication of the database and can be done for a database
+or database server
+	- We can backup a database solely, or a whole server can be backed up
+- Usually the RDBMS or equivalent database management program performs file backups
+	- It pops-out a file, and then uses that same file to restore
+- Database administrators can use the backup copy of the database to restore the
+database and its data and logs to its operating state
+	- The backup of the database can be saved either locally or on a backup
+	server
+	- **The backup of a database can be saved anywhere**, remotely, in a cloud,
+	external hard disk.
+- The businesses use backups to protect their important database from disasters
+
+**Why database backups are important?**
+
+- The most important job of a DBA, is to **have a database backup available to use
+at any point in time, ready to spin-up**
+- There should be _really specific reasons as to why you won't want to have a database
+backup_
+	- Backup of everything that is offline should be had, and more than one copy
+- **Business Protection:** Your business' growth and survival depend on your
+operations' important information. Backup of servers are important for data loss
+prevention, which can fully interrupt business operations.
+	- Everything we are using is on a hardware, and that can go corrupt, it can
+	fail, accidents can happen. The only tool that can help us bring our business
+	back online after all these disasters: **BACKUPS**
+		- The most important things happen in the database, because data is
+		a _gold mine_, yes there are other components that we also have to backup,
+		but for the sake of the DB course, we are focusing on this.
+- **Unlimited Data Access:** Access your data without time or location constraints.
+We can have multiple copies of data at different locations to ensure that info
+is preserved. E.g., We can have a copy of data that is geographically closer to
+users or specific places.
+- **Credibility and Accountability:** No customer wants to work with a company that
+continues to lose information and cannot find a way to solve a problem like this.
+It breaks the faith. It tells a lot about your **reliability** that are able to
+recover information after a disaster.
+	- We should avoid disasters, and when they DO happen, we have to show the
+	customers that we can be trusted, that data is secure, and we can go back
+	to a state that data is available for them
+- **Time effective:** It's good if you have tons of backups, but you should be
+able to use them effectively, it shouldn't take **a week** to restore a backup,
+it should be a timely and reliable `database backup solution`, and once we restore,
+we need to make sure that all data that is necessary is actually being backed up,
+we should do constant exercises to see if we can actually work after a backup
+has been restored.
+	- There is no excuse, you can't say "this part of the app works, this
+	doesn't", you should be backing up all the necessary data that is necessary
+	for the business to keep running
+
+**Where to Store a Backup?**
+
+- A best practice is to keep the copy of files **on site**, you should have a
+dedicated backup server on site and off site for reliability.
+- Online Backup Services: The cloud, e.g., S3
+- USB Drives = Small databases (but you need to password protect such devices)
+- External Hard Drives = Same idea as USB Drives, although these can store much
+more data
+- LAN Storage = A dedicated storage for backups (backup only), pretty fast disks,
+and faster network bandwidth so that backups are fast
+- Tape Storage = Not that cheap, but very reliable, however tape technology is
+becoming obsolete
+- Backup System = The best you can do is to save the backup with **security**,
+so your data doesn't end up compromised. Nowadays there are tons of backup
+systems, that not only help organizing databases, but also provide space in
+online storages (Glacier, etc), we take backup with their software and then they
+also store `securely` your data
+	- When you take the backup, you should make sure that the backup is secured
+	from third-parties. Backup should have a reliability side, but also a `security`
+	side, if someone is not authorized to see the data, **they should not be
+	able to see it**
+- _Reality Check:_ 20% of your DBA life will be dedicated to Backups.
+
+=== Recovery Models in MSSQL and their Impact on Database Restore
+
+**Understanding the MSSQL Recovery Models**
+
+_DBA should be able to recover backups reliably and securely_
+
+[IMPORTANT]
+====
+If you do not have the processes in place, the systems, the framework to manage
+database backups, and everything in a way that allows you to do a full recovery
+of all the business' data. **Then you are not qualified to be a DBA**, meaning
+that you should know how to do all this, and you should put all of that in place
+in case the current environment you are working at doesn't have it.
+
+_And this is, as we know, theory, you always have to compromise on things_
+====
+
+- Each database within SQL Server has a recovery model setting
+	- Simple
+	- Full
+	- Bulklogged
+
+Based on the recovery model you picked then the way the database will behave will
+also have slight differences:
+
+- What backup and restore options are available for a database
+- How the database engine handles storing transaction lgo records in the transaction
+log
+
+So, this is an _important decision_ that you need to take.
+
+- The transaction log is a detailed log file that is used to record how the database
+is updated for each transaction
+- The SQL Server engine uses this log to maintain the integrity of the database
+- In the event that a transaction needs to be backed out, or the database crashes
+for some reason, the transaction log is used to recover from such a disaster,
+hence this is probably one the most critical components for the database system
+- The recovery model setting will determine:
+	- _How the logs will be saved_
+	- _How much data will be saved in those logs_
+	- _For how long the data will be saved_
+	- **IMPORTANT**, we should probably _not_ use `data` as a word here, since it
+	can have different meanings, but all of the things that are being accounted
+	for are **TRANSACTIONS**. How the transactions will be saved, how many transactions
+	will be saved, for how long the transactions will live in the `transaction log`
+- The recovery model will determine also:
+	- **Whether we will be able to perform a point-in-time restore**
+- The initial recovery model setting for a new database is set based on the recovery
+model of the _model_ system database
+	- So, if the _model_ system database is `Simple`, the next created database
+	will also have its recovery model set as `Simple`. If it's `Full`, it will
+	be `Full`, if it's `Bulklogged`, it will be... _Bulklogged_
+- We can change the recovery model easily by using SSMS or TSQL code
+
+==== Simple Recovery Model
+
+- This is the most basic of the recovery models
+- When this recovery model is used, we still **write every transaction written in
+the transaction log**
+- The transaction logs will eventually be removed using the simple recovery
+model
+- The removal process happens for all completed transactions when a checkpoint
+occurs
+- SQL Server won't remove an active transaction on a `checkpoint`, it only removes
+**committed** transactions' logs from the transaction log
+- Because log records are removed when a checkpoint occurs, transaction log backups
+are not supported when using the simple recovery model
+	- Hence if a database is in Simple recovery model, we can't get the transaction
+	log backups
+	- This means **we cannot do a point-in-time restore**, because the transaction
+	log is necessary for this (one that isn't empty)
+- But the idea behind this model is that the transaction log is small, and it
+won't grow out of control
+- You can only perform full and differential backups on this recovery model
+- _You can only do a `point-in-time` recovery with full or differential backups_
+- This mode is used usually for Development or Test databases, where data loss
+is acceptable
+
+==== Full
+
+- This supports all the options for backup and restore of the database
+- Just like in simple recovery model, _we record all transactions written in the
+transaction log_
+- Unlike the simple recovery model, they stay in the transaction log after the
+transaction is completed
+- But transactions are removed eventually, _when?_ When we take a transaction log
+backup. All committed transaction logs will be removed after this specific event
+	- Because this is a manual process, we have to be careful about how we do this.
+		- Wait, but doesn't that mean that this is just something a DBA as a
+		"best practice" does then?
+- When a transaction log backup is performed against a database that is in full
+recovery model, the log records are written to the transaction log backup, and
+the completed transaction log records are removed from the transaction log
+- Since every transaction is being written to the transaction log, the full recovery
+model supports point-in-time restores
+- Meaning a database that is fully logged can be restored to any point in time
+- This also means that full recovery model comes with a lot of leeway for us,
+however the bad side is that the transaction log needs to be big enough to support
+logging of all the transactions until a transaction log backup is run.
+	- We **HAVE** to take continous transaction log backups, because otherwise it
+	will grow without stopping until it becomes an issue
+- If an application performs lots of transactions, there is the possibility that
+the transaction log will become full. (_So there is a risk even_, the transaction
+log can be filled up)
+	- When the transaction log becomes full, and we don't have autogrowth configured,
+	OR the disk is full, then the database will stop accepting transactions
+	until a transaction log backup is taken, the transaction log is expanded, or
+	the transaction log is truncated.
+- This comes with its own problems, but the **BIG TAKEAWAY** is that we now have
+on our tasks, to take periodic backups
+- So _be really careful_ and **ensure that transaction log backups are taken
+frequently enough to remove the completed transactions from the transaction log
+file before it becomes full**
+- In addition to inserts and update transactions fill up the log, index create/alter
+and bulk load operatiosn write lots of information to the transaction log
+- If it happens that: `the transaction log keeps filling up due to the index and bulk
+load operations`, you can always consider to not use `FULL` recovery mode, but
+`bulk-logged` while these operations are being performed
+	- _Wait what? so we can on-the-fly, switch?_
+
+==== Bulklogged
+
+- The bulk-logged recovery model minimizes the transaction log space usage when
+bulk-logged operations like BULK INSERT, SELECT INTO, or CREAT INDEX are executed
+	- In this specific recovery model, **these operations specifically** get minimal
+	logging, so that the transaction log doesn't take a big hit
+- This is similar to `full recovery` however the transaction log records are
+minimally logged while bulk-logged operations are running
+- Minimal logging helps keep the log smaller, by not logging as much information
+- Improves the performance of large bulk loading operations by reducing the amount
+of logging performed
+	- So these specific types of operations, that _are known to generate a lot of
+	log data_ get reduced intentionally
+	- Since we are not logging so much, we fight actively against the danger of
+	running out of space on the transaction log (but bear in mind that this happens
+	when you are working with millions of records)
+- Point-in-time recoveries are affected, because we are not taking _every single
+transaction into account_
+- However, there are _specific situations_ in which bulk-logged recovery models
+can still have point-in-time recoveries
+- If the database becomes damaged while a minimal bulk-logged operation is
+being performed, the database can only be recovered to the last transaction log
+backup **before the first bulk-logged operation**, meaning that if we introduce
+bulk operations, then the transaction log effectively becomes _fragmented_ or
+_incomplete_ the points at which the restores can go are effectively non-restorable
+if a bulk-logged operation took place at that specific position in the transaction
+log
+- When the transaction log backup contains a bulk logged operation, the `stopat`
+options cannot be used
+	- `stopat` is a specific option on a restore that allows us to stop at a
+	specific point in time (at a specific transaction), the usage for this can
+	be very specific, but imagine that we want to reproduce a specific scenario,
+	or be at a certain point in time, this option is really useful to _go back
+	in time_
+- So in short, if your database for whatever reason **didn't have bulk-logged
+operations**, then you can do a full `point-in-time` recovery without issue
+	- I don't think this scenario is that common though
+		- Hence a good way to go around this limitation is to take a transaction
+		log backup before a bulk-logged transaction fires, and right after it
+		finishes take another backup, you might have to add more complexity to
+		the restore later down the line, but this is just a way to minimize data
+		loss, while also keeping point-in-time capabilities (you will just have
+		to keep track of what period corresponds to which backup and then restore
+		things accordingly)
+
+**Lab**
+
+You can `Right Click > Properties > Options` and in there change on the fly the
+`Recovery Model`, however you can also `Script` it, and as you know _text is
+king_.
+
+The SQL is pretty simple actually:
+
+[source, sql]
+----
+ALTER DATABASE [dbtest] SET RECOVERY SIMPLE WITH NO_WAIT
+----
+An alter on the database followed by `RECOVERY` and then the different modes that
+there are `SIMPLE`, `FULL`, `BULKLOGGED`. The `NO_WAIT` modifier specifically
+states that we shouldn't wait for transactions to be completed (cuz that can
+take forever), this way the recovery model change is immediately effective.
+
+=== Full Backups
