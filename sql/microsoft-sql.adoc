@@ -6206,3 +6206,108 @@ states that we shouldn't wait for transactions to be completed (cuz that can
 take forever), this way the recovery model change is immediately effective.
 
 === Full Backups
+
+This is one of the most important type of backup.
+
+- A full database backup backs up the **whole database**
+- This includes _parts_ of the transaction log, so that the full database can
+be recovered after a full backup is restored
+- The full database backup represents the database at the time said backup
+**finished**
+	- A database is 50 GB, started a full backup at 10 AM, once the backup ended
+	at 2 PM, the database status at 2 PM, the state at that specific point in time
+	will be what the backup captures. **All transactions from the transaction log
+	are grabbed once the backup is done**
+- This is the foundation of **any kind of backup**, a complete copy
+- Stores every type of object: Tables, procedures, functions, views, indexes,
+etc.
+- It's a really easy way to recover/restore a database exactly in the same form
+as it was at the time of the backup
+- A **full backup** has to be run _at least once_ before any of the other type
+of backups. Without a full backup, we can't do anything. It's necessary, since
+all other backups will use it as a `foundation`
+
+**Full Database Backups in Simple Recovery**
+
+`A database backup mode, behaves different in the different recovery models`
+
+- Under the simple recovery model, after each backup, the database is exposed
+to potential work loss if a disaster were to occur
+- The work-loss exposure increases with each update until the next backup
+	- This is when the work-loss exposure returns to zero and a **new cycle of
+	work-loss exposure starts**
+	- Work-loss exposure incresases over time between backups
+
+Work-loss exposure:: If we don't take a backup, the transactions that happen on
+the database, are yes saved into the database, but _if not backed up_ a disaster
+that happens, will completely wipe out that data. _As soon as we took a backup,
+the work-loss exposure resets back to `ZERO`_.
+
+Again, the data keeps growing, and the data-loss exposure grows as well, we
+**again** have to take a backup, to avoid that risk, of potential critical data
+loss.
+
+For simple recovery model databases, this will be the cycle for data-loss exposure,
+**always** because we don't backup the transaction log.
+
+**Full Database Backups in Full Recovery**
+
+- For databases that use full and bulk-logged recovery, database backups are
+necessary but not sufficient
+	- We should have differential backups, or backup the transaction log
+- Transaction log backups are also required
+
+Imagine this lifecycle:
+
+- We take a full backup to reduce work-loss exposure
+	- And after this, we don't need to create a full backup, for some time at least,
+	we can just take transaction log backups, having constant backups of the
+	transaction log will keep `data-loss exposure` at ZERO. It's a really nice
+	strategy. _This is the beauty of full recovery model_ For the lifetime of
+	the database we can rely on the transaction log and its backups.
+	- **HOWEVER**, if you stop taking transaction log backups, then `data-loss
+	exposure` starts to grow
+
+- A full database backup backs up all data files and active part of the transaction
+log
+- The active part of the transaction log is necessary to restore database to a
+transactionally consistent point
+
+**As soon as you execute a full database backup**, SQL Server will issue a
+checkpoint immediately, so that all Dirty Pages are flushed, everything that
+is in the transaction log **GOES INTO DISK**. _In simply recovery model, the log
+is simply truncated, so taht all committed transactions are removed from the log
+automatically_ In full and bulk-logged recovery models it does not occur, that's
+why in Simple Recovery we can't rely on them, since they are wiped always.
+
+A really _common scenario_ is that as we are backing up data, a lot of data
+and _"conflicting" transactions_ are bound to pop up. Perhaps same pages are
+being overwritten, and other types of interactions will be captured, in the end
+it's at a _random point in time_ that a backup takes place. We might have old,
+and new copies of a data page in memory.
+
+_So when we restore_, the data pages are restored, and then the transaction log
+is read and executed _in sequence_ that way the state is **rebuilt**
+
+There are tons of commands for backup:
+
+- `BACKUP DATABASE AdventureWorks TO DISK = 'C:\AdventureWorks.BAK'`
+	- For full backups we tend to keep the `.BAK` filename (prefixed by the name
+	of the database)
+	- _NOTE:_ There are so many commands for backups, but there are definitely the
+	most widely used ones
+	- _The different backups will be tackled in the same lecture, because they
+	are really **interconnected**
+- `BACKUP DATABASE TestBackup FILE = 'TestBackup' TO DISK = 'C:\TestBackup_TestBackup.FIL'`
+- `BACKUP DATABASE TestBackup FILEGROUP = 'ReadOnly' TO DISK = 'C:\TestBackup_ReadOnly.FLG'`
+- You can split backups in equal-sized files
+- You can save backups with a password-protection
+- You can show the stats of the backup, so you can enable information that shows
+the completion percentage of the backup (they run for long)
+- You can backup stuff with decriptions
+- You can do backups with **mirrors**, meaning that more than one copy can be
+taken and stored in different places (drives, repositories)
+	- You can always copy the file yourself, but there's this specific functionality
+	that does the work for you
+
+=== Diferential Backups
