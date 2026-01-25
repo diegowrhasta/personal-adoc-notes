@@ -6311,3 +6311,187 @@ taken and stored in different places (drives, repositories)
 	that does the work for you
 
 === Diferential Backups
+
+- Is a backup of a database which basically has only the differences found with
+a **previous backup** (it is based off of the most recent previous backup)
+- A differential backup **only captures the data that has changed**
+- The full backup that is used for the difference calculation is called **base
+backup**
+- Full backups, except for copy-only backups, can serve as the base for a series,
+of differential backups, including database backups, partial backups, and file
+backups
+- Differential backups can be **considerably faster** than a full backup
+	- But mind you, **you have to restore the base backup first**, if that doesn't
+	get instanced, then the differential backup bears little to no value
+- Restoring from a differential backup will necessarily take more steps and time
+than restoring from a full backup because two backup files are required
+	- The backup steps get "more complex"
+- Under the full recovery model, using differential backups can reduce the number
+of log backups that you have to restore
+	- This is probably the biggest advantage and best use case for differential
+	backups
+
+Example:
+
+- You can restore one full backup
+	- One differential backup
+	- Three log backups
+
+**Overview of Differential Backup**
+
+- They capture the state of any `extents` (collections of eight physically contigous
+pages) that have changed between when the differential base was created and when
+the differential backup is created
+	- The differential backup captures the data of an extent, that's the basis
+	of how their architecture work.
+		- The size of a differential backup, depends on the amount of extents,
+		so yeah, _if your database has a lot of changes all of the time_,
+		_the older the database_, the bigger the differential backups will
+		become. It's all directly proportional.
+- In a series of differential backups, a frequently updated extent is likely to
+contain different data in each differential backup
+- So when deciding _what data to backup_ the differential backup will scan all
+extents, and see **what extents have been changed**, THOSE will be grabbed, nothing
+more.
+- It also will not manually calculate each page's signature, hash or something.
+There's a `differential bitmap page`, which acts as a map that you simply read
+from, and each respective bit that should map to an extent, will state if the
+extent indeed changed or not (1 = Changed, 0 = Didn't), it basically keeps a
+record of what extents changed since the last time we took a database backup
+- For each extent updated since the base, the bit is set to 1 in the bitmap
+
+[IMPORTANT]
+====
+A differential backup that is taken fairly soon after its base is usually significantly
+smaller than the differential base which saves storage space and backup time
+====
+
+- However, as the database changes over time, the difference between the database
+and a specific differential base increases
+- The longer the time between a differential backup and its base, the larger the
+differential backup is likely to be
+- This means that the differential backups can eventually approach the differential
+base in size
+	- So, we have to be constantly taking differential backups if we want to leverage
+	their biggest advantage, it's meaningless if you want "take advantage of them",
+	if you do differential backups that are extremely big (done infrequently)
+- A large differential backup loses the advantages of a faster and smaller backup
+- As the differential backup increases in size, restoring a differential backup
+can significantly increase the time that is required to restore a database
+- Take a new full backup at set intervals to establish a new differential base
+for the data
+	- Meaning, you need to have fresh full backups also, to mitigate the idea of
+	differential backups that are being taken in the future. You have to stay
+	active and on top of this
+	- A good rule of thumb is: Take a weekly full backup of the whole database,
+	followed by a regular series of differential database backups during the week
+	- At restore time, before you restore a differential backup, you must restore
+	its base. Then, restore only the most recent differential backup to bring the
+	database forward to the time when the differential backup was created
+
+Here are some commands:
+
+- `BACKUP DATABASE AdventureWorks TO DISK = 'C:\Temp\DatabaseBackups\AdventureWorks_Full.bak'`
+- `BACKUP DATABASE AdventureWorks TO DISK = 'C:\Temp\DatabaseBackups\AdventureWorks_Diff_1.bak'
+WITH DIFFERENTIAL`
+- `BACKUP DATABASE AdventureWorks TO DISK = 'C:\Temp\DatabaseBackups\AdventureWorks_Diff_2.bak'
+WITH DIFFERENTIAL`
+
+=== Transaction Log Backups, Log Backup Chain and Tail-log Backup
+
+_To start these backups:_
+
+- You must have a full backup. Again, _this is the base for all other types of backups_
+	- With this in mind, the transaction log can be backed up at any time unless the
+	log is already being backed up, meaning, _if a current log backup is taking
+	place_, you should wait until that is done to then start taking a **transaction
+	log backup**
+- We need to take these backups frequently to minimize the work loss exposure and
+to truncate the transaction log
+- If we delay a transaction log backup, more transactions will stack up, and keep
+on growing
+	- We should create a weekly backup
+	- Create differential datbase backups such as daily
+- Independent of the database backups, the DBA backs up the transaction log at frequent
+intervals (sometimes even every 5 minutes)
+- The optimal factor hinges on the importance of the data, the size of the database,
+and the workload of the server
+	- When creating a **maintenance plan**, the variables/parameters help us decide
+	when and how often we should take a full backup, differential backup, transaction
+	log backup
+
+==== Overview of Transaction Log Backup
+
+- A transaction log backup contains all transaction log records that have been made
+between the last transaction log backup or the first full backup and the last
+committed log record create upon the completion of the backup process.
+	- When we take a full backup, we know that everything within the transaction
+	log is now under the full backup. After we **later** take a transaction log
+	backup, everything that happened in-between, will be saved in the transaction
+	log backup. This backup enables us to restore the state before a catastrophe.
+	- So a way to come back online and recover as much as possible:
+		- We restore a full backup, and we start one by one in order restoring
+		the transaction log backups, with that we can bring the database into
+		a state with all the information (updated transactions) that happened
+		between a disaster and a checkpoint such as the **transaction backup**
+- To restore a database to a certain point-in-time, all transaction log records
+are required to replay database changes up to that particular point in time.
+
+LSN:: Log Sequence Number
+
+_If a transaction is still running, i.e., not committed, the backup will skip it_,
+however it's important to highlight the fact that **if a previous uncommitted
+transaction completes** as a "late comer" it will be added to the backup
+
+**Transaction Log Backup Chain**
+
+A transaction log backup is not **accumulative**, it's kinda separated, however
+there's a link between them.
+
+- A transaction log backup chain is a continous sequence of transaction log backups
+starting with first full database backup
+- Each backup from the chain has its own `FirstLSN` (oldest record in the backup
+set) and LastLSN (the number of the next log record after the backup set), that
+helps restore the transaction log backup files in the right sequence.
+
+**We need to have all the log backups to restore the database to a particular database**,
+we cannot skip a transaction log backup in-bewtween, so _**IT'S VITAL THAT YOU
+KEEP THEM SAFELY KEPT**_. At the end we will have _a chain of log backups that
+are interconnected_.
+
+This is a command to get a backup's `FirstLKSN` and `LastLSN` values:
+
+`RESTORE HEADERONLY FROM DISK = 'log1.bak'`
+
+There are instances when the log backup chain is broken:
+
+- Adding T-SQL options such as `TRUNCATE_ONLY` or `NO_LOG` after a `BACKUP LOG`
+command
+- If you switch from full or bulk-logged recovery models to simple and back again
+- If you don't want to break the chain you should take these type of actions:
+	- Starting a full, differential or file/filegroup backup
+	- Switching from full recovery model to bulk-logged and back again
+
+**Tail-log backup**
+
+- A _tail-log backup_ captures any log records that have not yet been backed up
+(the _tail of the log_) to prevent work loss and to keep the log chain intact
+- Before you can recover a SQL Server database to its latest point in time, you
+must back up the tail of its transaction log
+- The tail-log backup will be the last backup of the interest in the recovery
+plan for the database
+- **Not all restore scenarios require a tail-log backup**. You do not need a tail
+-log backup if the recovery point is contained in an earlier log backup
+- Also, a tail-log backup is unnecessary if you are moving or replacing (overwriting)
+a database and do not need to restore it to a point of time after its most recent
+backup
+
+_Biggest difference:_ Only can be taken when the SQL Server is online.
+
+**COMMAND:**
+
+`BACKUP LOG AdventureWork TO DISK = 'log1.trn'`
+
+The `.trn` extension is used for a **Transaction Log Backups**
+
+=== Lab for Full, Differential and Transaction Log Backups
