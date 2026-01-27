@@ -6495,3 +6495,251 @@ _Biggest difference:_ Only can be taken when the SQL Server is online.
 The `.trn` extension is used for a **Transaction Log Backups**
 
 === Lab for Full, Differential and Transaction Log Backups
+
+Let's do some exercises. We will take backups of the SQL Server databases.
+
+Let's remember the different types of backups:
+
+- Full Backup
+- Differential Backup
+- Transactional Backups
+
+We will also explore the different combinations and options we have at our disposal
+inside of these types.
+
+**Two ways to take backups:**
+
+- GUI
+- Scripts
+
+==== GUI Backups
+
+- Highlight a database > Right Click > Tasks > Back Up
+
+On this GUI we can see many options and information in regards to the settings
+that the database is under.
+
+**BUT**, if we were to work with AdventureWorks, we have something to take into
+consideration: `This database starts as SIMPLE recovery model`. If we want to
+take full backups, and then transaction log backups, we **NEED** to have a Database
+with `FULL` or `BULK-LOGGED` recovery model. 
+
+- Highlight a database > Right Click > Properties > Options > Change from `Simple` to
+`Full`
+
+Returning to the screen for taking a backup, we will see that we should now have
+the option of `Full` **Backup type**.
+
+There's this other option:
+
+- `Copy-only backup`, remembering what we learned previously, which stated that
+we should take the different types of backups and that they are built on top of
+each other:
+	- Full Database Backup
+		- Differential Backup
+			- Log Transaction Backup
++
+These are all inside of the backup chain, they become "coupled" between one and
+other, whenever we take a **database backup** we are under the hood essentially
+changing the structure of the database somehow, many of the components themselves
+work together to leave a trace/mark of this backup. However, there are special cases
+in which we might not want a backup to be part of this `backup chain` or to make
+those underlying changes to the database, we don't want to **disturb the chain
+of backups**. A `copy-only backup` will NOT break the chain of backups, it's a
+great "off the record" type of backup option.
+
+- Backup component:
+	- Database = A full database backup will compress/package **all files and all
+	filegroups that are present**
+	- Files and filegroups = Remember that we can sort of disect a database into
+	multiple files (physically) and filegroups (logically), we can take backups
+	focused only around those boundaries.
+
+- Destination
+	- Disk = A physical place, inside of the server/machine, this will be a file
+	in the end.
+	- Url = We provide some cloud provider URL in Amazon, Azure or whatever
+
+**Add:** We can remove the by default file that is there, and then press this button.
+After that we can select **where we want to save the backup file**, remember how
+we created **FOUR** folders at the beginning of the course. One of those folders
+is for backups, so we should be standing at that folder when opening the _location
+selector_. In there we can then put a name for the backup file: `AdventureWorks2019_MMddyyyy.bak`.
+Always make sure to version your backup files by date, that's **extremely important**.
+
+<Database Name>_MMddyyyy.bak
+
+After inputting everything you can just press **Okay** on everything.
+
+Going onto the _second tab of the backup screen_
+
+- Media Options
+	- We can configure if we want to `Append to an existing backup set`
+	- Overwrite the existing backup sets
++
+Just leave it as **append**
+
+- Verify backup when finished = This is a really interesting option, **it will
+add more time to the backup process**, _however_, the idea here is that after the
+backup process finishes, it can run a check on its integrity, just to be 100% sure
+that this file will indeed be USEFUL.
+
+- Backup Options
+	- Description
+	- Do we want to expire the backup?
+		- Really interesting "use case" I guess? This option is here for a reason
+		of course. But in most normal cases, we wouldn't want to tag a backup
+		to be "non-restorable" after a set amount of time. So this should be
+		kept as `0` so that it **never expires**
+	- Compression: We can compress a backup, however, **THIS IS AN ENTERPRISE
+	EDITION FEATURE**
+		- This makes the size of a database smaller, yet "the restore will take
+		longer", _why?_ **Because it will have to uncompress it as it restores
+		it!**
+	- Encryption: Will be skipped for now
+
+Never forget, that **everything**, **everything** you do, _can be done with a
+query_. And so there's that big button at the top of almost all screens with the
+`SQL Script` label. If you press it, then all the settings you cranked up, touched,
+will be read and then outputted in the SQL Query equivalent.
+
+_Note:_ Since the verification of the backup takes longer, we will skip it for this
+specific exercise. So **uncheck it**
+
+The course makes an interesting remark:
+
+- If you run things with a query, you get status updates, you have more control
+of the whole operation.
+
+It basically has a lot of keywords, alongside specific values:
+
+[source, sql]
+----
+BACKUP DATABASE [AdventureWorks2019]
+TO DISK = N'C:\SQL_BACKUPS\AdventureWorks2019_01282026.bak'
+WITH NOFORMAT, NOINIT, NAME = N'AdventureWorks2019-Full Database Backup', SKIP, NOREWIND, NOUNLOAD, STATS = 10
+GO
+----
+
+This is a full database backup (**DON'T FORGET THAT THOSE ALWAYS ARE `.bak`**)
+
+**Filegroup Backups**
+
+So remember, how we did a small exercise of separating a database into `filegroups`
+which are **logical** ways of separating tables and so on?
+
+We can take backups that only backup those specific filegroups, maybe one, or
+a combination of two. It really depends.
+
+[source, sql]
+----
+BACKUP DATABASE AdventureWorks2016 FILEGROUP = N'FG_2019', FILEGROUP = N'FG_2020'
+----
+
+**Splitting a backup**
+
+We can have `ONE BACKUP` but be split amongst **three different files**. Which
+we can then _send into other disks even_
+
+[source, sql]
+----
+BACKUP DATABASE AdventureWorks2016 TO DISK = 'C:\SQL_BACKUPS\AdventureWorks2016_1.bak',
+DISK = 'C:\SQL_BACKUPS\AdventureWorks2016_2.bak', DISK = 'C:\SQL_BACKUPS\AdventureWorks2016_3.bak'
+----
+This type of splitting will try to split the data amongst 3 files that are of the
+equal size
+
+**MIRROR BACKUP**
+
+We can take **TWO SIMULTANEOUS BACKUPS INTO DIFFERENT PLACES**
+
+[source, sql]
+----
+BACKUP DATABASE AdventureWorks2016 TO DISK = 'C:\SQL_BACKUPS\AdventureWorks2016.bak'
+MIRROR TO DISK = 'C:\SQL_BACKUPS_Mirror\AdventureWorks2016_mirror.bak' WITH FORMAT
+----
+
+[IMPORTANT]
+====
+You should be really familiar with the most used functions of the backup module
+of the SQL Server Suite. That is, because the business' data hinges on the fact
+that it can realiably and safely recover from disasters.
+====
+
+==== Differential Backup
+
+This will only take the backup of `pages` that have changed _after a full database
+backup_
+
+On the GUI you just change the type from `Full > Differential`, options/settings
+shouldn't change either.
+
+- Script it
+- And you should see almost the exact same query as before (the full backup one),
+with the only extra option of `WITH DIFFERENTIAL`
+
+The naming convention also changes a bit:
+
+`AdventureWorks2019_diff.diff` The `.diff` extension shouldn't really matter, but
+it's got to keep a naming cue to differentiate the backups that are just differential
+from the other types.
+
+- **It's really fast**, should take less than the full backup, _WHY?_ Well, because
+we are only taking the pages that are different since that backup, we aren't
+backing up the **WHOLE** database, we are backing up just the changes after that
+point in time.
+	- And we can then have multiple differential backups and keep adding a sequence
+	number on their name so we know the order in which we should then later restore
+	them:
+		-  `AdventureWorks2019_diff_01.diff`
+		-  `AdventureWorks2019_diff_02.diff`
+		-  `AdventureWorks2019_diff_03.diff`
+
+And remember how you should go about restoring with differential backups:
+
+- Restore the FULL DATABASE BACKUP FIRST
+	- Restore the next differential backup in terms of time
+	- Restore the next differential backup in terms of time
+	- etc...
+
+==== Transaction Log Backup
+
+This is more interesting than the differential backup. Because there are many
+options here that we can play with.
+
+**With Full Recovery Model** Never forget, we have access to this type of backup.
+
+[IMPORTANT]
+====
+It's good to keep scripting all the settings or things you can probably configure
+in the GUI, since you can see directly in `SQL` the slight differences that make
+all the difference on what will be run and what output we will get
+====
+
+So a `Transaction Log Backup` will have this appending modifier:
+
+`BACKUP LOG [AdventureWorks2019] TO DISK = ...`
+
+Also, don't forget the extension for these backups are `.trn`, these are marked
+as `SQL Server Transaction Log Backup` even on the file explorer this description
+will be apparent. And the **SIZE** is obviously another factor to see the differences,
+the `.trn` backups should be the **smaller of every other type of backup**
+
+[NOTE]
+====
+Another amazing thing about scripting everything (_besides version control that
+we know is kul_), is that you can easily change things on the fly and re-run the
+queries, like taking multiple transaction log backups and then add a sequence number
+each time.
+====
+
+**REMEMBER:** That once you take multiple transaction log backups in sequence, if
+you want to _properly restore_ the database up to one of them, you have to go in
+sequence, from the full database backup, to the FIRST `.trn`, then the SECOND `.trn`,
+and so on. It should always be done in terms of **TIME**, from past to present.
+
+This is but the `first part of the disaster recovery process`, we now have the
+data backed up, that's cool, but how do we use this? We have to restore it,
+that `restore` will be explored in the next lectures.
+
+=== Restore and Recovery Overview
