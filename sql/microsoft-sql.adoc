@@ -6743,3 +6743,107 @@ data backed up, that's cool, but how do we use this? We have to restore it,
 that `restore` will be explored in the next lectures.
 
 === Restore and Recovery Overview
+
+**Restore of a database**
+
+- Means, to recover a SQL Server database from a failure, a database administrator
+has to restore a set of SQL Server backups in a logically correct and meaningful
+restore sequence
+	- We get `.bak`, `.trn`, `.diff` files, all from the different types of backups
+	- To restore a database, we have to _restore these backup files_, these files
+	have to be restored **in a sequence**
+- SQL Server restore and recovery supports restoring data from backups of a whole
+database, a data file, or a data page
+	- We can restore all three of these objects
+- The database (_a complete database restore_): The whole database is restored
+and recovered, and the database is offline for the duration of the restore and
+recovery operations. We cannot read, insert, delete whilst a backup and restore
+takes place
+- The data file (a _file restore_): A data file or set of files is restored and
+recovered. During a file restore, the filegroups that contain the files are
+automatically offline for the duration of the restore. **Any attempt at accessing
+these files causes an error
+- The data page (a _page restore_): Under the full recovery model or bulk-logged
+recovery model, you can restore individual databases. Page restores can be performed
+on any database, regardless of the number of filegroups
+
+**Restore scenarios:**
+
+[cols="1,1,1"]
+|===
+|Restore Scenario|Under Simple Recovery|Under Full/Bulk-Logged Recovery
+
+|Complete database restore
+|This is the basic restore strategy. A complete database restore might involve
+simply restoring and recovering a full database backup. Alternatively, a complete
+database restore might involve restoring a full database backup followed by restoring
+and recovering a differential backup
+|This is the basic restore strategy. A complete database restore involves restoring
+a full database backup and, optionall, a differential backup (if any), followed
+by restoring all subsequent log backups (in sequence). The complete database restore
+is finished by recovering the last log backup and also restoring it (RESTORE WITH
+RECOVERY)
+
+|File restore
+|Restore one or more damaged read-only files, without restoring the entire database.
+File restore is available only if the database has at least one read-only filegroup
+|Restores one or more files, without restoring the entire database. File restore
+can be performed while the database is offline or, for some editions of SQL Server,
+while the database remains online. During a file restore, the filegroups that contain
+the files that are being restored are always offline.
+
+|Page restore
+|Not applicable
+|Restores one or more damaged pages. Page restore can be performed while the database
+is offline or, for some editions of SQL Server, while the database remains online.
+During a page restore, the pages that are being restored are always offline. An
+unbroken chain of log backups must be available, up to the current log file, and
+they must all be applied to bring the page up-to-date with the current log file.
+|===
+
+**Recovery Models and supported restore operations**
+
+- The restore operations that are available for a database depend on its recovery
+model
+- The following table summarizes whether and to what extent each of the recovery
+models supports a given restore scenario
+
+[cols="1,1,1"]
+|===
+|Restore operations|Full recovery|Bulk-Logged recovery|Simple recovery
+
+|Data recovery
+|Complete recovery
+|Some data-loss exposure
+|Any data since last full or differential backup is lost
+
+|Point-in-time restore
+|Any time covered by the log backups
+|Disallowed if the log backup contains any bulk-logged changes
+|Not supported
+
+|File restore *
+|Full support
+|Sometimes. **
+|Available only for read-only secondary files
+
+|Page restore *
+|Full support
+|Sometiomes **
+|None
+|===
+
+[NOTE]
+====
+If we are a **good DBA**, and we take backups periodically, and from all types.
+Then we are enabled to do all sorts of recovery plans, and get the data back
+up to the latest possible point in time. So a `point-in-time` recovery is only
+enabled if you do your homework, and are diligent.
+====
+
+You get different options for recovery, and all based around all the concepts that
+we have been seeing up until this point. It all boils down to what are the requirements
+you need, how critical are operations, how critical is data, so you pick the right
+choice to then start backing up and restoring.
+
+=== Full, Differential and Transaction Log database restore
