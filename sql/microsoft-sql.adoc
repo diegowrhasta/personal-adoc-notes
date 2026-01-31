@@ -6846,4 +6846,147 @@ we have been seeing up until this point. It all boils down to what are the requi
 you need, how critical are operations, how critical is data, so you pick the right
 choice to then start backing up and restoring.
 
-=== Full, Differential and Transaction Log database restore
+=== Full, Differential and Transaction Log database
+
+We will focus on theory for this part. And then go into practical application on
+the next section. _That is for full focus_
+
+**Full database backup restore**
+
+- Full backups contain all information necessary to restore your database to the
+point in time when the backup process had finished.
+- The backup will overwrite your database if it already exists, or it could
+also create a new SQL Server database
+- `RESTORE DATABASE AdventureWorks2019 FROM DISK = 'C:\SQL_BACKUPS\AdventureWorks_full.bak'`
+- If you are going to continue with restoring differential or transaction log backups
+after that, you need to add `NORECOVERY` as an option
+	- If you have a Simple Recovery Model Database, perhaps a dev database, and
+	you want to restore something to an exact point in time for whatever reason.
+	You goofed up, because this recovery model DOES NOT help you with that.
+	- But on PROD let's say, we **have to go to a point-in-time**, you can then
+	restore a full database backup and then start restoring differential and
+	transactional log backups, however, if you were to run the normal command,
+	it would bring the database back online automatically the moment the `full
+	database backup` finishes. And so, if we want to keep it offline so that we
+	restore all the other backups, we can add the `NORECOVERY` option at the
+	end of the query.
+
+**Differential database backup restore**
+
+- Differential backups contain changes that took place in the database since the
+last full backup
+- The last differential backup accumulates all the changes so you don't need to
+restore all previous differential backups to restore a database, **WAIT**
+	- So, yeah you can be taking lots of differential backups, but in the end,
+	the last one will have all the aggregated transactions. So if you restore the
+	**last one**, then you should have everything until that point (unless you
+	take a new full database backup and move the reference point up to the present)
+- Before restoring the differential backup we need to restore the last full backup
+first with NORECOVERY, **AND THEN** the `differential` should be restored with
+`RECOVERY`, because he's the last backup in line and we **DO WANT FOR THE DATABASE
+TO COME ONLINE AFTER THAT RESTORE**
+- `RESTORE DATABASE AdventureWorks2019 FROM DISK = 'C:\SQL_BACKUPS\Adventureworks_full.bak'
+WITH NORECOVERY`
+- `RESTORE DATABASE AdventureWorks2019 FROM DISK = 'C:\SQL_BACKUPS\AdventureWorks_diff.dif'
+WITH RECOVERY`
+- Now, if you have **Transaction Log Backups** that you want to restore, _**AFTER
+THE DIFFERENTIAL BACKUP**_ restore, meaning, you should also run the differential
+restore with `NORECOVERY` because you have one last set of backups to restore,
+and on application of those, the last one should run with `RECOVERY`
+
+**Transaction Log database backups restore**
+
+- Transaction log backups contain all transactions that took place between the last
+transaction log backup (or the first full backup) and the moment when the backup
+process had finished
+	- So, transaction log backups are chained together, they really depend on
+	order
+- You have to restore all transaction log backups made after the last differential
+backup in the same sequence they were made
+	- We have to restore things **IN SEQUENCE**, _we can't cherry-pick_
+- And, obviously, log backups are restored after you're done with full and differential
+backups
+- `RESTORE DATABASE AdventureWorks2019 FROM DISK = 'C:\SQL_BACKUPS\Adventureworks_full.bak'
+WITH NORECOVERY`
+- `RESTORE DATABASE Adventureworks2019 FROM DISK = 'C:\SQL_BACKUPS\AdventureWorks_diff.diff'
+WITH NORECOVERY`
+- `RESTORE LOG Adventureworks2016 FROM DISK = 'C:\SQL_BACKUPS\Adventureworks_log1.trn' WITH
+NORECOVERY`
+- `RESTORE LOG Adventureworks2016 FROM DISK = 'C:\SQL_BACKUPS\Adventureworks_log2.trn' WITH
+RECOVERY`
+
+=== Point in time restore of a database
+
+**Point in Time restore**
+
+- Allows us to restore a database into a state that it was at **ANY POINT IN TIME**
+- This type of recovery is applicable only to databases that run under the full
+or bulk-logged recovery model
+	- That is because transaction log backups are key to enabling us to do that.
+- If the database rusn under a bulk-logged recovery model and transaction log backup
+contains bulk-logged changes, the recovery to a point-in-time is not possible
+	- Bulk-logged recovery truncates information on the transaction log, and so,
+	a point-in-time type of recovery would not be possible (_because the data won't
+	be enough_), if we somehow change the recovery model to bulk logged and we
+	were doing transaction log backups for a full recovery model, then we effectively
+	turn any other transaction log backup _non-recoverable_ after that point in time.
+- **EXAMPLE:** Assume that at 12:00 we run a full backup (it takes 45 minutes) at
+13:30 we took the last transaction log backup, and 30 minutes later another, and
+30 minutes later another one. After 6 hours pile up, we can change a `Differential
+Backup`, after that backup we can start again taking `transaction log backups`,
+until we arrive again, 6 hours later to another differential backup. This last
+one, will be **bigger** than the **one that was taken 6 hours before**. We then
+keep taking transaction log backups, and BOOM, something explodes.
+
+**What to do?**
+
+- To recover a database to a point-in-time it is necessary to start from restoring
+the full database backup using the following syntax:
+- `RESTORE DATABASE AdventureWorks2019 FROM DISK = 'AdventureWorks2019_full.bak' WITH
+NORECOVERY, REPLACE`
+	- The `REPLACE` flag here is really important, because we ran into a disaster,
+	and the state of the database might be uncertain, SQL always has checks in
+	place, it will probably not allow us to restore because files don't match,
+	or this backup at this point in time looks iffy to restore based on the status
+	(time, differences)
+	- But `REPLACE` helps us tell the SQL Engine: _"I know what I'm doing, just do it"_
+		- Replace the database, yes replace the files. DO IT.
+- So, we need to _go back in time_, we **have to start restoring from the latest
+available checkpoint**.
+	- After the full backup is restored we have to restore the differential backup,
+	- The **latest one**, only grab that one, and restore it:
+- `RESTORE DATABASE AdventureWorks2019 FROM DISK = 'AdventureWorks2016_diff.diff' WITH
+RECOVERY`
+- Remember that the last differential backup includes all changes that were made to the
+database since the last full backup
+- And also remember that the **last step** is to apply _all transaction log backups
+that were made after the differential backup_
+
+[NOTE]
+====
+We don't have to restore all transaction log backups from the start, the differential
+backup is a big shortcut we can use.
+====
+
+- Apply all transaction log backups in the same sequence in which they are created.
+It is crucial to remember to specify the time to which the database should be restored
+with the help of `STOPAT`, when you restore the last backup log, you can specificy
+the specific point in time at which you want the restore to stop, _it might have
+more data, but we want to restore before the catastrophe_
+
+**Transaction LOG**
+
+- All backups, except the last one, are restored with the `NORECOVERY` option, while
+the last one should be restored with `RECOVERY` so that the database comes online after
+the restoration.
+- `RESTORE LOG AdventureWorks2016 FROM DISK = 'AdventureWorks2016_log_013.trn' WITH
+NORECOVERY`
+- `RESTORE LOG AdventureWorks2016 FROM DISK = 'AdventureWorks2016_log_014.trn' WITH
+STOPAT = '2020-11-19 13:29:59.00', RECOVERY`
+	- Again, we want to stop just before the error/corruption whatever issue happened.
+	We want to restore up until a working/correct state
+		- Sometimes, the "catastrophe" can be you goofed up, and deleted something
+		you shouldn't have.
+- You can use GUI or Script (_but as you know, we are real men, we use SQL_)
+
+=== Complete Backup, Restore and Restore in Time Lab
