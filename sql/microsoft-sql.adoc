@@ -6990,3 +6990,149 @@ STOPAT = '2020-11-19 13:29:59.00', RECOVERY`
 - You can use GUI or Script (_but as you know, we are real men, we use SQL_)
 
 === Complete Backup, Restore and Restore in Time Lab
+
+We will do:
+
+- FULL Bckup
+- Diff Backup
+- Transaction Log Backup
+
+And then restore:
+
+- Full Restore
+- Diff Restore
+- Trans Log Restore
+- Point in Time Restore
+
+**IMPORTANT:** Make sure the database is in _full recovery model_. Honestly, in
+production, we always have FULL recovery model, rare cases just use `SIMPLE`.
+
+- Create a table in the AdventureWorks database
+- Insert 5 rows
+- Take a full backup of this (don't forget to suffix it with `_backup.bak`)
+- Insert 5 more rows
+- Take a differential backup (don't forget that the naming convention goes like
+`_diff_1.diff`, `_diff_2.diff`)
+	- The only difference when you script this type of backup that you "set-up"
+	with the GUI is that it has the `WITH DIFFERENTIAL` option applied to it
+- We will start adding more rows in batches, and take backups respectively
+- After 3 differential backups, we can now start backing up the transaction log,
+we should also do this sequentially with new rows we insert
+	- This has a naming convention of `tran_1.trn`, `tran_2.trn`
+	- Since we are going to simulate and run tests, we will leverate this command:
+	`print GetDate()`
+		- This prints to us the current time the MSSQL Server has (which in turn
+		should be the OS's time)
+		- With this we will take some minutes (wait), and then try to run the backup
+		again.
+	- Say we want to restore the database up until a _really specific point in
+	time_ so up until the last minute of the last backup we have:
+		- Drop the database (AdventureWorks)
+		- _NOTE:_ Here, so for whatever reason, when trying to DROP I was getting
+		an erorr stating "database in use", using `sp_who2 active` showed nothing,
+		however I switched the database context to `AdventureWorks2019` and then
+		back to `master` and the drop could run (the auto-generated SCRIPT)
+	- With the database dropped, we can right click `Databases` and select `Restore
+	a database`
+		- With this option you can select `Device` and select the **full database
+		backup** we took.
+		- And on the `OPTIONS` we should definitely set it it as `NORECOVERY`,
+		what this does is really cool, whenever we said _"it doesn't bring it online"_
+		it literally shows (after you refresh) next to the database name `Restoring...`,
+		meaning that with `NORECOVERY` it will literally put the database in a
+		"limbo state", a state that tells everyone ("this database is in the process
+		of restoration")
+		- **BIG NOTE:** Lab has flaws, in the sense that it probably doesn't account
+		for this scenario, but again, it shows the advantages of using RAW
+		`SQL` queries than relying on the GUI. Even though the GUI states that
+		the database is "restoring" it is "forgetful". If you exit the wizard,
+		it won't query properly and acknowledge the database already had a
+		full database backup restored, and it will try to "save you from yourself",
+		even though it's being really dumb, actually.
+		- So, just run T-SQL man, (aha, the course also decides to fallback)
+		- You can use the SQL that is generated for the full database backup
+			- All you have to do is to change the name of the file, that's it.
+				- **Don't forget that this command had `NORECOVERY`**, so even
+				after we run the differential, it will still be `(Restoring...)`
+		- The course shows an experiment on how it actually restored the `diff`
+		**with** `RECOVERY`, and yes, the database doesn't show up as `Restoring...`
+		and if we query the test table, we will see how all the records up until
+		that specific point match the records we did have (after our inserts)
+		- We can even use the GUI to explicitly restore a `Transaction Log`
+		backup
+			- The course tried to restore ALL the transaction log backups, but
+			it didn't work, scripting **only one** seems to work just fine.
+			- THE COURSE ALSO RUN INTO THE SAME ERROR I DID, apparently it's just
+			human error? I don't know though. Whatever, in short the "next"
+			transaction backup seemed to not have the LSN (the position that
+			marks the continuity of the backups), aligned from `trn1` to `trn2`.
+			So we broke the chain, _we can't restore if the chain is broken_.
+			So yeah, I don't know, won't try again, got the gist of it.
+			- We can also just select `Restore > Database` and pick **all the
+			files** the GUI is smart enough to rebuild a path to restore all of
+			them (it makes sense out of their types and following the LSN),
+			so that it makes a "plan" of the restoration. You can press `OK` or
+			script it and run it. All things in sequence should be restored correctly.
+				- **EXTRA NOTE:** It should also be said that the GUI tells you the
+				First and Last LSN of each database, so you can do some forensics and
+				research if there are errors, or things don't seem to make sense.
+- _In a perfect world_, with no errors, we would do this at first try, and we
+would not be rebuilding things from scratch (which are actually a hassle).
+	- Seeing how volatile, and brittle things can be, human error can be a lot
+	of a risk, so **tools**, and **automation** help to avoid that human error,
+	on top of accelerating your speed
+- So far we have done a transaction log backup, **BUT WHAT ABOUT POINT IN TIME??**
+	- The course goes and does everything again from scratch:
+		- Restore AdventureWorks
+		- Create the test table
+		- Insert rows
+		- Take full backup
+		- Take differential backup
+		- Used `PRINT GetDate()`
+		- Started taking transaction log backups and inserting one at a time new
+		records
+	- The course ends up with **3 transactional log backups**
+	- We (with a `REPLACE` would be easier), restore again the `full backup` and
+	the `differential backup`
+	- Example: We are taking backups as the GOOD DBAs we **ARE**, and in the middle
+	of our day, someone tells us: DUDE, WE NEED TO RESTORE THE STATE TO THE ONE
+	HOUR AGO STATE. QUICK!
+		- Well, too bad we don't have a specific backup that has every single transaction
+		up until the previous hour.
+			- But we can use the already taken backups, any type of backups
+			that might hold in them the story state up until a certain a point, are **amazing
+			targets to grab and apply the point in time option**
+			- And so regardless of the type of backup, you can configure its restoration
+			to be done up until a certain hour. E.g., (`STOPAT = N'2021-07-26T08:54:23'`)
+	- **NOTE:** Remember that even though we might be right clicking a database,
+	through `SQL` we can put another database name and the backup will be restored
+	to this new database (it will be created in the background)
+- **Of course:** by doing things manually, testing, failing and learning, finding
+solutions and workarounds. THEN you can actually start forging **knowledge**, THEN
+you can start gaining wisdom on the topic.
+
+[NOTE]
+====
+And in playing around with the issues that I ran into, I could actually leverage
+what I learned with `REPLACE` so that I could re-run all the commands to restore
+from the full backup all the way to the transactional log backup. Instead of
+manually having to DROP, and whatevers. This replaced the state and ran all the
+backup restores back-to-back.
+
+Also, if you want to "turn on" the database, from recovery model (`Restoring..`),
+then you can literally just run a `RESTORE DATABASE AdventureWorks2019 WITH
+RECOVERY`, this literally just brings the database back online after it was left
+in a recovering state.
+====
+
+[IMPORTANT]
+====
+Try to practice as much as you can, try to really nail down the idea of backups.
+That is because one of the most important parts of the job are being a DBA. If
+you feel you'll dread that, you are probably not going to be a DBA, that is not
+suited for you. It's actually a big responsibility, because the data, which is
+actually one of the most important parts of the business falls upon your shoulders.
+====
+
+=== MS SQL Server DBCC CHECKDB command
+
