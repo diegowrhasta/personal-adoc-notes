@@ -7136,3 +7136,215 @@ actually one of the most important parts of the business falls upon your shoulde
 
 === MS SQL Server DBCC CHECKDB command
 
+We will be talking about a really important in MSSQL Server.
+
+**DBCC CHECKDB** = Quite descriptive, "Check DB"
+
+- DBCC CHECKDB checks logical and physical integrity of all the objects in the
+specified database
+- DBCC CHECKDB includes all the three commands
+- DBCC CHECKALLOC - Checks the consistency of disk space allocation structures for
+a specified database
+- DBCC CHECKTABLE - Checks the integrity of all the pages and structures that make
+up the table or indexed view
+- DBCC CHECKCATALOG - Checks for a catalog consistency within the specified database.
+The database must be online
+
+[IMPORTANT]
+====
+We can run each command individually/separatelly, however when we run `DBCC CHECKDB`
+we are actually running all of these three at the same time, so think of it as
+a "shortcut" or "alias" as well.
+====
+
+- On top of these three steps, it checks the validty of the database (physical as
+well logical), i.e., validates the contents of every indexed view in the database
+- Validates the Service Broker data in the database
+	- Basically, when running this command we can easily run a check for any corruption
+	of data in our database.
+
+**DBCC CHECKDB Syntax and Options**
+
+The command in-it-of-itself, is actually pretty simple, we just need to feed a
+database name to it. However we can finely shape the outout and behavior of it
+with different options:
+
+- `DBCC CHECKDB('DatabaseName')`
+	- **NOINDEX** - Specifies that intensive checks of non clustered indexes for
+	user tables should not be performed
+	- **NO_INFOMSGS** - Suppresses all information messages
+	- **PHYSICAL_ONLY** - Limits the checking to the integrity of the physical
+	structure of the page and record headers and the allocation consistency of
+	the database
+	- **TABLOCK** - Causes `DBCC CHECKDB` to obtain locks instead of using an
+	internal database snapshot. `TABLOCK` will cause `DBCC CHECKDB` to run faster
+	on a database under heavy load, but decreases the concurrency available on
+	the database while `DBCC CHECKDB` is running.
+		- Which I'm guessing is that, in order to read all the tables and info
+		it needs, it will add locks on all the places it touches, it's interesting
+		to think of it that way. Although a use case for this, really escapes my
+		mind.
+		- Okay, thanks Gemini, apparently when you run `DBCC CHECKDB` it actually
+		creates an internal snapshot (a _hidden snapshot_) to then run its calculations,
+		however this can be extremely process and file-size consuming. Hence,
+		you have to be really careful when your disk is about to run out or if
+		the database is under really heavy write-loads, the snapshot creation
+		can easily become way more taxing and the system can enter a failure state.
+			- So it's really _extreme cases_ let's say, but it's interesting to
+			know that this hidden snapshot mechanism exists, and how that can
+			be an issue, and the second lesser evil is to not create it and
+			act on the live data and perhaps, _yes, stalling other connections
+			for a while_, but also allowing for the database to not die
+	- **DATA_PURITY** - Causes `DBCC CHECKDB` to check the database for column
+	values that are not valid or out-of-range. For example, DBCC CHECKDB detects
+	columns with date and time values that are larger than or less than the acceptable
+	range for datetime data types; or decimal or approximate-numeric data type
+	columns with scale or precision values that are not valid.
+
+You achieve purposes that vary on the requirement / situation by using or not
+using these options.
+
+**DBCC execution results**
+
+When you run this command, you will get different results. However if there are
+no problems, you will see only information messages. However, if the database is
+corrupted because of whatever reason, you will see these types of messages:
+
+- `SQLSTATE 42000 (Error 2508)` (_The whole error message is too long to write
+but this is a good way of pointing out to an easily identifiable part of it_).
+	- This is an error that can actually be easily fixed by running a simple command:
+		- `DBCC UPDATEUSAGE` will correct the page and row count inaccuracies in
+		the catalog views
+- It will also show specific `page` corruptions (the message has a really specific
+instruction: `repair_allow_data_loss is the minimum...`)
+	- This in turn states that we should run `DBCC CHECKDB` with the repair allow
+	data loss option, which will perform quick and broad integrity fixes to any
+	errors that it founds.
+		- **IMPORTANT:** If you are going to run the "apply-fix" version, be
+		sure to put the database in single-user mode.
+		- **ALSO IMPORTANT:** The command can easily nuke data, so it's a warning
+		also stating _"You may lose some data"_
+	- This command can be _not used_ by using backups, we can just restore the
+	database up until a state before the page in question got corrupted.
+		- _But in case we are out of luck, and the backup is not good, or whatever
+		other possible bad scenario that rules out backups as a solution_, we
+		will have to run this command.
+	- However there are other options you can run to try and fix the corrupted
+	page:
+		- `REPAIR_BUILD` - Performs repairs that have no possibility of data loss.
+		This can include quick repairs, such as repairing missing rows in non-clustered
+		indexes, and more time-consuming repairs, such as rebuilding an index
+			- This is pretty harmless, not dangerous, since **NO DATA LOSS**. However,
+			if this option just didn't work, it was not **powerful enough**
+		- You can bring-in the big guns: `REPAIR_ALLOW_DATA_LOSS` - Which tries
+		to repair all reported errors. These repairs **can cause some data loss**
+			- So be really careful, its name states clearly that it's possible to
+			run into data loss. Due to this possibility, Microsoft warns people
+			to use this **WITH EXTREME CAUTION**. Keep things in mind:
+				- Is this database critical
+				- How big is the database?
+				- Is there a good recovery strategy?
+				- How would you validate your db backup?
+			+
+			Based on the answers, you will get an answer as to whether you will
+			get to use this command or not. But again, this is, **a rocket launcher**
+
+**DBCC CHECKDB Examples**
+
+- DBCC CHECKDB(N'AdventureWorks2019') WITH NO_INFOMSGS
+	- This is just avoiding any sort of summary or stuff that's **not error messages**
+	on output
+- DBCC CHECKDB(N'AdventureWorks2019', REPAIR_BUILD) 
+	- This is the command that is pretty harmless, it will try to apply as many
+	quick wins as possible on errors it finds
+- DBCC CHECKDB(N'AdventureWorks2019', REPAIR_ALLOW_DATA_LOSS) 
+	- This is the rocket launcher approach that you should try to avoid, because
+	it can delete data, but also even after you run it, there might be consistency
+	and integrity checks that will not pass **OR** behave weirdly
+- Single User Mode = It's better to run the checks when in this mode (on the
+database). It only allows the first connection to be connected to the database
+	- Basically only **ONE PERSON TO BE CURRENTLY CONNECTED TO THE DATABASE**
+	- The command to set the database to single user mode: `ALTER DATABASE AdventureWorks2019 SET
+	SINGLE USER`
+		- And there's even an option that will make all currently connected users
+		to get disconnected
+	- And if you want to put the database back on track:
+		- `ALTER DATABASE AdventureWorks2019 SET MULTI_USER`
++
+We use a lot of this setting to single user, and that is because as we saw in the
+previous labs, we tend to run issues with locks and other connections a lot.
+Specially when we are trying to restore a database and so on. _To avoid these
+annoyances, on top of also making sure our data will be consistent_, we run the
+command, run our stuff, and bring the database "back-online" by setting it again
+to multi-user mode.
+
+**EXAMPLES IN LAB**
+
+- Yeah, since I nuked AdventureWorks, I can't run this against it now (_will probably
+download the backup again_)
+- But yeah, when I run it even against really small databases, it _"takes a while"_.
+So I can totally see how **intense** it can be.
+- If you look at all the info messages, you will see how it scans all the database
+objects, and metadata such as rows, pages, etc.
+	- **AT THE END OF THE WHOLE TRACE IT WILL SAY IF THERE ARE ISSUES OR NOT**
+		- Probably the most important section of the whole thing XD
+- `DBCC CHECKDB('AdventureWorks2019') WITH NO_INFOMSGS`
+	- You won't see as much detail as the original command, literally just shows
+	`Command(s) completed successfully`
+- `ALTER DATABASE AdventureWorks2019 SET SINGLE_USER WITH ROLLBACK IMMEDIATE`
+	- `DBCC CHECKDB ('AdventureWorks2019', REPAIR_REBUILD)`
+- `ALTER DATABASE AdventureWorks 2019` SET MULTI_USER WITH ROLLBACK IMMEDIATE`
++
+Running these three commands with a `GO` in the middle of them ensures that we
+run the command and we don't fail. The `WITH ROLLBACK IMMEDIATE` is the specific
+option that we mentioned before that **_kicks everyone out_** of the database
+connection pool.
++
+An extra cool fact about this single user mode, is that if you just run the application
+of it, you can see in the list of databases next to the name `(Single User)`, which
+is cool, the "IDE", well RDBMS, (in this case SQL Server Studio), understands these
+concepts and displays feedback accordingly.
+- `DBCC CHECKDB('AdventureWorks2019', REPAIR_ALLOW_DATA_LOSS)`
+	- We can run this in test runs, and test examples, but again don't forget
+	**THIS CAN BE REALLY BAD, SO BE SURE YOU HAVE YOUR BUTT COVERED BEFORE RUNNING
+	THIS COMMAND**
+
+
+_NOTE:_ The course sort of does this inadvertedly, but it's good to stay consistent
+on syntax, for readability and uniformity. So all database commands with all caps,
+keeping spaces, keeping tabs, and as many visual cues you can think of, in place,
+so that you can have an easier time reading queries, an easier time building and
+making sense out of things.
+
+====
+[IMPORTANT]
+====
+The error messages that `DBCC CHECKDB` throws, are really detailed, and some of
+them might be a bit insipid, yes, however, most of the time it will actually tell
+you how to solve the issue (by running a command). It also goes into deep detail.
+====
+
+**ADVICE:**
+
+You can schedule in a job, create a maintenance plan, and then run this database
+integrity check command. _Daily_, just to keep the health of the database in
+check. Sometimes these integrity/corruption errors go, and keep going for a long
+time before anyone notices, and once it's already really goofy, then it can bring
+down a whole database on its own.
+
+- So better to be safe, than sorry. And again, it's nothing "crazy" so just keep
+in automated tasks.
+	- Also, this avoids you having to go and do a full recovery which can itself
+	be a bit time-consuming, error prone, and just annoying. (_We already saw how
+	we have to go, one-by-one, and start applying different backup restorations,
+	in order, how it can go horribly wrong, etc_)
+
+_Idea:_ This also leads me to believe that DBA's have great opportunity to automate
+their tasks, to create whole systems that take care of the menial, hard labor
+that they should know by heart/know how to do manually. But also that tends to get
+pretty repetitive, whereas they could be focusing on other areas that bring
+value to the business whilst they keep the basics already covered by automation.
+
+=== Page Level Restore / Recovery using Full Backups
+
+
