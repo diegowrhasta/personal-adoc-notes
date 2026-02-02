@@ -7347,4 +7347,318 @@ value to the business whilst they keep the basics already covered by automation.
 
 === Page Level Restore / Recovery using Full Backups
 
+[NOTE]
+====
+Before proceeding, I just want to log this issue I came across and how I fixed it.
+So apparently, you _should turn off the QEMU VMs if you want to suspend the host_,
+otherwise, if you force it, when coming back on-line they might start behaving
+weirdly. Like my Windows Server machine, literally had no internet all of sudden.
+And no amount of trying to fix it could find a solution (I'm sure there is one,
+I'm just not gonna waste my life on it). In the end I gave up, but because the
+VM could still see the host I decided to just download what I wanted on the host
+and start a small server so that from the VM I could pipe into the host's file
+system and download the file into the VM: `cd ~/Documents` > `python3 -m http.server 8080`
+> On the VM (Windows) just go to a browser and input: `http://192.168.122.1:8080`.
+This should visualize the folder that the server is running on. And kinda like FTP
+you can click on files and download them. _Easy, and clever_
+====
+
+_And just like that, my nuked AdventureWorks2019 was back-online_. Also wow,
+it seems there's a 2025 version of AdventureWorks2019. I wonder **what's different
+there**
+
+In the last lecture we went with the `DBCC CHECKDB`, and we saw how we can find
+out corruptions, and try to fix that corruption. We can do: **page level recovery**
+and **page level restore**, this process looks at all the pages that are corrupted,
+and we take a backup as a reference to find said pages in order to restore them
+in a _non-corrupted_ state. **That is called** `page level restore`.
+
+- Page restore is a technique used to replace corrupted pages of information in
+a database with uncorrupted data from a backup
+	- This is **only possible**, _if you manage to establish a good backup plan/
+	strategy_
+- The intent of the restore is to fix one or more corrupted pages from the available
+backups
+- To identify corrupted pages, we look at pages marked as "suspect" in the table
+`msdb.dbo.suspect_pages`, this is a `System Table` btw, keep that in mind.
+- Most of the time, performing a page-level restore suffices for database
+availability
+	- In the practical life: Instead of restoring the WHOLE database, which is
+	time-consuming and error prone, sometimes you can just make usage of the backups
+	to do a **page-level restore** and that would be enough to bring back the database
+	online
+- A good backup strategy is key to a recovery or restoration, and SQL Server provides
+us with an option to fix database pages at a granular level.
+	- Instead of restoring Terabytes sometimes, MSSQL allows us to find pages
+	through queries and just restoring those specific pages from a backup. It's
+	this granularity that is so powerful
+- Performing a page level restore in SQL Server is a clever option wherein the
+restoration of the entire VLDB database backup is not required
+	- VLDB => Very Large Database
+- Identifying the corruption and finding a solution is the key to a successful
+restoration or recovery of the database
+	- We need to be able to find the corrupted pages
+- If the number of corrupted pages seems too large, and if the administrator feels
+that restoring the entire database from the most recent backup is a viable option,
+only in that case should the option be full restoration
+	- 100 corrupted pages, database is not that big, problems are too many
+	- However if the restore might take too much, best to go for the granular
+	strategy
+
+**Lab Notes**
+
+- Create a database, take a backup, find a page, corrupt the page intentionally,
+restore the corrupted page from the backup
+- We will use queries that are _advanced level_
+	- I'm taking a `.txt` that was provided to download with all the queries that
+	we need to execute. Since I'm working on a VM I can't really leverage that so
+	I will be writing everything by hand.
+
+[source, sql]
+----
+USE master
+GO
+DROP DATABASE IF EXISTS [CorruptionTest]
+GO
+CREATE DATABASE [CorruptionTest]
+GO
+ALTER DATABASE [CorruptionTest] SET RECOVERY FULL;
+GO
+ALTER DATABASE [CorruptionTest] SET PAGE_VERIFY CHECKSUM <.>
+GO
+CREATE TABLE [CorruptionTest].[dbo].[mssqltips_online]
+(increment INT, randomGUID uniqueidentifier, randomValue INT, BigCol CHAR(2000) DEFAULT 'a',
+INDEX CIX_MSSQLTips_increment1 UNIQUE CLUSTERED (increment))
+GO
+CREATE TABLE [CorruptionTest].[dbo].[mssqltips_corrupt]
+(increment INT, randomGUID uniqueidentifier, randomValue INT, BigCol CHAR(2000) DEFAULT 'a',
+INDEX CIX_MSSQLTips_increment1 UNIQUE CLUSTERED (increment))
+GO
+----
+<.> This is legacy, since MSSQL 2005, `PAGE_VERIFY CHECKSUM` is applied under the
+hood on a `CREATE DATABASE`. However, it's good to know _what it does_, in short,
+this enables the server to keep track of all 8 KB pages that are being generated
+and written to disk. It keeps a HASH (checksum) for all of them, once they are
+written and when they are read again. This enables us to raise an alarm if the
+checksum doesn't match to the "good state" when the page was written to disk.
+**Bear in mind, this is only a way to detect corrupted pages, if you want to restore
+them you have to still use backups and have good restoration strategies**
+
+This will drop this new `CorruptionTest` database if it already exists, create the
+database again, set the recovery model to `FULL` and also set `PAGE_VERIFY` CHECKSUM,
+it will create two tables with indexes on both of them. Pretty straightforward.
+
+[NOTE]
+====
+There are definitely inconsistencies across the board on all the commands provided,
+some have semicolon (;), when we said that those are unnecesary, `GO` is enough
+on a new line. Also the casing of the names and MSSQL statements is also mixed up.
+====
+
+[source, sql]
+----
+SET NOCOUNT ON; <.>
+DECLARE @counter INT = 1;
+BEGIN TRAN
+   WHILE @counter <= 250000
+   BEGIN
+      INSERT INTO CorruptionTest.dbo.mssqltips_online (increment, randomGUID, randomValue) 
+      VALUES (@counter, NEWID(), ABS(CHECKSUM(NewId())) % 140000000) <.>
+
+      INSERT INTO CorruptionTest.dbo.mssqltips_corrupt (increment, randomGUID, randomValue)
+      VALUES (@counter, NEWID(), ABS(CHECKSUM(NewId())) % 140000000)
+
+      SET @counter += 1
+   END;
+COMMIT TRAN; <.>
+GO
+----
+<.> For any non-trivial data modification, especially in loops or bulk operations,
+`SET NOCOUNT ON` provides free performance gains by eliminating unnecessary network
+chatter. It's one the simplest optimizations you can make
+<.> You can see how we are using the counter for an ID, then to get a random
+guid we can leverage `NEWID()`, and lastly to get ar andom value we are getting
+an absolute value (probably to avoid negatives) of the module of a CHECKSUM of
+another randomg GUID and a really big number `140000000`
+<.> You can also see how on this really big loop we by the end commit if everything
+went right
+
+This is a really big query, it takes around 1:04 minutes to run it (in my case)
+
+And lastly we can just run queries to double check we indeed have 250000 rows
+on each table, on top of other things:
+
+[source, sql]
+----
+SELECT count(1) FROM [dbo].[mssqltips_corrupt] <.>
+SELECT count(1) FROM [dbo].[mssqltips_online]
+
+DBCC CHECKDB('CorruptionTest') WITH NO_INFOMSGS <.>
+GO
+BACKUP DATABASE [CorruptionTest] TO DISK = 'C:\SQL_BACKUPS\CorruptionTest_Full.BAK' WITH COMPRESSION <.>
+GO
+----
+<.> Clever usage of `count(1)` that way we are just "counting" a static `1` for
+each row
+<.> So that we don't get bombarded with feedback messages (because it does it
+for each row and they are too many). _Note:_ This took around 14 seconds to run,
+and I'm guessing it's because the database is really big, and also because **as
+we now know, this creates a whole snapshot in the background, and it's actually
+really taxing**
+<.> We lastly backup the database (this also took some time, although less than
+the integrity check which is funny)
+
+- We have created databases
+- We have run integrity checks
+- We have backed up this data successfully
+
+Now, there are **intentional ways to corrupt pages**, **NEVER TRY THIS ON PROD**.
+
+_This is for science_
+
+````
+SELECT TOP 10
+   sys.fn_PhysLocFormatter(%%physloc%%) PageId,
+   *
+FROM [CorruptionTest].[dbo].[mssqltips_corrupt]
+GO	
+````
+
+This is a useful system function that helps us query page information, in this
+instance we are using it to spit out the `PageId` of the respective row from
+`mssqltips_corrupt`
+
+Example result: (1:354:2) - <randomValue>
+
+The <randomValue> is the rows specific value that was calculated
+
+Next we would want to run:
+
+[source, sql]
+----
+DBCC TRACEON (3604) <.>
+GO
+DBCC PAGE ('CorruptionTest', 1, 354, 3) <.>
+GO
+----
+<.> This is a specific flag that you should run always if you want to see feedback
+from a `DBCC` command, this redirects the output of `DBCC` to a client instead of
+dumping it in the SQL error log. Don't use it in production unless you have a
+compelling use-case. It's really taxing on performance. Also, it exposes a lot
+of sensitive data, so be careful. However, it's a bit legacy.
+<.> From the `PageId` that we got on a row, we can feed those 3 numbers separated
+by colons as the last three parameters of `DBCC PAGE`; the first parameter is the
+database namei. **REALLY IMPORTANT:** I misunderstood the parameters, the `last
+parameter` is actually the verbosity level and we want it at `3` because it gives
+the most amount of information possible.
+
+**IMPORTANT:** NEVER FORGET TO ALSO TURN IT OFF AFTER YOU HAVE STARTED THE TRACE:
+`DBCC TRACEOFF (3604)`
+
+After we execute the `DBCC PAGE` we see A LOT OF INFO. However we want to look for
+something that points to info in regards to the `randomValue` that we picked.
+This should be (as this is a controlled test with a specific structure), under
+`Slot 1 Column 3`.
+
+After we have found this, we can now start cooking up the corruption:
+
+- We want to insert a different value in here, however we will insert it differently
+than the normal approach, which requires us the value to be in HEX (Hexadecimal),
+in order to get such a value we can leverage a QUERY: `SELECT CONVERT(VARBINARY(8), 963424)`,
+this takes the random value (second parameter), and then converts it into HEX.
+
+And now, we will do a `dirty` write of the page, so we insert this HEX, this will
+corrupt the datapage, because it will not be consistent anymore:
+
+[source, sql]
+----
+USE master;
+GO  
+ALTER DATABASE [CorruptionTest] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; <.>
+GO
+DBCC WRITEPAGE ('CorruptionTest', 1, 354, 2151, 4, 0xCFD5B605, 1) <.>
+GO
+ALTER DATABASE [CorruptionTest] SET MULTI_USER; <.>
+GO
+----
+<.> Already saw this, but to avoid errors, we are going to set the database to single
+user and kick everyone. (WITH ROLLBACK IMMEDIATE is the kicking part)
+<.> And the course completely avoids explaining this, f that tbh. A breakdown of each
+parameter will be after this section
+<.> Lastly, let's re-enable users to connect to this database
+
+````
+DBCC WRITEPAGE (
+    'CorruptionTest',  -- Parameter 1: Database name
+    1,                 -- Parameter 2: File ID (1 = primary data file)
+    354,               -- Parameter 3: Page number
+    2151,              -- Parameter 4: Offset within page (in bytes)
+    4,                 -- Parameter 5: Number of bytes to write
+    0xCFD5B605,        -- Parameter 6: Data to write (hex bytes)
+    1                  -- Parameter 7: Direct write flag (1 = immediate)
+)
+````
+
+**This command is actually undocumented and extremely dangerous**, not writing
+something "that makes sense" is probably the way you easily induce a corruption,
+we didn't _really_ have to go through the whole convert to hex, nor even extracting
+the page number or file id. We can just throw random garbage at the wind probably
+to then corrupt the pages.
+
+If we try to run the previously working query:
+
+````
+SELECT TOP 10
+   sys.fn_PhysLocFormatter(%%physloc%%) PageId,
+   *
+FROM [CorruptionTest].[dbo].[mssqltips]
+GO
+
+DBCC PAGE ('CorruptionTest', 1, 354, 3);
+GO
+````
+
+Then we would get hit with a big **error in red** stating `SQL SERVER detected a
+logical consistency-based I/O error: incorrect checksum`.
+
+If we hit this condition, we are gucci. We have tanked the database.
+
+We can still run `DBCC PAGE` and we will see how at Slot 1, Column 3 the value
+indeed changed, but even a `SELECT *` will result in the **Big Red Error*
+
+This is awful, we can't use the database/table anymore.
+
+So let's restore the page from the backup:
+
+- You can do it with GUI
+- You can do it with query
+
+We will we do the hybrid.
+
+Right Click Database > Restore > Page...
+
+On the GUI SSMS is so smart it will automatically detect the corrupted page, this
+is marked the moment the page is written. However you can still press `Check Database
+Pages`, do detect even further corrupted pages.
+
+It will also list backups that are registered to be restored for this database.
+You can also press `Verify` to see if the backups that are registered do indeed
+contain the information we need (and are healthy backups). Also, when the restore
+takes place, automatically SQL Server will perform a `Tail-log backup`.
+
+- Let's script
+- Let's analyze
+
+Basically it will render three queries:
+
+- RESTORE DATABASE = This actually has a really specific option `PAGE='x:xxx'`,
+this specifically calls out the corrupted page, the slot and page id, and from the
+backup tries to get that specific page and restore it back
+- BACKUP LOG
+- RESTORE LOG
+
+After running the page restore, we should be able to run the previous `sys.fn_Physoc`
+function leveraging query and we should no longer see the **BIG RED ERROR MESSAGE**
+
+=== Restore Master Database
 
