@@ -1914,7 +1914,7 @@ Forgot where I placed this note, so I'll keep writing it as long as I need. If y
 restart your PC, you need to start two services to use QEMU on Linux:
 
 - `sudo systemctl start libvirtd`
-- `sudo virsh net-start default`
+- `sudo  net-start default`
 ====
 
 SQL = Structured Query Language. Used to communicate with a database. It's this
@@ -7661,4 +7661,456 @@ After running the page restore, we should be able to run the previous `sys.fn_Ph
 function leveraging query and we should no longer see the **BIG RED ERROR MESSAGE**
 
 === Restore Master Database
+
+**When we need to restore master database?**
+
+- The number 1 reason is corruption.
+	- This can happen for any reason, but more often than likely a restore of master
+	brings the database back online
+- If master becomes corrupt the best course of action is generally to restore from
+a backup
+	- Hence you should have backups of many of the databases, not just your "application-user"
+	ones. If in **PROD** the `master` database becomes corrupt, you just need a backup
+	to get it up to speed
+- The data within master is relatively static so having to lose a few hours if history
+should not be a big deal in most scenarios
+	- It was recommended to not create user objects in `master`, for this very reason,
+	since we want to keep the data "static" there, we should not be using it as
+	something it's not intended as.
+- Other reasons to restore master might be to recover a dropped login or password
+that was changed and cannot be reset for some reason.
+	- So to recover a password for you would be to just go back in time on `master`
+- If the master database needs to be restored to recover user data or objects then
+this would be an opportunity to move them to an **actual user database**
+
+**Methods to restore master database**
+
+Depending on the scenario you might want to restore differently, here's one initial
+method that builds on the typical restore we know by now. 
+
+- Restore SQL Server master database when SQL service is able to start
+	- This method uses a traditional database restore command with one twist
+	- The server must be stopped and started in single-user mode
+	- RUN DBCC CHECKDB
+
+_Most of the time you use this method for recovering login/password_
+
+**Second scenario:**
+
+- Restore SQL Server master database when SQL Service is NOT able to start (this
+is more tedious, still doable)
+	- Find another instance of SQL Server of the same major version of SQL Server
+		- Say the corrupted instance is SQL Server 2016, need to find another instance
+		of that very same version to get its `master` from
+	- Restore the master database backup of the working SQL Server instance as if
+	it was a regular user database. An alternate name will need to be used, e.g.,
+	master_recovery
+	- Now that the database is online, step 3 is to detach that database from the
+	working instance
+	- At this point the 2 database files are no longer attached to the working
+	instance of SQL Server (`.mdf` and `.ldf` files). Step 4 is to move the 2
+	files to the server hosting the instance experiencing the problem with master
+		- Maybe rename the old files, and bring the new ones. Once you copy them
+		and try to run the SQL Server, it should boot back-up
+		- The instance of SQL Server experiencing the problem must be told to
+		consider these new files instead of the failing ones
+		- RUN DBCC CHECKDB
+
+**LAB NOTES**
+
+So the course installed a second instance of MSSQL so that we can emulate that
+environment of: _"Oh no, this instance in this server is dead, we need to restore
+master from another instance, I'm so lucky I have this other instance here"_.
+But, of course, you can just boot up some VM with the instance and just get its
+`master` backup/files.
+
+We are going to demo the two scenarios:
+
+- When SQL Server is up and running, and we need to restore master because we lost
+some logins
+	- Make sure you have a backup ready of `master`
+
+==== First Scenario
+
+- **Before taking the backup**, we will create a user under `Security > Logins`,
+simple user with password, and the `sysadmin` role.
+- And now we should take the backup of master
+	- **IMPORTANT:** You should be taking backups of `master` every single day with
+	jobs or something specific like that. For **every instance**
+- Let's drop the user
+- Try to run a restore of `master` of the very same backup we took
+	- **RED MESSAGE**, no you can't it tells you, you NEED to be in single user
+	mode. Now we can't alter the database to be in single user mode as before with
+	a query, we have to use commands on the `cmd`
+		- Open CMD as `Admin`
+		- `net stop mssqlserver`
+			- Say `Y`, you want to drop all connections and agents using the service
+		- `net start mssqlserver /m`
+			- Be really careful here, SQL Server when booted up as single user mode,
+			will pick the FIRST incoming client that wants to connect as the sole
+			user that will be able to use it, after that user connects, any other
+			incoming connection will be dropped
+			- **REALLY IMPORTANT**, so I don't know man, maybe SSMS is dumb, and
+			keeps connection active even though you kill them in theory. But if you
+			were connected with SSMS and then stop the service, and then try to
+			reconnect you will be met with an error of "This is in single user mode,
+			you can't connect (someone else won the slot)"
+			- There's a command to find the active connection and kill it, but it
+			doesn't work really since the query to get the active connection takes
+			the slot, and if you want to kill it it's taken as if it's a new slot
+			so you are met with the same error
+			- So, CLOSE SSMS
+			- Re open it "DON'T CONNECT JUST YET"
+			- Kill, Start Service
+			- CONNECT RIGHT AWAY. Only then you seem to be able to win the slot
+		
+
+[NOTE]
+====
+So the course lied. And, also, another point going for commands instead of GUI
+NONSENSE. You can't really do stuff with SSMS, there's errors, connections don't
+seem to drop. It's awful, it's only after I decided to use the CLI's `sqlcmd`
+command that I could manage to restore the master database from the backup
+====
+
+- `net stop mssqlserver`
+- `net start mssqlserver /m`
+- `sqlcmd -S . -E -Q "RESTORE DATABASE [master] FROM DISK = 'C:\SQL_BACKUPS\master_backup_test.bak' WITH REPLACE"`
+	- I think that Microsoft themselves recommend this approach, because right after
+	I ran this command, the msssqlserver **automatically** shut down. As if saying:
+	"Yeah, it's done. Now bring it back online for actual usage"
+- After this you can open up SSMS, login, and see under the `Logins` that yes indeed,
+our nuked user, **came back to life**
+
+Breaking down the `sqlcmd` command:
+
+````
+sqlcmd -S . -E -Q "RESTORE DATABASE [master] FROM DISK = 'C:\SQL_BACKUPS\master_backup_test.bak' WITH REPLACE"
+````
+`sqlcmd` => Command line utility for SQL Server, installed with SQL Server, alternative
+to SSMS for command-line operations
+`-S` => (Server) Specifies the SQL Server instance to connect to, Syntax: `-S server_name[\instance_name]`
++
+Here are examples of different ways to connect:
+
+````
+`sqlcmd -S .` # Local default instance
+`sqlcmd -S (local)` # Local default instance
+`sqlcmd -S .\SQL2019` # Local named instance SQL2019
+`sqlcmd -S DBSERVER01` # Remote server
+`sqlcmd -S DBSERVER01\PRODUCTION` # Remote named instance
+````
+
+`-E` => (Trusted Connection), Windows Authentication mode, uses your **current
+Windows credentials** to log in. There's an alternative though: `-U username -P password`
+`-Q` => (Query), Execute a single query and exit, Runs the SQL statement, displays results,
+then closes connection. Alternative: `-i input_file` (execute SQL from file)
+
+_**Going back to the course**_
+
+- In SSMS, he runs the query to restore, and just like our CMD experience, the SQL
+Server shutsdown and we have to get it back online manually. (Interesting)
+	- Still, ef, GUI
+
+**IMPORTANT:** Oh yeah, after the restore don't forget to run `DBCC CHECKDB`,
+you shouldn't see any errors. Otherwise you goofed up.
+
+==== Second Scenario
+
+**MSSQL is not able to come on-line**
+
+- Stop the server
+	- Mimicking the scenario that our MSSQL server is DAWN.
+		- Corrupted, indexes are corrupted
+- We need another instance running with the SAME MAJOR version. (SQL Server 2016)=
+- In the course, another named instance was created
+
+_Like a good DBA:_ We have a backup of the `master` database. We are going to restore
+that backup. And then run:
+
+[source, sql]
+----
+RESTORE DATABASE master_recovery WITH FROM DISK = 'C:\SQL_BACKUPS\master_backup_test.bak' WITH <.>
+MOVE 'master' TO 'C:\master_recovery.mdf' <.>
+MOVE 'mastlog' TO 'C:\mastlog_recovery.ldf' <.>
+----
+<.> This is the "good instance's `master` backup"
+<.> We are moving the `master`'s database file to this new path
+<.> We are moving the `master`'s log file to this new path
+
+- _Note:_ The course also deos some weird switching of users and instances and agents.
+Meh.
+	- The takeaway: We are bringing the main instance offline, and starting the
+	other instance online.
+
+With the files "extracted" we can now deattach the database (so that we don't
+keep locks on these files):
+
+````
+USE [master]
+GO
+EXEC master dbo.sp_detach_db @dbname = N'master_recovery'
+GO
+````
+When running this, and if we go into the `C:` drive, we will see the two files,
+we can now move these two files, because the database has been detached. The files
+are not in use anymore, no more locks in them.
+
+The default path for the `master` database can be extracted from many different
+places, unless you configured a custom path it should be under:
+
+- `<MSSQL-SERVER-VERSION>\MSSQL\DATA\master.mdf`
+- `<MSSQL-SERVER-VERSION>\MSSQL\DATA\master.ldf`
+
+So we should replace the files from `C:` to this path for master (of the "bad"
+instance) (we gave them different names on `MOVE` but once we copy them, we should
+change the name of the original `master` files to `master_old` and then replace
+the `master_recovery` to `master` for both `mdf` and `ldf`). Once we have done
+this whole process, we should be able to run the MSSQL Server (like start it).
+And it should come back online without issue.
+
+**EMPHASIS:** Always have a `master` database backup. And any other database. With
+that you can recover from disasters, our two methods are essentially ways to recover
+a database in a _bad scenario_ and a _really bad scenario_. But it all depends on
+having the proper backups in place.
+
+=== Creating Maintentance Plan Backups / Re indexing etc.
+
+SSMS => Gives us a GUI to create a workflow, and execute them whenever we want.
+If there's an issue and we can even get alerts, if a backup failed, or something.
+
+To setup the database alerting, we need to setup database mail. (Microsoft SQL
+Agent Properties). That comes in another section.
+
+Anyway, a backup plan helps in taking backups automatically, alongside re-indexing
+and other tasks like that.
+
+- A maintenance plan is a set of measures (workflows) taken to ensure that a database
+is properly maintained and routine backups are scheduled and handled
+	- The most important task as a DBA is to have proper backups of all databases
+	at all time
+	- One way to ensure this, is to ensure that backups are running and we get a
+	recovery plan in place. And the maintenance plans are a tool to facilitate the
+	running of all this tasks (it's basically automation)
+- Microsoft SQL Server maintenance plans can be configured by a wizard in Microsoft
+SQL Server Management Studio, which can help alleviate some of the burden involved
+in creating the plan
+	- Instead of writing the queries and doing tasks manually, the GUI for Microsoft
+	Maintenance Plans, it's much easier to create and use (it seems it beats SQL
+	queries/scripts, HUH)
+	- In Microsoft SQL Server Database Engine, maintenance plans create an Integration
+	Services package (SSIS package), which is then run by the SQL Server Agent job
+	- Behind the scenes, things are highly automated, you configure your whole
+	backup plan, and once you hit "save" an SSIS package is created/stored. And
+	the agent then automatically creates a job, that will trigger the running of
+	this package that has loaded all the logic to do the backup or whatever.
+		- **If there are issues when running the maintenance plan, we will get
+		alerted immediately**
+
+**Let's create our first package**
+
+. Go into SSMS
+. Under the first level folders, search for `Management`
+. If you expand it you will see `Maintenance Plans`
+. Right Click
+. New Maintenance Plan
+. Name it `DBA - Backups`
+
+After we create our first maintenance plan, we actually see a GUI with lots of things
+to edit, add, interact with.
+
+- However to the _right corner_ you will see a button that says `Toolbox`, if
+you press it, and expand the `Maintenace Plan Tasks` you will see tons of items
+for all tasks that are commonly done on a Maintenance Plan. For the sake of the
+lab we will do two things:
+
+- Back Up Database
+- Rebuild Index/Reorganize Index
+	- We are treating this as one item, because based on fragmentation level we
+	choose one of them. **Refresh:**
+		- Fragmentation under 30% => Do Reorganization of Indexes
+		- Fragmentation above 30% => Do Rebuild of Indexes
+
+So just click on `Backup Database Task`, it will literally draw a big box to the
+right. It looks like a whiteboard, in which you can start drawing all the tasks,
+(a nice graphical interface to visualize your maintenace plan)
+
+- Right Click the task box
+- You will see a whole wizard, since this is a `Backup Task` we will have all
+sorts of controls that are focused entirely on Database backup.
+	- You can select what type of backup you want to take
+	- You can select what databases you want to backup
+	- You can even connect to other instances, not necessarily the local one
+
+In our case, we want to backup **All databases**. _And, we will check the option
+for ignoring databases that are not online_. Also, we will backup to Disk.
+
+After that we can head into the `Destination` tab, in there there are tons of
+options that you can customize but our configuration will be:
+
+_Create a backup file for every database, with a sub-directory for each database,
+and on the default path for backups. Extension should be `.bak`_
+
+There's also the `Options` tab, in there the only option we will leverage is the
+`Set backup compression`, remember that compression is not available in **all
+MSSQL versions**.
+
+==== Cleanup Task
+
+So, this is good, and you migh stop for a second and think. Wait a second, so
+we are going to start backing up every single thing, every time???? Are we
+gonna need 10K Petabytes by the end of a month? Well, maybe for _some scenarios_,
+but in general, you also have to clean backups after a certain period of time.
+The recommended rule of thumb is **7 days**, and so there's a task specifically
+taking care of that in the wizard.
+
+**You should connect the Back Up Database Task with a Maintenance Cleanup Task**,
+that way the maintenance plan will understand that these two tasks are related,
+and in most cases in the way that they will execute _back-to-back_.
+
+If you double-click the Clean Up Task, you will get a window with lots of options,
+but the way to understand the setup we want here's a small paragraph:
+
+_We want to delete Backup files, we also want to search inside the default backup
+folder `C:\SQL_BACKUPS`, we want to delete `bak` extension files, and yes we want
+to `Include first-level subfolders`, this is tied to the idea that we set the backup
+task previously to create subfolders for each database. Lastly, we want to delete
+files based on age that is set to `7 Day(s)`_
+
+==== Rebuild Index
+
+There's another task for rebuilding indexes, _a good practice is to run this
+before we run the backup task, so that our backups have clean tables_.
+
+If you edit the Rebuild Index task, then you get access to another set of
+multiple functions:
+
+_We want to rebuild indexes for all databases, with a default free space, and there's
+a specific option only available for DEV and Enterprise editions called `Keep index
+online` this enables the index to remain operational whilst the rebuilding of it
+takes place, so that clients that need it to access data can still use it.
+Going back to description, you can configure the fragmentation condition (if it's
+greater than 30%) and also if the page size is big, THEN rebuild the index_.
+
+==== Reorganize Task
+
+Again, drag and drop, put it before the Rebuild Index Task, Edit it, set it to
+do this against `All databases`, and yeah the trigger should be for fragmentation
+above `15%`
+
+==== Check Database Integrity Task
+
+We can even add this task in between the `Rebuild Index Task` and `Back Up Database
+Task`.
+
+==== Subplans
+
+So, once we have setup our flow, we can start thinking about _when_ should this
+run, it can be weekly, daily, so many things to consider. And since we know
+that there multiple types of database backups (full, differential, transaction log)
+we can also start thinking about the fact that we might run full backups at a certain
+frequency, and differentials at another interval, transaction log backups at another
+interval.
+
+This is were you can start thinking about your own strategy:
+
+- One `Weekly_SubPlan` that will be taken on **Sunday at 2 AM**, it should be
+a FULL backup
+- One `Daily_SubPlan` that will be taken on **All days except on Sunday**, (better
+to leverage the `Weekly` option, since if we select `Daily` it will execute regardless
+of the day). Also keep this as `2 AM`
+
+[IMPORTANT]
+====
+Done goofed up. So the whiteboard that we can drag and drop the task boxes too,
+**is TIED to a sub plan**, so when you create a new sub plan all the tasks you
+configured are GONE. So, for the default `SubPlan` rename it to `Weekly_SubPlan`
+since it has all the config we did for all the different tasks.
+====
+
+And then on the `Daily_SubPlan` that we created, just configure a database backup
+task but set up as so:
+
+_Differential, when selecting what databases to backup, select All, except system
+databases, should backup to the default backup path, and creating sub-directories
+for each database, also the extension should be `diff`_
+
+_And we will also drag and drop the delete (cleanup) task, this will have to look
+in `C:\SQL_BACKUPS`, for `diff` extensions, it will include first-level subfolders,
+and we will also set it to clean 7 days old backups_
+
+**Hourly_SubPlan**
+
+The Schedule should be setup as: `Occurs: Daily`, `Occurs every: 1 hour(s)`.
+
+And we will use the `Daily_SubPlan` as a basis:
+
+_Backup Database Task > Differential > All user databases > Create subfolders_
+
+Connect it to run then a `Maintenance Cleanup Task`, the cleanup should look at
+`C:\SQL_BACKUPS` and `trn` files. And just for files older than 7 days.
+
+After all of this, save this Maintenance Plan, and if you refresh the `Maintenance
+Plans` entry in the navigation tree, you will see that our `DBA -` Plan is now
+listed. If you double click it, it will recover all the setup we previously did.
+
+==== SQL Server Agent
+
+We will see this more in depth later. **But** just as a quick double check and introduction
+to this component. You can look in the navigation tree and way down below, you will
+see the `SQL Server Agent` entry. If you expand it (if it's not running, START it),
+you can see an option called `Job Activity Monitor`, if you double click, it will open
+a window, and you will see how it lists **3 jobs**, and they have the names of the maintenance
+subplans.
+
+In theory these jobs will run based on the schedules we setup, but we can also trigger
+this manually, we want to do that so that we test that our plans are behaving as
+expected.
+
+==== Running our plans
+
+You can try and run the maintenance plan from the `Maintenance Plans` item, but if
+you have **sub plans** it won't let you. It tells you you have to run those
+individually. So it's best to just go the `SQL Agent` job monitor screen and
+`Execute` each job corresponding to each of the sub plans.
+
+After running all three, you can head down to the `SQL_BACKUPS` folder and check that
+we have all folders that represent each database, and inside of them we should be
+able to see all the different backup files.
+
+_Now, when running the tasks, you can execute `sp_who2` to see what are the commands
+that the currently running maintenance sub plan is running, this might come in handy
+at specific scenarios, specially for debugging_
+
+==== Seeing the history of the jobs
+
+If you want to see if backups took place as expected, or if there was an error or whatever,
+you can right click the Job at the `Job Activity Monitor` and select `View History`
+
+It will tell you a lot of details of the runs of the jobs (maintenance plan)
+
+If you want to be **extra sure** things are behaving as expected, you can go into
+the system databases folders and check we in fact **did not take differential
+nor transaction log backups**, that way we are sure to have configured things
+correctly.
+
+[IMPORTANT]
+====
+Another goofed up and got'cha. Be **REALLY CAREFUL**, since I restored AdventureWorks
+and it had set `SIMPLE` as the recovery model. When I took all the backups, in this
+mode, then the `Daily_SubPlan` executed and didn't create any `.trn` backups. Because
+**IT WILL ONLY CREATE BACKUPS FOR DATABASES THAT HAVE THE FULL RECOVERY MODEL SET
+IN PLACE**. And since I ran the full chain with SIMPLE mode, once I switched to
+`FULL` and then tried to run the daily, it **FAILED**. Because it was trying to
+reference (use as a point of reference) backups from a `SIMPLE` recovery model
+database. If you are changing the mode, you have to re-run all backups of the database
+in the new FULL recovery model.
+====
+
+_Conclussions:_ So this is how you can automate the database backup tasks (as a
+good DBA), you don't have to go and manually do all this, _let's be honest_,
+mechanical and boring type of work. Yes, **IT IS IMPORTANT**, but so time-consuming
+and boring in the end.
+
+=== Quiz 8: MSSQL Backup and Restore
 
