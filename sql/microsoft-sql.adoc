@@ -8114,3 +8114,54 @@ and boring in the end.
 
 === Quiz 8: MSSQL Backup and Restore
 
+What is the primary purpose of taking regular backups of a database?
+
+R - To recover data in case of loss or corruption
+
+Which type of backup captures only the data that has changed since the last full
+backup?
+
+R - Differential Backup
+
+In database backups, what is the role of a Transaction Log Backup?
+
+R - Captures only committed transactions
+
+Why is it important for a Database Administrator (DBA) to perform regular database
+backups?
+
+R - To ensure data recoverability and minimize data loss
+
+What is the advantage of using cloud storage as a backup medium?
+
+R - Lower cost compared to other media
+
+Which backup medium provides a balance between performance and reliability for
+database backups?
+
+R - Magnetic Disks
+
+What does the DBCC CHECKDB command do in SQL Server?
+
+R - Checks the integrity of a SQL Server database
+
+What is the purpose of the PHYSICAL_ONLY option in the DBCC CHECKDB command?
+
+R - Performs only physical consistency checks
+
+Which option is used to repair the found errors without risking data loss in DBCC
+CHECKDB?
+
+R - REPAIR_REBUILD
+
+Which option is used to limit the checks to the non-clustered indexes in DBCC
+CHECKDB?
+
+R - NOINDEX
+
+== MSSQL User Management
+
+=== Welcome to MS SQL User Management
+
+We are going to cover about all the possibilities that SQL Server brings out of
+the box to manage access through roles, logins and so on.
