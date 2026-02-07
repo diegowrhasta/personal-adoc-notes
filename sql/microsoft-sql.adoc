@@ -1914,7 +1914,7 @@ Forgot where I placed this note, so I'll keep writing it as long as I need. If y
 restart your PC, you need to start two services to use QEMU on Linux:
 
 - `sudo systemctl start libvirtd`
-- `sudo  net-start default`
+- `sudo virsh  net-start default`
 ====
 
 SQL = Structured Query Language. Used to communicate with a database. It's this
@@ -8165,3 +8165,83 @@ R - NOINDEX
 
 We are going to cover about all the possibilities that SQL Server brings out of
 the box to manage access through roles, logins and so on.
+
+=== MSSQL Security Model
+
+We are now going to talk about one of the most important features to MSSQL, it
+has a lot of moving parts, but if we start with key concepts, we can get around and
+also have enough tools in our bag to figure things out on our own, besides just
+doing **anything:**
+
+**What is MSSQL Security Model**
+
+- Imagine you have a house, you have a key, a master key that allows you to do whatever
+you want in the house. Give the keys to other people, go into any room, make modifications
+to the home. Etc. This is all **under your permission**.
+	- You are the owner, **you have the key**
+		- You can do anything you want on the house, at anytime, and you decide WHO
+		gets keys, and WHAT they can do
+			- You can get a spouse, and have the exact permissions (since the house
+			if now of both)
+			- Assume you have two kids, they need keys whenever they truly need them,
+			however just to get to open the house. Nothing else, in your absence
+			they might be dangerous on their own, so you select the specific keys
+			that allow only for them to access to specific rooms and things you
+			define. Now, of course, you will not give them permissions to change
+			their own keys (give them more permissions than the ones YOU gave
+			them)
+
+**4 people can enter a house. 2 can do whatever they want, 2 have some restrictions**.
+This is the analogy that we will roll with. Pretty nice one.
+
+Now let's translate that into MSSQL Security Model:
+
+- In the SQL Server security model:
+	- House - an instance of SQL Server
+	- Keys to the house - Logins
+	- Mom and Dad - Logins with sysadmin roles (God rights...)
+	- Suzie and John - Logins without sysadmin
+	- Rooms - databases
+- You have to have a key/Logfin, to even open the door/connect to the instance
+- You need specific permissions to access a database/room
+- John is not allowed in Suzie's room and vice-versa
+	- There are two databases (e.g., Sales database and customer database)
+		- They each can access one of these two
+- Neither kid is allowed in dad's man-cave, but mom is.
+	- The kids can't access the system databases, that are only restricted to
+	`sysadmin`s
+- Suzie and John need to be granted access to use a database/room, so they are
+created as USERS in the database
+	- There are two layers:
+		- Enter the house (one permission)
+		- Ente a room (a second permission)
+- Mom and Dad do not explicitly need to be granted as USERS in any database, because
+they own the place and can do whatever they want at the server/house or database/room
+level
+	- You don't need explicit permission (specific user rights) in any database,
+	because you **OWN THIS PLACE**
+- If Uncle Joe is coming for a visit, he would also get a key/LOGIN and access
+to the rooms/databases he will be using. When he leaves, he gives his key back
+(USER/LOGIN removed)
+- If you want, image John has a brother and they share a room. In their room there
+are two beds. They don't share and they don't switch. In this example the beds
+are database objects such as tables. You can grant or deny access down to that
+level as well.
+	- We can go even to that granular level, we can decide that users access just
+	a specific set of **tables**, and another user to access just a specific set
+	of **tables**.
+		- They don't share access, they have a specific experience configured for
+		them.
+- So, LOGIN is created first (can't go into a room until you get in the house)
+- USER access for non sysadmins is created next at the database level
+- Inside the database, you GRANT or DENY permissions to objects in the room (if you
+choose)
+- You can get very, very granular if your application/employer requires it
+- Login can be either Windows based or created within SQL Server depending on how
+the instance is configured and your security teams requirements
+	- You can create a SQL Server login, that is local to the instance, and that
+	is not connected at all through AD.
+
+=== MSSQL Server Authentication Modes
+
+
