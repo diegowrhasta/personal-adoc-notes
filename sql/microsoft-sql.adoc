@@ -8462,24 +8462,33 @@ later**
 [cols="1,1"]
 |===
 |Fixed Server-Level Role | Description
-|
-|sysadmin | users with this role can do ANYTHING they want
-|
-|serveradmin | These can only change configurations and shut down a server
-|
-|securityadmin | Manage logins and properties. They can also reset passwords
-|
-|processadmin | End processes that are runnin in an instance of SQL Server
-|
-|setupadmin | Add and remove linked servers
-|
-|bulkadmin | Run the `BULK INSERT` statement
-|
-|diskadmin | Manages disk files
-|
-|dbcreator | Create, alter, drop and restore any database
-|
-|public | Every SQL Server login becomes a member of `public`. All objects that are public will be accesible
+
+|sysadmin
+|users with this role can do ANYTHING they want
+
+|serveradmin
+|These can only change configurations and shut down a server
+
+|securityadmin
+|Manage logins and properties. They can also reset passwords
+
+|processadmin
+|End processes that are runnin in an instance of SQL Server
+
+|setupadmin
+|Add and remove linked servers
+
+|bulkadmin
+|Run the `BULK INSERT` statement
+
+|diskadmin
+|Manages disk files
+
+|dbcreator
+|Create, alter, drop and restore any database
+
+|public
+|Every SQL Server login becomes a member of `public`. All objects that are public will be accesible
 |===
 
 - Creating and configuring a user-defined server role is very straightforward
@@ -8538,3 +8547,236 @@ you need to select `Groups` and it will feed that on the `Search` window.
 ====
 
 === Principals (Part-2): Database Users, Database Roles
+
+In the previous lecture we talked about server logins and server rules. However
+in here we will talk about database users and database roles.
+
+- After you've set up your server-level logins, you can create database users
+that map back to those logins, whether they're Windows or SQL Server logins
+- You can also create database users that do not map to logins
+	- But these are for **special use cases**
+	- These types are generally used for contained databases, impersonation, or
+	development and testing
+- SQL Server provides the CREATE USER statement for creating database users. You
+must run this statement within the context of the database in which the user is
+being defined
+
+[source, sql]
+----
+USE Adventureworks
+GO
+CREATE USER [win10b\winuser01]
+GO
+GRANT ALTER ON SCHEMA::Sales TO [win10b\winuser01] <.>
+GO
+----
+<.> This is but an example of what object we are giving permissions to. The double
+colon is really important to point to the object's name
+
+- The winuser01 user is based on the win10b\winuser01 login
+- When you create a database user that has the same name as a login, you do not
+need to specify the login
+	- So in _not-ideal_ scenarios, you might be creating a user that has a completely
+	different name than a login, and in that case you have to explicitly state
+	to which login the user and permission is being granted
+
+- If you want to create a different name, you must include the `FOR LOGIN` or
+`FROM LOGIN` clause:
+
+````
+CREATE USER winuser03 FOR LOGIN [win10b\winuser01]
+GO
+GRANT ALTER ON SCHEMA::Sales TO winuser03
+GO
+````
+
+- You can create only **one user** in a database _per login_
+- If you want to try out both these statements, you'll need to drop the first
+user before creating the second
+	- Meaning if you already created a user (the one that mapped automatically
+	to the login of the same name), you have to delete that one first and then
+	run this `winuser03` statements
+- The two preceeding examples also include a GRANT statement that assigns the ALTER
+permission to the user on the Sales schema. As a result, the user will be able
+to alter any object within that schema
+- When you grant a permission on a specific object, you must specify the type of
+object and its name, separated by the scope qualifier (double colons)
+- In some GRANT statements, the securable is implied, so it does not need to be
+specified
+	- Within the GRANT permission this is injected, so we don't need to do anything
+	on our end
+- Creating a database user that's associated with a SQL Server login is as simple
+as creating a user based on a Windows login, it's _way easier_ if you use the
+same name:
+	- CREATE USER sqluser01
+- The `CREATE USER` statement creates the sqluser01 user, but this time, the example
+grants no permissions
+- The user receives only the `CONNECT` permission, which you can verify by running
+the following SELECT statement:
+
+````
+SELECT pe.state_desc, pe.permission_name
+FROM sys.database_principals pr
+INNER JOIN sys.database_permissions pe ON pr.principal_id = pe.grantee_principal_id
+WHERE pr.principal_id = USER_ID('sqluser01')
+````
+
+**Database Roles**
+
+- A database role is a group of users that share a common set of database-level
+permissions
+- As with server roles, SQL Server supports both fixed and user-defined database
+roles
+- Database-level roles are database-wide in their permission scope
+	- And yes, there are "from stock" options here, but you can also add your
+	own user-defined roles (database-level-wise)
+- Fixed-database roles are defined at the database level and exist in each database
+- There are also some special-purpose database roles in the msdb database
+	- These are related to the administration of SQL Server Agent
+- Members of the `db_owner` database role can manage fixed-database role membership
+- You can add any database account and other SQL Server roles into database-level
+roles
+- Server-level permissions cannot be granted to database roles
+	- Like `sys_admin`, `bulk_operator`, these **server-level roles** CANNOT be
+	granted to database roles
+- Logins and other server-level principals (such as server roles) cannot be added
+to database roles
+
+[cols="1,1"]
+|===
+|Fixed-Database role name | Description
+
+|db_owner
+|Members of this role can perform all configuration and maintenance activities
+on the database and can also drop the database in SQL Server
+
+|db_securityadmin
+|He can modify role membership for custom roles only and manage permissions. Members
+of this role can potentially elevate their privileges and their actions should
+be monitored
+
+|db_accessadmin
+|Members of the `db_accessadmin` fixed database role can add or remove access
+to the database for Windows logins, Windows groups, and SQL Server logins
+
+|db_backupoperator
+|Backup permissions ONLY
+
+|db_ddladmin
+|Any DDL command can be run
+
+|db_datawriter
+|Write anything in a user database
+
+|db_datareader
+|All data can be read and user objects **EXCEPT** `sys` and `INFORMATION_SCHEMA`
+
+|db_denydatawriter
+|CANNOT add, modify, delete any data in a user database
+
+|db_denydatareader
+|CANNOT read any data
+|===
+
+Here's an image with all permissions:
+
+image::database-level-roles-and-permissions.png[Permissions]
+
+Basically, if you have, either of the "stock" database permissions, you will be
+able to perform all the different commands that are here. As you can see some
+are `GRANT` others `DENY`, others `ALTER`, `BACKUP`, `CREATE`, and so on.
+
+**User defined Database Roles**
+
+- To set up a user-defined database role, you must create the role, grant permissions
+to the role, and add members to the role (or add members and then grant permissions)
+
+[source, sql]
+----
+CREATE ROLE dbdev
+GO
+GRANT SELECT ON DATABASE::WideWorldImporters TO dbdev <.>
+GO
+ALTER ROLE dbdev ADD MEMBER [win10b\winuser01]
+GO
+ALTER ROLE dbdev ADD MEMBER sqluser01
+----
+<.> If you notice, this is the exact same syntax to the granting to a user, however
+through the **NAME** the engine will resolve the `ROLE`
+
+**LAB**
+
+As the theory suggests, the database roles are created **WITHIN A DATABASE**. So,
+you have to right click a database `Security > Roles` or `Security > Users`.
+(As always, you can use the GUI, you can use SQL Script). (And as always, you can
+bootstrap with the GUI)
+
+There are tons of options, however, besides searching for the user that you created
+at a _OS level_, you should also grant a `default schema` to the user. The mechanism
+to "find" the object is the same as users, you can type the name and press `Check
+Names` to then "match" the correct entry.
+
+After bootstraping the SQL Query, you can then grant alter with something like:
+
+`GRANT ALTER ON SCHEMA::Sales TO [LABMSSQL\user01]`
+
+And if you run the query we laid out in the previous sections, you should be able
+to see the `GRANT`s that the user has: (It should have `CONNECT` and `ALTER`)
+
+The same process should take place for SQL Users. Although in this instance you
+have to manually attach the Login, SQL **demands it**
+
+[NOTE]
+====
+A good way to immediately tell if a user is a Windows Authentication one or a
+SQL Server one: Look for a preceeding prefix: `LABMSSQL\<user-name>`. There should
+be some form of "domain" attached to it.
+====
+
+[NOTE]
+====
+The default GRANT that any user is given by default. Is `CONNECT`
+====
+
+Under `Membership`, you can grant the different database-level roles. If you grant
+a user say, `db_owner` from these roles, then the `GRANT` it gets is `ALTER`
+
+**NOTE:** So basically, if you give a user an `ALTER` grant, then that means he
+can whatever he wants with the database.
+
+And that's it, really BROAD type of thing. _However,_ if you want to be very
+**granular**, you can go to `Securables`, and from in there you can search by
+any type of database object that you want. And you can grant specific permissions
+on that type of object (and that specific object)
+
+We can go to a level at which we can give permissions to a simple object, we can go
+to a really, **REALLY** specific level.
+
+E.g., "Execute only THIS specific stored procedure". Users won't be able to do
+anything EXCEPT that specific task.
+
+In the realm of stored procedures, you can grant a user permissions such as
+`ALTER` the SP, or `EXECUTE`, or `View its SQL Definition`. And nothing more than
+that.
+
+_The granularity level is quite something here_.
+
+[NOTE]
+====
+Never forget the fact that all these settings and tools are catered towards "all
+possible use cases", some might not fit within your company, culture, setting.
+And that's okay, but you should know about these concepts, and think critically
+in order to deem them useful or not to your own ends.
+====
+
+_Lastly, let's talk about database roles_
+
+You can access a database's `Security > Roles > Database Roles`, and you can edit
+the stock ones that are "replicated" from the `model` database. And then you can
+access more custom roles that you want. And of course, inside these custom roles,
+you can configure them however you see fit, granting permissions for specific database
+objects, or specific schemas. And so on.
+
+=== Permissions (GRANT, DENY, REVOKE)
+
+
