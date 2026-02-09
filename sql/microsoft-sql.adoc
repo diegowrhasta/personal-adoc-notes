@@ -8195,7 +8195,6 @@ to the home. Etc. This is all **under your permission**.
 This is the analogy that we will roll with. Pretty nice one.
 
 Now let's translate that into MSSQL Security Model:
-
 - In the SQL Server security model:
 	- House - an instance of SQL Server
 	- Keys to the house - Logins
@@ -8244,4 +8243,298 @@ the instance is configured and your security teams requirements
 
 === MSSQL Server Authentication Modes
 
+- Protecting data starts with the ability to authenticate users and authorize their
+access to specific data.
+	- Protect data, and allow users to connect to an instance
+	- Also, to specificy the access for specific data
+- To this end, SQL Server includes an authentication mechanism for verifying the
+identities of users trying to connect to a SQL Server instance
+	- Is that a legitimate user? If not, the access of the user will be stopped
+- The authorization mechanism determines which data resources that authorized
+users can access and what actions they can take
+	- So we validate simply if "the user can access/connect" and secondly we
+	start limiting what access level the user has (1. Legitimize the user, 2.
+	Make sure the user has access to the right objects)
+- Authentication and authorization are achieved in SQL Server through a combination
+of security principals, securable, and permissions
+- SQL Server supports two authentication modes:
+	- _Windows Authentication_
+	- _SQL Server and Windows Authentication_
 
+
+==== Windows Authentication
+
+- Sometimes referred as _integrated security_
+- Windows authentication is integrated with Windows user and group accounts, making
+it possible to use a local or domain Windows account to log into SQL Server
+	- In any business environment, or at the very least _enterprise level_, we
+	set a domain.
+		- **Domain** is a network of interconnected computers (login, users) 
+			- This allows for a user to have a login `at the domain level`, and
+			for him to be able to access the network resources without having to
+			create an account with password for each single thing
+	- When we have installed SQL Server in one of those machines in a domain,
+	instead of using different accounts, we can **use the Windows Authentication**
+	that can be connected through domain, to also log into the SQL Server instance
+- When a Windows user connects to a SQL Server instance, the database engine
+validates the login credentials against the Windows principal token
+	- The SQL Server instance validates a login with the same login that is used
+	at Windows Server authentication. In short, it cross-valides or "trusts" that
+	if a user has been logged into the server, then he should have access to the
+	SQL Server instance as well
+	- **REALLY IMPORTANT:** This is simply talking about _connecting to SQL Server
+	with Windows authentication server_
+- This eliminates the need for separate SQL Server credentials
+	- A domain account that is used for connecting to a machine/server, can be
+	re-used, making things easier
+- Microsoft recommends that you use Windows Authentication whenever possible
+	- More secure
+	- Easier to manage
+
+==== SQL Server and Windows Authentication
+
+- Sometimes referred as **mixed mode**
+	- We use Windows Authentication and also SQL Logins to connect to the instance
+- In some cases, however, you might require SQL Authentication
+	- Even though Windows Authentication is easier
+- For example, users might connect from non-trusted domains, or the server on which
+SQL Server is hosted is not part of a domain
+	- Sometimes, in some corporate environments, they separate sections of the
+	company with their **own domain**, sales have their own domain, HR has its
+	down domain and so on.
+		- So trust-relation is a thing, you can configure cross-domain trust
+		relationships, yet, sometimes you can't do that
+		- But when there's no trust-relation, we need a SQL Server account to
+		connect to the instance, since the domain account won't be able to be
+		authenticated.
+		- In other cases, is when the SQL Server is not part of a domain, say,
+		a SQL Server was created for a company you acquired, and they don't have
+		a domain, or at the very least, you can't make it join. So you have
+		to resort to SQL Server logins.
+- SQL Server logins relies completely on the instance, the whole mechanism is
+assumed by the database
+	- Under this scenario, the user supplies a username and password to connect
+	to the SQL Server instance, bypassing Windows Authentication together
+- You can specificy the authentication mode when setting up a SQL Server instance
+or change it after implementation through the server's properties
+	- By default, the server instance will be done with Windows Authentication
+
+**LAB**
+
+Basically, just try login into the machine with the Windows Account, or with the
+`sa` account we setup at the very beginning of installation of MSSQL Server.
+
+You can right click the instance > Properties > Security. And then you can switch
+the authentication mode. You can play around with it, **the main difference is that
+SQL Server Authentication** will require for you to provide a user and password
+and then try to connect, whereas Windows Authentication just requires for you
+to press the `Connect`
+
+[NOTE]
+====
+When you change the authentication mode, sometimes, you have to restart the server,
+be careful about this, if you are on production, you might have to do it in _off-hours_.
+====
+
+When `Windows Authentication` has been set, we can try to connect to the server,
+the `sa` account option will still be there _"available"_, however if we try to
+login with it it will **FAIL**. Now, if we want to really double check the reason
+
+Database > Management > SQL Server Logs > Current
+
+You will see an error stating `...Server is configured for Windows Authentication ONLY`
+
+You can then restart again with the right mode, and **it should now work**.
+
+=== Principals (Part-1): Server Logins, Server Roles
+
+SQL Server Hierarchy.
+
+**SQL Server Security Components**
+
+- SQL Server provides three types of components for controlling. _Which users can
+log onto SQL Server._ _What data they can access._ _Which operations they can
+carry out._
+	- These are the three "steps" that SQL Server runs against someone connecting.
+	Everything is divided into three components
+- Principals
+- Securables
+- Permissions
+- Together, these three component types provide a structure for authenticating
+and authorizing SQL Server users
+	- So you provide a mechanism for authentication (you are allowed to connect
+	to the instance), and authorization (what objects do you have access to in the
+	database)
+- You must grant each principal the appropriate permissions it needs on specific
+securables to enable users to access SQL Server resources
+	- Basically the objects that you give access to, in this context/sub-domain,
+	they are referred to as "securables"
+		- A table, a stored procedure, a function. All of these turn into securables
+- **EXAMPLE:** If the sqluser01 database user needs to be able to query data in the
+Sales schema, you can grant the SELECT permission to that user on the schema. The
+user would then be able to query each table and view within the schema.
+
+**Server Logins**
+
+- Server logins are entirely focused around "DO YOU HAVE ACCESS TO SQL SERVER? YES
+OR NO". That's it.
+- SQL Server supports four types of logins: Windows, SQL Server, certificate-mapped,
+and asymmetric key-mapped
+	- In practical life application, Windows and SQL Server are the most widely used
+- Windows and SQL Server logins.
+- To create a login we use `CREATE LOGIN` statement to define several logins
+	- We need to execute this at a **SERVER LEVEL**. A user is **DATABASE LEVEL**,
+	so be sure to know the difference between these two.
+- Because logins exist at the server level, you must create them within the context
+of the `master` database. So _any login has to be in the master database_.
+- A Windows login is associated with a local Windows account or domain account.
+When you create the login, you must specify the Windows account, preceded by the
+computer name or domain name and a backlash.
+	- `USE master`
+		CREATE LOGIN [win10b\winuser01] FROM WINDOWS
+		WITH DEFAULT_DATABASE = master, DEFAULT_LANGUAGE = us_english
+	- Even if you don't specificy the other options, they will be applied by
+	default.
+- If you're creating a login based on a domain account, replace the computer
+name with the domain name, following the same format: `[<domain_name>\<windows_account>]`
+- Also use this format if creating a login based on a Windows group
+	- `CREATE LOGIN [win10b\wingroup01] FROM WINDOWS WITH DEFAULT_DATABASE = master, DEFAULT_LANGUAGE = us_english`
+- By creating a login based on a group, you can provide the same level of access
+to any user within that group, while letting Windows and SQL Server handle authenticating
+and authorizing the individual users.
+	- In practical application, this is probably the best approach, since you can
+	manage waves of users through groups, have the groups abstract/encapsulate
+	the idea of the authorization levels and layout you want, and simply add/remove
+	users from the respective groups
+- Use the `CREATE LOGIN` statement to define a SQL Server login (one that is not
+associated with a Windows account), in which case, do not include the FROM WINDOWS
+clause. However, you must include a WITH clause that specifies a password.
+	- CREATE LOGIN sqluser01 WITH PASSWORD = 'tempPW@56789' MUST_CHANGE, CHECK_EXPIRATION
+	= ON, DEFAULT_DATABASE - master, DEFAULT_LANGUAGE = us_english
+		- The `MUST_CHANGE` and `CHECK_EXPIRATION` flags make it so that the user
+		has to change his password the first time he does a login, alongisde the
+		idea that this provisional/initial password will expire soon (starting
+		from now)
+	- So again, windows accounts are verified at an OS level, with its own mechanisms
+	- SQL Server logins are verified at a database level, this is also the reason
+	as to why we can see the user and password, and "recover" them from the SQL
+	Server with database backups
+- Use the GRANT statement to gran permissions to a login
+	- `GRANT IMPERSONATE ANY LOGIN TO [win10b\winuser01], sqluser01`
+		- Basically this is a clone/copy of the permissions of the first account
+		to the second account
+	- Once we configure the first layer (the first line of defense) that is simply
+	the keys to the house (the allowance of connection to the SQL Server), we
+	need to apply/give permissions to the user. _That way it does specific tasks_,
+	the scope can then be configured at will. Limited rights, `sysadmin`, and
+	so on.
+	- We can then run some queries to double check if the permissions have been
+	configured correctly:
+		- `SELECT pr.principal_id, pr.name, pe.state_desc, pe.permission_name FROM
+		sys.server_principals pr INNER JOIN sys.server_permissions pe ON pr.principal_id
+		= pe.grantee_principal_id WHERE pr.principal_id = SUSER_ID('win10b\winuser01')
+		OR pr.principal_id = USER_ID('sqluser01')`
+			- This is a specific query that gives you the level of permissions,
+			what permissions, and info for specific users. This will allow us
+			to quickly check for the permissions of a particular account.
+
+**Server Roles**
+
+- First part => Getting to SQL Server. That's why we create SQL Server logins
+- Second part => These are pre-defined sets of permissions that can be given to
+Server logins
+- SQL Server provides server-level roles to help you manage the permissions on
+a server
+- These roles are security principals that group other principals
+- Server-level roles are server-wide in their permissions scope
+	- When you give a login a server role, then that permission is not on a
+	particular database, but **server level**
+- SQL Server supports fixed server roles and user-defined server roles
+- You can assign logins to a fixed server role, but you cannot change its permissions
+	- You can create logins, and then assign a fixed role, yet, those role's permissions
+	cannot be changed
+- **If you use a `user-defined` server role, you can indeed change the permissions
+later**
+	- Meaning we have server roles that are "default" or that come already pre-configured,
+	and those are **static**
+	- Then there are "user-defined roles", that we customize however we see fit
+
+[cols="1,1"]
+|===
+|Fixed Server-Level Role | Description
+|
+|sysadmin | users with this role can do ANYTHING they want
+|
+|serveradmin | These can only change configurations and shut down a server
+|
+|securityadmin | Manage logins and properties. They can also reset passwords
+|
+|processadmin | End processes that are runnin in an instance of SQL Server
+|
+|setupadmin | Add and remove linked servers
+|
+|bulkadmin | Run the `BULK INSERT` statement
+|
+|diskadmin | Manages disk files
+|
+|dbcreator | Create, alter, drop and restore any database
+|
+|public | Every SQL Server login becomes a member of `public`. All objects that are public will be accesible
+|===
+
+- Creating and configuring a user-defined server role is very straightforward
+- You create the role, grant permissions to the role, and then add logins-or you
+can add the logins and then grant the permissions
+	- `CREATE SERVER ROLE devops`
+	- `GRANT ALTER ANY DATABASE TO devops`
+	- `ALTER SERVER ROLE devops ADD MEMBER [win10b\winuser10]`
+	- In these statements we are basically creating a _user-defined_ server role
+	called `devops`, we then grant permissions to alter any database to said
+	role, and lastly we are adding a login to said role
+
+**LAB**
+
+_Let's Login_
+
+And to configure:
+
+- Databases
+	- Security
+		- Logins
+
+You can actually find something "akin to users/logins" if you expand the tree
+of a database. However the key difference is as follows:
+
+- At _"SQL Server"_ level, we deal with `logins`, and a database level we deal
+with `users`
+
+_You can always choose a GUI or a query to create a login_
+
+We will go through the GUI to walk through the available options.
+
+- You can choose a Windows Authentication or SQL Server authentication login,
+we all know by now, that one login will **not ask for credentials**
+- If we choose Windows Authentication
+	- We can create a user for testing purposes
+		- Make the account an admin
+- And inside the Windows Authentication option we can click on `Search...`, and
+in here we can search for a user we want to add as a login.
+- After that you can assign **Server Roles**
+	- (By default it will always have `public`)
+- Don't forget you can always script the whole setting for creating a user
+- **SQL Server Authentication**
+	- Put the name of the user
+	- SCRIPT
+- We can create then an SLQ login account and then assign different server roles
+around the two new accounts
+- With the query we were provided to check on a server role, we can get both info
+as to what type of permissions it has
+	- **BUT ALSO**, we can just check what users have the specific role
+
+[IMPORTANT]
+====
+When you add a `group`, be sure to check the _group_ button. To select a group,
+you need to select `Groups` and it will feed that on the `Search` window.
+====
+
+=== Principals (Part-2): Database Users, Database Roles
