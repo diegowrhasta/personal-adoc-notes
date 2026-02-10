@@ -8779,4 +8779,191 @@ objects, or specific schemas. And so on.
 
 === Permissions (GRANT, DENY, REVOKE)
 
+There are three different types of permissions in MSSQL, and they are given to
+all the different types of database objects:
 
+- GRANT
+- DENY
+- REVOKE
+
+**Permissions**
+
+- SQL Server provides the ability to grant users the access they need, to the level
+they need. The GRANT, DENY, and REVOKE statements -along with the wide assortments
+of permissions (230 in SQL Server 2016 and 237 in SQL Server 2017).
+- SQL Server actually provides three T-SQL statements for working with permissions
+	- Use a GRANT statement to enable principals to access specific securables
+		- Schema, SP, Function, Table, etc
+	- Use a DENY statement to prevent principals from accessing specific securables.
+	A DENY statement overrides any granted permissions
+		- Schema, SP, Function, Table, etc. Any `GRANT` permissions will get
+		overriden
+	- Use a REVOKE statement to remove permissions that have been granted to
+	principals on specific securables. Overturns the GRANT statement
+- Permissions are cumulative in that the user receives all permissions granted
+specifically to the database user as well as to its associated login
+	- Meaning, that if you grant permissions to a LOGIN the associated database
+	user also gets those permissions (always based around the database object and
+	scope)
+- If the user has been assigned to a database role or if the login has been assigned
+to a server role, the user receives the role permissions as well
+	- A database user has been assigned a database role, the login associated with
+	that gets a server role. Then from server to database and vice-versa, things
+	get **INHERITED**
+- Permissions are also transitive, based on the hierarchical nature of the server,
+database, and schema securables
+	- For example, if you grant the UPDATE permission to a user for a specific
+	database, the user will also be granted the UPDATE permission on all schemas
+	and schema objects such as tables and views
+	- E.g., In AdventureWorks, you give permissions for UPDATE to a user, that's
+	it, it's pretty general, isn't it? Because it is, ANY database object, schema,
+	table, function, stored procedure, all of them will be able to be **updated**
+	by the user. That's how things work in a _"hierarchical"_ manner.
+
+**GRANT Permissions**
+
+- Some permissions are "covering", meaning, they include **multiple permissions**
+under a single name
+- A good example of this is the CONTROL permission, which includes such permissions
+as INSERT, UPDATE, DELETE, EXECUTE, and several others.
+- Example: `GRANT CONTROL ON SCHEMA::Sales TO sqluser01`
+- After granting the `CONTROL` permission, you can assign the fn_my_permissions
+function to view the effective permissions for that user on the Sales schema
+- The SELECT permission was granted to the user at the database level through
+the `dbdev` role and at the schema level as part of the CONTROL permission, as
+are the rest of the permissions shown in the results
+- Covering permissions help simplify the process of granting access to the database
+objects
+
+**DENY Permissions**
+
+- We can also deny permissions on securables
+- This can be useful when you want to grant permissions at a higher level in the
+object hierarchy but want to prevent those permissions from extending to a few
+of the child objects.
+	- If we have a GRANT statement and we give access to a particular user, _why
+	would you combine a `DENY` there?_.
+		- Perhaps there's a table in the database with employee's sensitive
+		information. (Salaries)
+			- And you need to give GRANT to a user to do its work, there may be
+			hundreds of tables/database objects. You are not going to waste your
+			time (and make things harder to read and maintain) by adding GRANTs
+			to every single atomic thing.
+				- So you can GRANT the user access to a whole database level, but
+				then hide/block access to specific objects from that database,
+				that's where DENY can come in, and be applied really poignantly.
+				The user will have access to the whole database, except a SELECT
+				on the _salary table_
+- For example, you can deny the CONTROL permission to sqluser01 on an individual
+table within the Sales schema, as shown in the following example:
+	- DENY CONTROL ON OBJECT::Sales.BuyingGroups TO sqluser01
+- When you deny the CONTROL permission, you deny all permissions that are part
+of CONTROL, including the SELECT permission
+- The SELECT statement returns an empty result set, indicating that sqluser01 no
+longer has any type of permissions on the BuyingGroups table
+- The DENY permission takes precedence over all granted permissions, no matter
+where in the object hierarchy permissions are granted or denied
+	- However, denying permissions on one object does not impact other objects
+	unless they're child objects
+		- **UNLESS,** that specific object has indeed child objects, in that case,
+		_yeah_, the permissions are also denied downstream.
+- The following `DENY` statement denies sqluser01 the ALTER permission on the Sales
+schema:
+	- `DENY ALTER ON SCHEMA::Sales TO sqluser01`
+	- If you run the function to check on permissions you will see how the
+	Sales schema specifically has now REVOKE.
+
+**REVOKE Permissions**
+
+- In some cases, you need to **roll back** the permissions that have been granted
+on an executable, in which case, you can use the REVOKE statement
+	- Basically, this removes back from a `GRANT`
+- The following REVOKE statement removes the CONTROL permission from the Sales
+schema for sqluser01
+	- `REVOKE CONTROL ON SCHEMA::Sales TO sqluser01`
+- After revoking the CONTROL permission, you can once again use the `fn_my_permissions`
+function to view the effective permissions for that user on the Sales schema
+	- Be careful to not confuse `REVOKE` with `DENY`
+		- You could end up with unintended consequences when users receive permissions
+		from multiple sources, and in the examples above
+		- E.g., If you had denied sqluser01 the CONTROL permission to the Sales
+		schema object, rather than revoke the permission, the user would no longer
+		have SELECT permissions to the schema and its objects
+
+**LAB**
+
+So, here's where things take a weird turn, because nothing is _as easy_.
+
+You can run these commands:
+
+[source, sql]
+====
+GRANT UDPATE ON SCHEMA::Sales TO [LABMSSQL\user01] <.>
+
+EXECUTE AS USER = 'LABMSSQL\user01' <.>
+SELECT * FROM fn_my_permissions ('Sales', 'SCHEMA') <.>
+REVERT <.>
+GO
+
+REVOKE CONTROL ON SCHEMA::Sales TO [LABMSSQL\user01] <.>
+
+SELECT <.>
+	class_desc,
+	permission_name,
+	state_desc
+FROM sys.database_permissions
+WHERE grantee_principal_id = USER_ID('LABMSSQL\user01')
+====
+<.> In here you can pivot between `GRANT CONTROL`, `GRANT UPDATE`, and many others.
+<.> You can literally "switch" to another user with this statement, and everything that
+runs will be done under "his credentials"
+<.> And _as the impersonated user_, you can then run this handy `fn_my_permissions()`
+function to which you can feed the name of a database object and its type, so that
+you see what permissions are granted to you in regards to that object
+<.> And lastly, to "stop impersonating", you can run a `REVERT`
+<.> And in here you can run a `REVOKE` or a `DENY` on the specific permission you
+gave up above
+<.> And this is when things get messy, on the course, the `REVOKE CONTROL` wipes
+entirely any permission, however, in pratice (at least in SQL Server 2019), it does not,
+the `fn_my_permissions` still shows a `CREATE SEQUENCE` and an `ALTER` permission.
+Reasons as to why these `GRANTS` are ther is a mistery (maybe defaults, or whatnot, or
+maybe because this is a db_owner at a server level, who knows).
+In any case, you can run this other query to get the _underlying metadata_ rather
+than the _effective results_. And in here I see `CONNECT` and `ALTER`. These permissions
+in order to be "effective", they have to be revoked MANUALLY.
+
+The **CLEAN SLATE** is actually not using REVOKE but `DENY`, this will destruct
+EVERYTHING, absolutely no access. And indeed, it does, if I run DENY the `fn_my_permissions`
+no longer shows those other two, and on the "underlying metadata" query, it shows
+explicitly that the SCHEMA - CONTROL is under a `DENY`.
+
+````
+DENY EXECUTE ON SCHEMA::Sales TO [LABMSSQL\user01]
+````
+Once we run this, we effectively apply a `FLAG` to this login/user, on the specific
+Sales schema, it will have `EXECUTE` denied. Even if we REVOKE CONTROL and then
+GRAN CONTROL again, the DENY is still there, and will not be overriden by ANYTHING.
+
+This translates to give a lot of power to a user with `CONTROL`, however, slicing
+away the `EXECUTE` power from stored procedures.
+
+In practice, this translates to:
+
+- `DENY SELECT ON Schema::Sales TO [LABMSSQL\user01]`
+
+BUT OKAY, GOT IT.
+
+- REVOKE, actually just "deletes" the metadata in regards to a permission in the `sys.database_permissions`
+table. If we give a GRANT or if we give a DENY to a user to whatever database object.
+The `REVOKE` just deletes that explicit entry. Hence, even if we do a DENY or a GRANT
+on a specific permission, and we REVOKE that, it will simply be taken out of that,
+if we have GRANT 'ed a CONTROL, then `REVOKE SELECT` on a previously `DENY SELECT`
+will default to the user "having SELECT rights again". Okay yeah, in practice and
+with these things in mind is way easier to understand and make sense of, in the course's
+explanation is just too nebulous and lacking depth due to no actual real-working examples.
+
+=== Quiz 9: MSSQL User Management
+
+== MSSQL Server Agent Management
+
+=== Welcome to Overview of MSSQL Server Agent
