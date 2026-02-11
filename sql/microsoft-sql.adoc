@@ -8964,6 +8964,93 @@ explanation is just too nebulous and lacking depth due to no actual real-working
 
 === Quiz 9: MSSQL User Management
 
+What is the primary authentication mode used in Microsoft SQL Server?
+
+R - Mixed Mode Authentication
+
+In SQL Server, what is the purpose of a server-level role?
+
+R - To manage server-wide permissions
+
+Which role in SQL Server has the highest level of permissions and can perform
+any action on the server?
+
+R - sysadmin
+
+What does the DENY statement do in SQL Server?
+
+Revokes permissions from a user or role
+
+In SQL Server, what is the purpose of the EXECUTE AS clause
+
+R - It allows a user to impersonate another user or role
+
+What is the purpose of SQL Server Audit?
+
+R - To monitor and record database activity
+
+Which statement correctly represents the syntax for granting SELECT permission
+on a table named "Employee" to a user named "John"?
+
+R - GRANT SELECT ON Employee TO John
+
+Which statement correctly represents the syntax for denying UPDATE permission
+on a table named "Orders" from a user named "Alice"?
+
+R - DENY UPDATE ON Orders TO Alice
+
+Which statement correctly represents the syntax for revoking DELETE permission
+on a table named "Products" from a user named "Bob"?
+
+R - REVOKE DELETE ON Products FROM Bob
+
+What is the effect of the CASCADE option in the REVOKE statement in SQL Server?
+
+R - It revokes permissions from other users as well
+
+**EXTRA**
+
+Okay, so CASCADE is interesting, it's a REVOKE with a bit more power than DENY,
+in the sense that DENY indeed superseds everything, however REVOKE has an
+extra condition attached to it:
+
+[source, sql]
+----
+-- 1. Admin gives Manager access + the power to give it to others
+GRANT SELECT ON Schema::Sales TO Manager WITH GRANT OPTION;
+
+-- 2. Manager gives access to Analyst
+AS Manager GRANT SELECT ON Schema::Sales TO Analyst;
+
+-- 3. Admin tries to revoke from Manager (This will FAIL without CASCADE)
+-- REVOKE SELECT ON Schema::Sales FROM Manager; 
+-- Error: "Grantor does not have required permissions to revoke... or dependencies exist."
+
+-- 4. Admin uses CASCADE to pull access from the whole chain
+REVOKE SELECT ON Schema::Sales FROM Manager CASCADE;
+----
+So imagine this, an `Admin` gives a `Manager` SELECT privileges on the `Sales` schema.
+**AND** he also gets the permission to _**GIVE OTHERS THE SAME SELECT PRIVILEGE**_.
+That `Manager` can then `GRANT SELECT` onto the schema to other users/roles.
+_However, what if the admin wants to revoke said permission because the `Manager`
+shouldn't have given him those permissions in the first place?_ If he tries to
+directly run a `REVOKE` it will **FAIL**. That is because the one who gave that
+grant is someone else, to _skip over that safeguard_, you can do a `CASCADE`.
+It will remove the `GRANT` from both the `Manager` and the `Analyst` effectively
+destroying the dependencies of GRANT. It's quite dangerous if you don't know what
+you are doing, so sometimes it's best to simply use a `DENY` and be done with it.
+
+_Extra note:_ You can check the dependencies of permissions in the `sys.database_permissions`
+table under the `grantor_principal_id` column.
+
+**Big Takeaway:** The `WITH GRANT OPTION` is really interesting, to extend the
+ability to give the very same permission to others or not. And also how that
+generates a dependency between the grantor, and the grantee. And how some commands
+because of said relationship will fail, and how `DENY` becomes a really attractive
+choice to get over this without destroying a whole dependency tree.
+
 == MSSQL Server Agent Management
 
 === Welcome to Overview of MSSQL Server Agent
+
+
