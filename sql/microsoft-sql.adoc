@@ -9053,4 +9053,74 @@ choice to get over this without destroying a whole dependency tree.
 
 === Welcome to Overview of MSSQL Server Agent
 
+We will basically setup jobs, and specific tools that are provided by the MSSQL
+Server Agent which is a critical component of the service. It enables DBAs to
+automate things.
 
+=== SQL Server Agent Introduction
+
+**Why do you need SQL Server Agent?**
+
+- In the era of automation, it is often required that we execute multiple scripts
+repeatedly in a timely fashion
+- These scripts can be used to back up an existing database, delete extra log files,
+process data from a table, drop and rebuild indexes on a table, or running an
+ETL job, etc
+- All these tasks are repetitive and can be automated using the SQL Server Agent
+- This gives us the flexibility that the job will be executed as per the rules defined
+in the schedule and there is minimal human intervention required in order to
+execute these jobs
+	- E.g., Imagine we have to take the backups of our database, the less busy
+	time of our database is 2 AM, so we **have to take backups at that time**.
+	_Without a SQL Server Agent_, someone has to be up at 2 AM and run the
+	scripts.
+	- Imagine having to wake up everyday at 2 AM. What would be the ideal solution
+	though? The system could self-manage itself and run all the necessary scripts
+	for the backups **by-itself** at 2 AM. That could be really helpful
+		- To do that, SQL Server provides an SQL Server Agent, which helps us with
+		the automation of jobs, on top of scheduling at a particular time so that
+		we don't have to _wake up at 2 AM to run scripts_
+- Once jobs are executed, we can also see the history, **so we can check if an
+execution failed or was successful**. The job history is really useful to know
+if there were issues and act accordingly
+- In case of a failure, we can always restart the job manually
+- SQL Server Agent can run a job on schedule, in response to a specific event,
+or in demand
+- By default, the SQL Server Agent service is disabled when SQL Server is installed
+unless the user explicitly chooses to autostart the service
+
+**SQL Server Agent Components**
+
+- **Jobs:** A _job_ is a specified series of actions that SQL Server Agent performs
+- **Schedules:** A _schedule_ specifies when a job runs
+- **Alerts:** An _alert_ is an automatic response to a specific event
+- **Operators:** An _operator_ defines contact information for an individual
+responsible for the maintenance of one or more instances of SQL Server
+
+**Security for SQL Server Agent Administration**
+
+- Keep in mind that you can only manage the SQL Server Agent _stuff_ can be
+managed by a user that has the `sysadmin` `fixed server role`, or specific database
+roles (in the `msdb` database) such as **SQLAgentUserRole**, **SQLAgentReaderRole**,
+and **SQLAgentOperatorRole**.
+	- If a user is not part of either of these roles, the user can't perform tasks
+	on the MSSQL Server Agent
+- On top of these fixed database roles, subsystems and proxies help database
+administrators ensure that each job step runs with the minimum permissions required
+to perform its task
+	- When we want to run a job or task, we want to give minimum permission to
+	the user to perform the task. And that is because if someone has access to said
+	task/job, we don't for it to become an **attack vector** and make damage to the
+	MSSQL Server Instance or even worse, the whole machine and connected machines
+	to it.
+- Roles: The reason only specific roles have access to the SQL Server Agent is
+to minimize these risks in security.
+- Subsystems: A subsystem is a predefined object that represents functionality
+that is available to a job step
+	- For example an SSIS package, command shell script, SQL server scripts. We
+	can pick so that the task is walled-off certain type of these objects
+- Proxies: SQL Server Agent uses proxies to manage security contexts. A proxy
+can be used in more than one job step. Members of the `sysadmin` fixed server role
+can create proxies.
+
+=== SQL Server Agent Jobs and Schedules
