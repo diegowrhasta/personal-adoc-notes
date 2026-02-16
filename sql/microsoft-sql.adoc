@@ -9587,6 +9587,243 @@ corrected the step's T-SQL script, and re-run. The job went through just fine.
 
 === Quiz 10: MSSQL Server Agent Management
 
+What is SQL Server Agent in Microsoft SQL Server?
+
+R - A tool for job scheduling and automation
+
+What type of jobs can be scheduled and automated using SQL Server Agent?
+
+R - Various administrative and maintenance tasks
+
+What is the purpose of the SQL Server Agent Operator?
+
+R - To monitor and respond to job status
+
+Which statement is true about the SQL Server Agent Job Step?
+
+R - It represents a single task within a job
+
+What is the significance of the SQL Server Agent Proxy Account?
+
+R - It provides security context for job execution
+
+In SQL Server Activity Monitor, what does the "Processes" tab display?
+
+Current connections, queries, and associated details
+
+[NOTE]
+====
+EF U. But okay, so this is something we didn't see at all lmao. You can right
+click the top item of the navigation tree and **Activity Monitor**, it shows a
+"control pannel", and yeah, under `Processes` it shows all the active connections,
+and queries that might be run under said connections and other interesting details
+====
+
+What is the primary benefit of using Database Mail in SQL Server?
+
+R - It allows sending email notifications from SQL Server
+
+Which SQL Server Agent component is associated with configuring and managing
+Database Mail?
+
+R - Operator
+
+Which type of notifications can a SQL Server Agent Operator receive?
+
+R - Emails, text messages, and pager details
+
+What triggers a SQL Server Agent Alert to activate and perform its defined action?
+
+R - A specific event or condition
+
+Which SQL Server Agent component is responsible for responding to predefined events
+with a specific action?
+
+R - Alert
+
+Which statement is true about SQL Server Agent Operators?
+
+R - They receive notifications about job events
+
 == Advanced SQL Server Administration Topics
 
 === Introduction to Advanced Topics in MSSQL Server Administration
+
+What we covered so far was necessary for basic administration of a database server.
+Now we will cover a higher level of tasks that are more complicated, but that will
+elevate and breakaway from junior DBA towards something else.
+
+=== High Availability and its Types
+
+**What is High Availability**
+
+- We live now in an IT based world, in which the success and the growth of the
+business depends mainly on the availability of the critical systems that run it
+- During Service Level Agreement (SLA) discussions, topics including Recovery
+Time Objective (RTO) and recovery Point Objective (RPO)
+	- It's basically "how much time will it be required for us to recover from
+	a disaster" and "how far are we willing to accept can be 'lost' from the
+	data, or well, how far will we go to recover data (how far in the past will
+	we go)"
+- That a second of downtime in financial or tracking systems will not be accepted
+	- If you have a one second of downtime, that's unacceptable, so you have to
+	push things even further
+- The availability of business applications depend also on the availability of the
+data that these applications process and store
+	- So the data (that we mentioned is probably the most critical part of systems,
+	it's where the value is at) has to be easily available if not always, **most**
+	of the time
+- What is the need for an application that is available without being able to
+reach the databases that this application uses?
+	- There's no point, if your backing services are not working, you can't do
+	basic tasks, that app is useless in such state
+- So, we provide a reliable, high availability and disaster recovery solution
+that ensures the minimum possible downtime for the database systems in case
+of any crash, failure or disaster situation
+	- We know these systems are human made, there's a chance of an error, issue,
+	and also things outside of our control happen, and so, we prepare for the
+	**worst**, and we estimate, or _try_ to get as minimum downtime as possible
+	even in face of all these dangers
+- **High Availability** means that the SQL Server instances or databases will be
+available and reachable, with the least possible downtime, in case of any server
+crash or failure
+	- We have to recover in the **least amount of time**, not weeks, days, but
+	minutes. **Yes, there will be some amount of downtime**, but it should be
+	with the idea of minimizing the business impact
+- The availability of the SQL Server that is provided by the solution is measured
+by the number of 9's in the availability percentage that this solution provides,
+and the total period of annual downtime, as per the Microsoft table below:
+
+[cols="1,1,1"]
+|===
+|Number of 9's | Availability Percentage | Total Annual Downtime
+
+|2
+|99%
+|3 days, 15 hours
+
+|3
+|99.9%
+|8 hours, 45 minutes
+
+|4
+|99.99%
+|52 minutes, 34 seconds
+
+|5
+|99.999%
+|5 minutes, 15 seconds
+|===
+
+Finally, these nebulous numbers have some sense, and I'm guessing Microsoft ran
+tons of tasks and calculations to get to these numbers (or someone just pulled them
+out their #$%^)
+
+- In High Availabilty, we are simply talking about how much does it take to go
+back to an operational state (the time-frame of the downtime)
+- **Disaster Recovery** means that, when the primary datacenter experiences a
+catastrophic event, such as an earthquake, flood or war, the system should be
+brought online and server the users in another secondary site
+
+**High Availability Types**
+
+- **Replication**
+	- The source data will be copied to destination through replication agents
+	(jobs). Object level technology
+	- This means that we can replicate simple a table, not the _whole database_
+- Terminology
+	- We have a **Publisher**, which is the _"main"_ server, _source server_,
+	that is going to publish a snapshot (with all the database objects' state that you
+	decide to snapshot)
+		- Changes happen, those changes get saved and the state after those changes
+		is grabbed as part of a snapshot
+		- The replication agents read the snapshots and replicate them into source
+		servers
+	- We have a **Subscriber**, which is a destination to which the snapshot of the
+	**Publisher** will be sent to-replicated
+	- Optionally there's a **Distributor** which will just act as a vault to keep
+	the data replicated for the **Subscriber** to grab
+
+- **Log Shipping** (Old, used a lot)
+	- The source data will be copied to the destination through the `Transaction
+	Log` backup jobs. It's a database level technology
+- Terminology
+	- Primary server is the source server
+	- Secondary server is a destination server
+		- This should always be in (Read only) mode
+	- Optionally you can put in-between a **Monitor Server**, and the log shipping
+	status is used for him to communicate of the status of the replication process
+	- Basically, on the Source Server you will do a transaction log backup to
+	a local folder or a shared folder, **then**, that backup gets copied/sent
+	to a Local Folder in the `destination server`, and in there the MSSQL Server
+	instance restores the log
+		- **It's worth remembering the concepts and clear any confusion**, we
+		are talking about **Transaction Log backups**, meaning the replication
+		needs to already have behind it a FULL BACKUP restored, and perhaps
+		differential backups also. (or also getting replicated in a chain)
+
+- **Mirroring**
+	- The primary data will be copied to a secondary through the network, on
+	a network transaction basis with the help of a mirroring endpoint and a port
+	number. Database level technology (we can't pick and choose tables, whole database
+	is mirrored)
+- Terminology
+	- Principal server is the source server
+	- Mirror server is the destination server
+	- Optionally there's also a `Witness server`, which is used for an automatic
+	failover, this is sort of extra, but in case the principal dies, the witness
+	can switch up the flow of the information and make the Mirror act as principal,
+	until the Principal comes back on-line and revert the change. (This can happen
+	automatically)
+		- Also, the mirror under _normal circumstances_ just coordinates and makes
+		sure the two databases and doing the mirroring correctly
+	- So any change, any operation that happens on Principal is immediately "mirrored"
+	onto the Mirror DB
+
+- **Clustering** (SQL Server cluster based on Microsoft clustering services, there's
+this other layer that you can apply on top of a Windows Clustering Server, which are
+clusters)
+	- The data will be stored in a shared location which is used by both primary
+	and secondary servers based on availability of the server. Instance level
+	technology. Windows Clustering setup is required with shared storage.
+- Terminology
+	- Active node is where SQL Services are running
+	- Passive node is where SQL Services are not running
+
+[IMPORTANT]
+====
+Clustering in Database Realms is basically shared computer power for running
+a **SERVER**, it's not just an MSSQL Server instance, but a whole machine. All
+changes, all services, everything is shared amongst multiple computation units.
+And all the state, (in this case MSSQL data), is kept separate, in a `Shared Storage`.
+With this in mind we can have an `Active` Cluster, that is the one serving the
+traffic/requests from production/from users. And then dealing with the shared
+storage. And then we can have up on another end of the infrastructure a `Passive
+Cluster`, configured to be dormant, but already pre-wired to work as the
+`Active Cluster` with the same **Shared Storage**, in case Cluster A (Active
+Cluster) DIES, we immediately start redirecting traffic to Cluster B (Passive
+Cluster), he will be working with the same data because it's on a Shared Storage,
+and will take over until Cluster A comes back online and we switch back again
+to that cluster
+====
+
+Clusterig is the most complex, but also the most available and seamlessly transitioned
+type of high availability.
+
+- **AlwaysON Availability Groups** (This came in MSSQL 2012)
+	- The primary data will be copied to secondary through network transactions.
+	Group of database level technology. Windows Clustering setup is required without
+	shared storage
+- Terminology
+	- Primary replica is the source server
+	- Secondary replica is the destination server
+	- Basically this is like mini-infrastructures that are replicated. On different
+	nodes/machines/instances you are replicating all data that can be of multiple
+	databases (that's why they are groups). Constantly. There can
+	be up until 8 secondary group instances, and you can fail-over in a chain until
+	you hit one secondary group instance that's operational and can take over
+		- There's NO shared stage, and the groups can be in different data centers,
+		again, it's a whole infrastracture ready to work the same as the main
+		infrastructure
+
+=== What is Replication and Transactional Replication Setup
