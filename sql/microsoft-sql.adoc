@@ -9827,3 +9827,191 @@ type of high availability.
 		infrastructure
 
 === What is Replication and Transactional Replication Setup
+
+**What is Replication**
+
+_This technique is not used only for high availability but also for reporting,
+read-only data, and others_
+
+- SQL Server Replication is a technology for copying and distributing data and
+database objects from one database to another and then synchronizing between
+databases to maintain consistency and integrity of the data
+	- We get a copy of a data at a certain point, however after the restore it
+	might not be in sync with the database. That is, if we do things manually,
+	however a way to keep replicating every single change from a source database
+	to another is through **replication**
+- In most cases, replication is a process of reproducing the data at the desired
+targets
+- SQL Server replication is used for copying and synchronizing data continously
+or it can also be scheduled to run at predetermined levels
+- There are several different replication techniques that support a variety of
+data synchronization approaches; one-way; one-to-many; many-to-one; and bi-directional,
+and keep several datasets in sync with each other
+	- Microsoft SQL Server can use several ways/patterns of distributing the
+	replicated data, it's not limited to "one-to-one"
+- Types of Replication:
+	- Transactional Replication
+		- We read the logs of a database and copy that to the destination
+	- Merge Replication
+		- We have two databases at different locations, and we want to sync them
+		in both sides. (Source and Destination both merge the different data)
+	- Snapshot Replication
+		- Take a snapshot of the database at a predetermined time, and that
+		snapshot is then replicated. It's good for systems that are not critical
+
+**Transactional Replication**
+
+- SQL Server Transactional Replication is a real time, database level, high availability
+solution, that consists of one primary server, known as **Publisher**, that distributes
+all the database tables, or selected known as articles, to one or more secondary
+servers, known as **Subscribers**, that can also be used for reporting purposes
+	- This is database level, that means if you have 10 different databases, we
+	should use 10 replications
+	- We are copying the database from the primary server - **Publisher**
+	- Within the database, we don't have to replicate all the database, we can
+	pick and choose what tables we want to replicate and tables are then referred
+	to as "Articles"
+- As the name indicates, Transactional Replication depends on a synchronization
+process with the SQL Server Transaction Logs
+- Components of Transactional Replications
+	- Real Life Example: Newspaper, there's an organization that publishes this
+	newspaper, then this newspaper is printed and put up for view in a specific
+	shelf at which only specific people that care about these news pick and
+	read. Subscribers are then in charge of doing whatever they can from the
+	published messages. The publisher just notifies subscribers, he doesn't
+	distribute things himself.
+	- **Publisher:** Is a database instance that makes data available to other
+	locations through SQL Server Replication. The Publisher can have one or
+	more publications, each defining a logically related set of objects and data
+	to replicate
+		- Meaning that for each set of articles/set of databases that are going
+		to be replicated, we can have the primary database publish multiple times
+	- **Publication database:** The **publisher** is a database instance that
+	contains a list of objects that are designated as SQL Server replication
+	articles, and these take a name of _publication database_. The publisher
+	can have one or more publications. Each publisher defines a data propagation
+	mechanism by creating several internal replication stored procedures
+		- Basically, Publisher is the name of the instance itself, the MSSQL
+		instance. And the databases objects that are defined for replication are
+		in a `publication database`
+	- **Publication:** Is a logical collection of articles from a database. The
+	entity allows us to define and configure article properties at the higher
+	level so that the properties are inherited to all the articles in that group
+		- In a publication database we don't have to replicate **all the tables**,
+		we pick some, and `Publication` is the logical grouping of those tables,
+			- _Why do we have these levels inside of levels?_ Basically, it's
+			easier to manage and configure properties for the articles. I guess,
+			it's kinda like a prototype pattern from programming, you can define
+			how an article "a general use artical" should look/behave like in the
+			realm of replication and that same template of configurations can then
+			be applied to other articles seamlessly
+	- **Articles:** Basic unit of SQL Server Replication. It can be used to refer
+	to tables, stored procedures and views. It is possible to scale the article,
+	horizontally and vertically using a filter option. We can also create multiple
+	articles on the same object with the **same restrictions and limitations**
+		- Articles generally end up being tables or views, so it's often used
+		interchangable with "tables" as the thing we are referring to
+		- Also, within a **Publication** we mark all the database objects we
+		want to replicate, and those _tagged_ objects are referred to as `Articles`
+		- The scale bit is referring to also that we have the ability to manipulate
+		the data that is replicated (you can get pretty granular), you can select
+		just specific columns to replicate and you can also filter just specific
+		rows to replicate
+	- **Distributor:** Actually really important. This is a database that acts
+	as a storehouse for replication specific data associated with one or more
+	Publishers. In many cases, the distributor is a single database that acts
+	as both the Publisher and the Distributor. In the context of SQL Server
+	replication, this is commonly known as a "local distributor". On the other hand,
+	if it's configured on a separate server, then it is known as a "remote distributor".
+	Each Publisher is associated with a single database known as a "distribution
+	database" aka the "Distributor"
+		- Why would we outsource a distributor to another instance? That is because
+		distribution is actually a really heavy workload, and if we want to replicate
+		say "production", we don't want to put it under heavy load, so we make
+		an instance take care of doing the replication process and keep the computation
+		power of production intact.
+			- Distribution is not limited to just "delivering data" but also to
+			keep track of status data, replication metadata, and to also implement
+			and serve a **queue**, to move data
+			- Depending on the replication model, the Distributor can also be
+			in charge of notifying subscribers if a specific article of a publication
+			has changed. So if there's update/delete/insert, then these changes are
+			notified
+			- Lastly, distribution agents also keep in check the integrity of the
+			data
+	- **Distribution database:** Each Distributor must have at least one distribution
+	database. The distribution database consists of article detail, replication
+	meta-data and data. A Distributor can hold more than one distribution database;
+	however, all publications defined on a single Publisher must use the same
+	distribution database
+		- For example, if we have 5 instances, we can have 5 distribution databases
+	- **Subscriber:** A database instance that consumes SQL Server replication
+	data from a publication is called a Subscriber. The subscriber can receive
+	data from one or more publishers and publications. The subscriber can also
+	pass data changes back to the publisher or republish the data to other
+	subscribers depending on the type of the replication design and model
+		- So yeah, we can configure extremely complicated setups, in which a
+		subscriber receives replication data from multiple sources, and he can
+		then reply back or send back messages to the publishers based on his
+		own process
+		- The Subscriber database has to be be `read-only`, and he also has the
+		ability to re-transmit the replication data he received to **other subscribers**
+	- **Subscriptions:** A subscription is as request for a copy of a publication to
+	be delivered to a Subscriber. The subscription defines what publication data
+	will be received, where, and when. There are two types of subscriptions
+		- _Extra:_ So basically the subscription is like the contract the subscriber
+		defines with the publisher
+		- **Push Subscription:** Distributor directly updates the data in the
+		Subscriber database
+		- **Pull Subscription:** The Subscriber is scheduled to check at the Distributor
+		regularly if any new changes are available, and then updates the data
+		in the subscription database itself
+	- **Subscription databases:** A target database of a replication model is
+	called a subscription database
+	- **Replication agents:** To perform all the replication tasks that are necessary,
+	MSSQL has replication agents. SQL Server replication uses a pre-defined set of
+	standalone programs and events that are known as `agents`, they carry out the
+	tasks associated with data
+		- Agents are standalone programs
+	- The **SQL Server Snapshot Agent** prepares the starting snapshot file that
+	contains the database objects to be replicated, you can imagine it as a full
+	backup file
+		- Basically the Snapshot is a **full database backup** of the specific
+		articles of a publication that are targeted for replication.
+		- This is the first agent that gets started when replication is configured,
+		he has to send the initial snapshot of data from source to target
+	- The **Distribution Agent** is responsible for copying the initial snapshot
+	and the cumulative logs to the subscribers
+	- The **Log Reader Agent** is responsible for monitoring the SQL Server
+	transaction log in the publisher database and copy these transactions from the
+	transaction log file of that database to the distribution database, to then
+	be copied to the subscribers by the distribution agent later
+		- We took an initial snapshot of the database, the distribution agent takes
+		care of delivering that initial snapshot
+		- And after that initial kick-off, the Log Reader Agent is continously
+		looking into the transaction log, the moment it detects changes that
+		the replication has marked for replication it will send them to the
+		distribution database to then be send downstream
+
+This is a diagram of transactional replication:
+
+image::transactional-replication.png[Transactional Replication]
+
+_Notes:_
+
+- The tables/views/sps we care about and want to focus on are what is the **Publication**.
+	- This data is what's going to be replicated into the `Distributor`'s Distribution
+	DB.
+	- The agents are always working in-between making sure the data travels from
+	point A (Publisher) to point B (Subscriber)
+	- The distribution agent is the intermediary always making sure that the changes
+	in the distribution database that have subscriptions are notified/replicated
+	in the subscription databases from `Subcriber`s
+	- **NEVER FORGET THAT WE HAVE AN INITIAL SNAPSHOT AT FIRST**, and _then after_,
+	we start periodically scanning the transaction log and replicating those changes
+	constantly
+		- The Snapshot agent seems to be only up for the initial snapshot job,
+		after that it is the distribution agent that kicks in and takes over
+		replication
+
+=== Transactional Replication Setup (LAB)
