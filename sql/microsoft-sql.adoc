@@ -10015,3 +10015,244 @@ _Notes:_
 		replication
 
 === Transactional Replication Setup (LAB)
+
+As we know from theory, we can have both setup a remote instance or a local instance
+for replication, since we are just labbing. We are going to setup a local instance
+for replication through a **Named instance**.
+
+Meaning:
+
+- We will have multiple instances on the same VM
+	- One will be the default instance
+	- Another will be the named instance
+
+- We need to run again the setup file
+	- This is under an ISO (just double click it)
+	- Installation > New SQL Server stand alone installation...
+	- It will run all the checks and stuffs, Next >
+	- There will be a screen asking if you want to install a new instance or
+	extend a current one
+		- We will select a NEW Instance, but just so you know, _this is a screen
+		at which we can add extra features to our **current instances**_
+			- Reporting Services
+			- Replication Services
+	- When it asks for what features to configure for the new instance, just:
+		- Database Engine
+		- Replication
+		- _For whatever reason we are not going to configure the paths and stuffs_
+	- Since the machine already has a default instance, the wizard will automatically
+	select a `Named Instance` option for the type
+		- Give it a **name**, it has `16 characters max`
+	- The account name for the services should be of the `Administrator`, the
+	Windows Login
+		- You need to introduce the login password **twice**
+	- It will ask for a password for the default `sa` account
+		- And all the services settings will be left with their defaults
+	- And after Next > Next the installation will start
+		- **JUST WAIT**
+
+Once the named instance's installation has finished, we can go into SSMS and
+trigger the connection window again, and on the instance browser you should
+be able to visualize the new `LABMSSQL\NAMEDINSTANCE1` option.
+
+The nomenclature for the names of a named instance is:
+
+- <MACHINE-NAME>\<INSTANCE-NAME>
+	- E.g., LABMSSQL\NAMEDINSTANCE1
+
+This is our target setup:
+
+- Publisher: LABMSSQL
+- Subscriber: LABMSSQL\NAMEDINSTANCE1
+- Publication Database: AdventureWorks2016
+- Subscription Database: AdventureWorks2016_rep1
+- Distributor: LABMSSQL
+- Distribution Database: distribution
+- Snapshot Folder Path: C:\SQL_DATA_FILES\MSSQL15.MSSQLSERVER\MSSQL\ReplData
+- Tables to Be Replicated: [dbo].[Sales], [HumanResources].[Employee]
+
+We are basically replicating from the default instance into the named instance.
+**Everything locally**
+
+- To turn on Replication:
+	- On the named instance Right Click `Replication` and select `Configure...`
+	- If you continue through the Wizard, it will ask to turn on the agent, say
+	yes
+	- It will also ask where do you want the distributor to be, you can leave it
+	as the current VM or say that another server will be the distributor, we want
+	to keep it simple, **SIMPLE**, so we are going to let the same machine as
+	a distributor also
+	- The snapshot path will be kept default
+	- The name of the distribution database can be changed (we won't)
+	- And we will indeed change the default paths that are filled in for the distribution
+	database file and log file
+	- It will then show a screen with the `Publisher`, for whatever reason the
+	named instance was marked as that, but that was wrong, you need to make the
+	DEFAULT INSTNACE be the Publisher
+	- Another window will also ask for a password that when connecting with remote
+	distribution databases the agent will input
+	- Leave the `configure` option of then next screen checked
+	- Next > Next
+
+We will have to create now the replication database in the Named Instance
+
+_NOTE:_ And even though the wizard says it will "automatically" start the SQL Server
+Agent, mine **failed**. So I had to right click it and start it manually.
+
+- The replication database will have all the default configurations
+
+Now, we need to setup the `Publication` from the Default Instance's side. Right
+Click under `Replication > Local Publications` > `Add`. After you enter the wizard,
+2019 vs 2016 or whatever SQL Server version the course uses has different screens
+for the wizard:
+
+- It asks if you want the same machine to act as Distributor
+- It will immediately ask you for what database to replicate
+- It will also ask for a path for a **Snapshot**
+- And after all of that it will then show this screen for `Publication Type`
+	- We are going to use `Transactional Publication`
+- You will then get a tree view of all the database objects, you can then choose which
+ones you want to mark as `Articles` (objects to be replicated)
+	- Maybe AdventureWorks2019 has differences in structure, but I don't have a
+	[dbo].[Sales], so... I will just replicate `Sales.SalesPerson`.
+		- You will see that some tables are marked with a red NO. These are tables
+		that **cannot be articles**, _WHY?_ Because they don't have a primary key.
+		That is a **KEY REQUIREMENT**
+- There's a `Filter` screen, and in here you can configure (if you want) a specific
+set of columns you want replicated
+	- **We won't for now**
+- Then there's a window for the Snapshot Agent
+	- There's an option to run the snapshot immediately or to defer that to us
+	triggering it **manually**
+	- We are going to mark as `immediately`, but bear in mind that snapshotting
+	is **REALLY RESOURCE INTENSIVE**, so if you are doing this, do it in off-hours
+- Then for the Snapshot Agent you have to mark the option to use the SQL Server
+Agent directly
+	- To impersonate
+- Configure option - DEFAULT
+
+**REALLY IMPORTANT**
+
+I ran into an error, and that is that it couldn't configure the `Distributor`,
+so on the screen that asks about "act as your own distributor", you should "connect"
+to the `NAMEDINSTANCE1`, remember **WE ALREADY SET IT UP AS A DISTRIBUTOR**, and
+from the default instance's POV he should coordinate with that instance for the
+distribution, _IT WILL ASK YOU FOR A PASSWORD, USE THE SAME PASSWORD THAT YOU
+USED FOR SETTING UP THE DISTRIBUTOR ON THE NAMED INSTANCE_
+
+After this Wizard, we have simply **SETUP THE PUBLISHER**, nothing has been replicated
+yet, this is just the blueprint established.
+
+I don't really know what happened here, but anyway.
+
+The course looks at the `Job Activity Monitor` from the default instance, and points
+out two new jobs that are "automatically created". But that wasn't my case, that
+was in the `NAMED INSTANCE`, maybe because of the setup that I made that instance
+the Distributor? Idk.
+
+Anyway there are two jobs here:
+
+- REPL-LogReader
+- REPL-Snapshot
+
+The snapshot will run immediately (as per what we checked), and then the `LogReader`
+will be constantly running, looking at the transaction log from the publisher's
+publication database. And the moment it detects changes it will notify the distributor
+so that he takes those new changes and passes it down to any subscriber's databases
+
+_NOTE:_ Course sucks for this cuz it confuses you. But it shows that we can go
+a specific path that is configured for our replication database and log files.
+And it **shows stuff already there**, but there shouldn't because we haven't
+wired the replication YET!!!
+
+Go into the named instance and under `Local Subscriptions` ADD one that will
+connect to the `Publication` from the default instance.
+
+_NOTE:_ As soon as you connect to the instance you want to replicate from, it will
+scan all configured publications and list them out for your. Since we only configured
+one for AdventureWorks we will select that one.
+
+It will ask for the model (push, or pull). Push is easier to manage because the
+`Distributor` basically grabs the events from publishers and then sends them out
+to subscribers himself. The other mode is in which each subscriber is querying the
+Distributor about changes. We want **PUSH**
+
+It will then ask to which database you want to replicate to, and so that will
+have to be our AdventureWorks2016_repl.
+
+Setup the process to run with the same service account, "Impersonate"
+
+Also, you can setup if you want for this process to run every 1, 2, 5 minutes,
+constantly... as soon as we update, destination also gets updated (Run continously).
+We want the later.
+
+Lastly, you can configure if you want for the replication to run immediataly as soon
+as we finish up setting up the subscription. That means the moment the subscription is
+created and it's live, it will run snapshotting, and will replicate the state.
+And the `Distributor` will be on the lookout for incoming changes to then replicate.
+
+If you Right Click the `Replication` item, you can Launch the Replication Monitor,
+in there you can see what the Publisher did, (a history), on top of checks of how
+the replication is doing. (Dates of latest synchronization and stuffs). **This is
+cool!**
+
+You can then query the default instance's respective article table, and then the
+named instance's article table.
+
+You should see the same data on BOTH.
+
+We can now make a change on one of article tables, and almost immediately you
+should be able to query the replication database and see that change also there.
+
+If you look at the Replication Monitor, you should see logged event of replication.
+
+And if you look at the `Agents` you will see the Snapshot Agent and the Log Reader
+Agent. We already explained these concepts through the `Job Activity Monitor`,
+but again:
+
+- The Snapshot Agent should run ONCE at the beginning to get an initial snapshot
+of the publication into the subscriber's database
+- The Log Reader should be constantly scanning for new changes in the transaction
+log of the Publisher, the moment it grabs a new event it should defer that to the
+Distributor
+	- The distributor will have a Distribution Agent, in charge of coordinating
+	how to push to all subscribers this new event in a publication database
+
+If you go into the `Job Activity Monitor` again, (in the named instance in our
+case), we will see a **new agent poppin-up**, we will now see the `REPL-Distribution`
+agent.
+
+This distribution agent can be configured to run on a different schedule, just
+Right Click > Properties, and you can setup recurring > every 1 minute > from
+12:00:00 AM to 11:59:00 PM. Or something like that.
+
+You should then STOP the job, and now he will make up for a bit, do replication if
+he needs to (he should almost always, data is always getting created/edited),
+and then go back to sleep after the process is done.
+
+With this, you mitigate slightly using TOO many resources by being more strategic
+with how you configure the replication agent.
+
+[IMPORTANT]
+====
+In performance critical environments, this type of setup might not cut it, and you
+HAVE to keep the distribution agent constantly looking so that even the tiniest
+transaction has to be replicated in less than a second.
+====
+
+You can also run tests/experiments, after we have changed the distribution agent's
+behavior. Because it now runs every one minute and we run an update on the Publication
+database, we _will no longer see that replication on our subscriber database_.
+We need to wait for the next run of replication to see that change. **So you
+need to know the configurations and setup to make sense of possible issues and
+expected behaviors**.
+
+Because replication is really resource consuming on network, processing power,
+and everything. We can run the process in short bursts. But also don't try to
+run replication every 24 hours or something, because that's a HUGE amount of
+transactions that would have to be replicated, in an already really expensive
+operation you are adding a ton of data to process. And that would be a bad
+recipe.
+
+=== Log Shipping and Configuring Log Shipping
+
