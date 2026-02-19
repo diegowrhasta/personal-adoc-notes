@@ -10256,3 +10256,197 @@ recipe.
 
 === Log Shipping and Configuring Log Shipping
 
+We briefly went through this when talking about replication strategies.
+
+**SQL Server Log Shipping**
+
+- SQL Server Log Shipping is a technique which involves two or more SQL Server
+instances and copying of a transaction log file from one SQL Server instance to
+another
+	- It looks and sounds sort of the same as Transactional Replication, but there
+	are some slight differences.
+	- Instead of reading from the Transaction Log and applying the changes with
+	a distribution agent, we are literally **copying transaction log backups**,
+	and restoring them in the target instance
+- The process of transferring the transaction log files and restoring is automated
+across the SQL Servers
+	- It's a simple backup and restore, however in a more automated way, the user
+	has minimal participation in it
+- As the process result there are two copies of the data on two separate locations
+	- These instances can be anywhere, locally, remote server, etc
+- A log shipping session involves the following steps:
+	- Backing up the transaction log file on the primary SQL Server instance
+	- Copying the transaction log backup file across the network to one or more
+	secondary SQL Server instances
+	- Restoring the transaction log backup file on the secondary SQL Server
+	instances
+
+**SQL Server Log Shipping Operating Modes**
+
+Remember how we had to put the database in a specific recovery mode and then
+apply the restoration of transaction logs?
+
+- There are two available modes and they are related to the state in which the
+secondary, log shipped, SQL Server database will be:
+- Standby mode - the database is available for querying and users can access it,
+but in read-only mode
+	- The database is not available only while the restore process is running
+		- Users can be forced to disconnect when the restore job commence
+		- The restore job can be delayed until all users disconnect themselves
+- Restore mode - the database is not accesible. You cannot select it **at all**
+	- The database will be in sync, and constantly getting updates, but yeah,
+	effectively this target database won't be usable at all, _only until we use
+	it to fallback_
+
+**Log Shipping Pros and Cons**
+
+- It's reliable and tested in details
+- It's relatively easy to set up and maintain
+- There is a possibility for failover between SQL Servers, data can be copied on
+more than one location, etc
+- Log shipping can be combined with other disaster recovery options such as
+AlwaysOn Availability Groups, database mirroring, and database replication
+	- Replication setups are not mutually exclusive you can combine different
+	modes, maybe for more resilience, or for even more security
+- SQL Server log shipping has low cost in human and server resources
+	- And yeah, of course, it's backups that are taken and then sent somewhere
+	else to restore
+- The main disadvantages in the SQL Server log shipping technique are:
+	- You need to manage all the databases separately, there isn't an automatic
+	failover
+		- Because this doesn't really work at a server level, it's a lot of manual
+		plumbing that you have to do
+	- Secondary database isn't fully readable while the restore process is running
+		- Again, if we are going to put users to make use of it, they will get
+		kicked constantly
+
+**Setting up Log Shipping**
+
+- The database log shipping setup needs to be initiated from the principal server
+using the SQL Server Management Studio wizard. The first step defines transaction log
+backup settings:
+	- We need to define a transaction log job that is going to take the backups
+	in the first place
+	- We need to setup a network path to which the transaction log backups will
+	be saved to
+	- We need to define for how long the transaction log backups should be kept
+	before deleting
+	- We should setup alerts in case no backup was taken (because of an issue or
+	whatever)
+	- The backup job itself will have its own setup
+		- Schedule the job
+			- Schedule type
+			- Frequency
+			- Duration
+- The next step defines secondary databases which involve choosing the SQL Server
+instance and secondary database. The full database backup, from the primary database,
+must be restored on the secondary server before log shipping commences
+	- This is kinda like the snapshot, although this is more manual, and we use
+	a full database backups
+- After initializing the secondary database you must define the copy folder where
+the transaction log backups from the primary server will be restored
+-  The final step involves choosing from the two available modes. The No recovery 
+Restore mode and Standby mode. You can also delay the restoring process and set
+up an alert if no restore occurs within the specified time
+	- E.g., You say that restore needs to happen every 1 hour, and if for whatever
+	reason after 1 hour a restore doesn't take place, we can notify (probably
+	operators) since there must be an issue with the log shipping itself
+- Once the log shipping is ready for use, it will run in the background, and if
+the problem occurs the alert will signalize the problem
+	- Backups will be taken care of by themselves
+	- Sending will be taken care of by itself
+	- Detecting and restoring of a backup will also be made by itself
+	- SQL Server will take over
+
+**LAB**
+
+_The course goes and cleans up a bit of space since we are going to now add
+a new database on the named instance, this is basically backup deletion_
+
+We'll create the same `AdventureWorks2019` database in the named instance, and
+we will double check that on the default and main instances the databases have
+Full Recovery Mode.
+
+When setting replication, the windows and path is a bit different, we need to:
+	- Right Click the database (from the default instance)
+	- And go to the Transaction Log Shipping Option
+
+We, **NEED TO SETUP A NETWORK PATH**
+
+And in order to get a network path, we have to share the physical folder at which
+we will keep the transaction log backups. That's a right click on the folder
+`C:\SQL_BACKUPS` > Properties > Share. Share it with administrators, and then
+a new folder will be created with a specific format:
+
+````
+\\Labmssql\sql_backups
+````
+
+_NOTE:_ So if a path starts with `\\` that's a shared/network path? Interesting.
+
+And this network path will have to be put **mandatorily** in the Network path
+to backup folder.
+
+In this screen you can also setup the frequency of old backup deletion, and also
+the maximum age they should have, it will also state how a job will be created to
+backup, and you can configure the scheduel of that job.
+
+We should also setup a **Monitor**, and that is because we want for a SQL instance
+to be constantly looking at backups, this monitor instance can be another external
+MSSQL Server, or the same instance. We will set it to the **named instance**.
+
+To kick-off we have to restore now, **wire the primary with secondary instances**.
+
+Go back to the same Transaction Log wizard, and in there there's a section to
+add "Secondary Databases", and in there we can configure the Full Backup that will
+be taken.
+
+- First option, take a full backup and restore it in the secondary database
+- When configuring the path for the secondary database, we should use the network
+path for the SQL_BACKUPS we shared
+- We will configure under `Restore Transaction Log` the No Recovery
+
+[NOTE]
+====
+Also, never forget that you can put all of this into a script. And yes you can
+generate the script with a button before running it with the wizard.
+
+I think this is amazing, try to keep things as text as much as possible, version
+control it, and all of that.
+
+But yeah, the wizard just makes it **so easy**
+====
+
+If you check the SQL Server Agent, on **both instances**, you will notice how
+there are new jobs for backing up on the primary, and on the secondary a monitor,
+a restore and so on. These are all the small pieces that are working behind the
+scenes to make log shipping a thing.
+
+Also I messed up, I set it a No Recovery, but the course set it as `Standby Mode`,
+meaning that you can access the database, in the other mode it stays in
+`Restoring...` and you can't do _anything_ with it. Luckily, you can edit the
+log shipping configuration and change it back. However you might have to run
+a sp so that the secondary database ends up in the desired (Standby / Read-Only)
+mode, because from No Recovery it will be in a different state.
+
+(Cuz, if you bring it back online with the query of `WITH RECOVERY` you get free
+access to edit the database and stuffs, and _we don't want that actually_)
+
+Anyways, you can then check the path of the backups, and then check the job monitors,
+they all should have run/should be present. We can also make a change on a table
+in the primary database, and then wait until the next restore and see the change
+replicated.
+
+You can Right Click a Database > Reports > Standard Reports > Transaction Log
+Shipping Status (Cool)
+
+Also, you can check the Job Activity Monitor, and check if there are issues,
+the course ran into them, and I also ran into them. The idea is to read these
+alerts and make sense of them, to then take solution steps. 
+
+_Note:_ Ehh... course might be a bit a$$ on this one. But oh well, there's definitely,
+more concepts and more things that we would have to see more deeply, because there's
+a lot of questions I have, and the replication doesn't seem to work. At least not
+as it was with Transactional Replication which indeed worked.
+
+=== SQL Query Tuning
