@@ -10678,3 +10678,180 @@ runs will re-use the **same execution** plan.
 _Possible extra study:_ Table Partitioning.
 
 === SQL Server Performance Tuning Using Artificial Intelligence
+
+We are bridging AI uses with performance tuning.
+
+- Artificial Intelligence (AI) enables machines to **think, learn, and make decisions**
+like humans
+	- AI helps with processing of information
+	- **Machine Learning (ML):** AI learns from data (e.g., Netflix recommendations)
+	- **Natural Language Processing (NLP):** AI understands human language (e.g.,
+	Siri, ChatGPT)
+	- **Computer Vision:** AI interprets images/videos (e.g., facial recognition)
+	- **Automation & Robotics:** AI-driven machines perform tasks (e.g., self-driving
+	cars)
+	- **Generative AI:** AI creates text, images, videos, or music (e.g., DALL-E,
+	ChatGPT)
+
+We are going to leverage `ChatGPT` to help with query tuning. But you are free
+to take **ANY MODEL**
+
+[IMPORTANT]
+====
+As DBAs you always have to keep in mind that the information that ChatGPT is
+providing, it can have errors. We need to check it, we can't just blindly start
+using code as if it was perfect. (Don't think that the norm is to have code that
+works 100% of the time)
+====
+
+Say we have a clear query to get a `TotalSales` aggregated `SUM`. And it runs
+fast, it's good, we happy.
+
+However, maybe on a single instance it works, but when scaling, the query might
+be actually slow.
+
+First of all we need to turn some settings `ON`:
+
+````
+SET STATISTICS IO, TIME ON
+````
+Displays information about logical and physical reads and writes performed by the
+query.
+Displays the time taken to parse, compile, and execute the query.
+Logical reads refer to the number of data pages read from the SQL Server buffer
+cache (memory) to satisfy a request
+
+**Logical Reads:** Memory Reads
+**Physical Reads:** I/O Reads (disk)
+
+**SECOND STEP** is to turn on the generation of the execution plan.
+
+Under the `Messages` tab thanks to the settings we **turned on**, we will get
+a lot of information of rows retrieved, time it took, and stuff. It's pretty
+nice.
+
+And then on the `Execution plan` bit, we can see all the steps the query took,
+alongside a **suggestion**, that suggestion indicates that we have to create
+an Index if we want better performance, in our case it's not that big of a deal,
+its impact is not that big, just 24%, still **it is** an improvement:
+
+[source, sql]
+----
+-- Missing Index Example
+SET STATISTICS IO,TIME ON 
+-- Displays information about logical and physical reads and writes performed by the query.
+-- Displays the time taken to parse, compile, and execute the query.
+-- Logical reads refer to the number of data pages read from the SQL Server buffer cache (memory) 
+-- to satisfy a query request.
+
+--Analyze the execution plan 
+--Create the missing Index 
+-- SQL query retrieves the total sales for each product from the AdventureWorks2022 database for the year 2014
+
+USE AdventureWorks2022;
+GO
+
+SELECT 
+    p.Name AS ProductName, 
+    SUM(sod.LineTotal) AS TotalSales
+FROM 
+    Sales.SalesOrderDetail sod
+JOIN 
+    Production.Product p 
+    ON sod.ProductID = p.ProductID
+JOIN 
+    Sales.SalesOrderHeader soh 
+    ON sod.SalesOrderID = soh.SalesOrderID
+WHERE 
+    soh.OrderDate BETWEEN '2014-01-01' AND '2014-12-31'
+GROUP BY 
+    p.Name
+ORDER BY 
+    TotalSales DESC;
+GO
+----
+
+Now, SQL Server is smart enough for the suggestion. But we can do cool stuff with
+AI, we can take a screenshot of the execution plan, send it to ChatGPT and see
+what it says.
+
+Here's a prompt:
+
+````
+Can you analyze this execution plan for me and suggest improvements?
+
+[PASTE THE SCREENSHOT]
+````
+
+In my case I sent this:
+
+````
+Look at this execution plan, can you tell me what possible bottlenecks or problems it presents?
+````
+
+With my prompt it gave some really cool suggestions and really deep insights into
+the query itself:
+
+image::performance-1[Performance 1]
+image::performance-2[Performance 2]
+image::performance-3[Performance 3]
+image::performance-4[Performance 4]
+image::performance-5[Performance 5]
+
+In a test environment, you can just go and copy suggestions, create indexes,
+create, delete, change the query however you see fit. Just keep information
+to then compare, so as we saw the query execution time before, save that info
+somewhere, apply the suggestions, and then check the time again.
+
+You can literally copy the whole statistics text message and have AI explain and
+walk you through that. (This is really powerful)
+
+**NOTE:** No physical reads => GOOD, reading from disk is expensive.
+
+The beauty of ChatGPT is that it generates things so fast, and even if it sucks,
+you can hop in and then edit things yourself. As experts, you **are capable of
+writing the same thing**, but it _takes time_
+
+ChatGPT _can indeed also suggest the same thing MSSQL Server suggests_. And once
+we create the "missing index" we can then try and run our query again, and hopefully,
+see that we now have a slight better performance.
+
+- You can even grab both statistics details, send them to AI and have it analyze
+the differences
+
+[IMPORTANT]
+====
+The fact that we can get statistics in **TEXT FORM** is the one enabler of us
+talking to AI, sending stuff, and running its analysis on it. It's such a simple
+yet powerful format. And also those flags: `SET STATISTICS IO,TIME ON`, they
+are the god-send.
+====
+
+Some improvement that's easily understandable:
+
+- Less Logical Reads
+- Less time
+- And percentages in all of that
+
+And that's _good_. But AI can even try to go above and beyond and still suggest
+MORE improvements:
+
+````
+CREATE NONCLUSTERED INDEX IDX_SalesOrderDetail_ProductID_LineTotal
+ON Sales.SalesOrderDetail (ProductID)
+INCLUDE (LineTotal)
+````
+
+This is also a learning experience on creating indexes that grab multiple columns,
+not just _one_. (`INCLUDE (<Extra Columns>)`)
+
+And, well yeah some improvements can be really marginal, so minimal that it doesn't
+really improve things at all.
+
+So you have to pick and choose, apply critical thinking and actually test and see
+if the suggestions do hold any weight.
+
+- Covering Index => Will cover more resources, and generate fragmentation for us.
+The result is not going to match the effort that we are applying, and that's one
+example of how some suggestions should be just ignored. Still, you learn so much,
+and you get insights and ideas from having this exchange with AI.
