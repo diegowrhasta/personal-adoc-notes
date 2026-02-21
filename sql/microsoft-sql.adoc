@@ -10450,3 +10450,231 @@ a lot of questions I have, and the replication doesn't seem to work. At least no
 as it was with Transactional Replication which indeed worked.
 
 === SQL Query Tuning
+
+- SQL query tuning or SQL optimization is the process of improving the performance
+of SQL queries by making them run more efficiently
+	- The idea is that our queries should run optimally, with minimal resources and
+	in a timely manner
+- Crucial for managing large databases where seemingly simple queries can consume
+significant resources and result in slow response times
+	- Say, a user wants to get all his transactions in the last month. But we have
+	millions of users, and there are Terabytes of data literally
+		- The user will start having his experience affected, really slow response
+		times, and just a bad experience. That might deter the user away from using
+		your system
+- The goal of SQL query tuning is to reduce the resource consumption (CPU, memory,
+I/O) and improve the speed of the query execution, thereby providing faster response
+times to the end-user
+
+**Why Tune SQL Query?**
+
+- Improved performance:
+	- We know that slow and inefficient queries can cause bottlenecks, so we
+	want to solve those issues
+- Better Resource Utilization:
+	- Unoptimized queries are going to consume CPU and Memory inefficiently,
+	once we optimize then they won't take such a toll on the server, and so the
+	quality of the system will turn for the better
+- Improved Scalability:
+	- As the data grows, the queries should be optimized to handle the amount of
+	data it's necessary
+	- We want more users? We want to scale our app? Optimize
+- Enhanced User Experience:
+	- The users want to get their results as soon as possible, almost instantly,
+	we want to optimize queries so customer's experience is good and we get their
+	business
+- Cost Savings:
+	- Efficient queries will consume a lot of computation and you will have to
+	be forced to scale (either vertically or horizontally), however, if you optimize
+	so that you don't need that much computation, you **save money**
+- Prevent Downtime:
+	- Poorly optimized queries can literally take down systems
+
+So tuning SQL queries goes beyond just "ah, make it fast". It even goes into the
+idea of keeping an instance that's indeed fast, efficient, but also COST efficient.
+
+Query Tuning, **is not a one time thing**. It's a _continuous process_, it requires
+a good understanding of the database schema, indexes, the application and domain
+itself.
+
+**Query Tuning Basics and Steps**
+
+- **Understand the database schema and design:** Knowledge of primary keys, foreign
+keys, and indexes is important
+	- If you know the design, it will help you with running queries against it
+- **Understand the Query Execution Plan:** Insights into how SQL Server interprets
+your query can help optimize it
+	- You will get more info and also cues into what actions you can take with the
+	query execution plan
+- **Indexing:** Indexes speed up retrieval of rows but can slow down updates
+	- You need to know what type of index to put in the specific table
+	- You must choose amongst WHAT COLUMN will be indexed
+- Avoid using `SELECT *`: Only fetch the columns you need
+- **Use Joins Instead of Subqueries:** JOINs are typically faster than subqueries,
+whilst subqueries do have their place, and use case, aim at making things with JOINs
+- **Use Stored Procedures:** Stored procedures are precompiled SQL statements
+	- Once you run a SP once, then we will "cache" this precompilation, and so
+	execution will be faster and less resource intensive
+	- Reserve this for complex queries though, queries that indeed might impact
+	the server on constant running (because they have to pre-compile every time)
+- **Avoid Functions in the WHERE Clause:** Functions in WHERE clauses can lead to
+inefficient use of indexes
+	- So say, you are trying to do a `WHERE` on a year, that might be extremely
+	taxing, so you can choose to do `AND` and simply play around the upper and
+	lower bound
+- **Keep Statistics Updated:** Updated statistics help SQL Server make better
+decisions
+	- SO KEEP THEM ON. THAT WAY IT CAN GENERATE A GOOD EXECUTION PLAN
+- **Use Pagination:** Pagination in queries improve performance
+	- Instead of fetching a large amount of data at once, we get a subset that
+	is less resource intensive
+- **Partition Large Tables:** Partitioning large tables into smaller tables to make
+them way more maneagable
+	- E.g., Say you can separate by YEAR or PERIOD for say transactions, and queries,
+	or actions depending on the date will be wired into the respective **partition**
+- **Use Parametrized Queries:** These improve performacne by reusing execution
+plans
+- **Monitor and Analyze Performance Regularly:** You can scan things in the wild
+one by one, but a really nice tool is the `Performance Monitor`. DMVs => Which
+write metadata and can be used to diagnose the SQL Server instance
+	- Regular monitoring and tuning should be a continous process that you are
+	doing constantly
+		- There's **fix one time and forget about it**
+			- Workload, schema, data, many things are changing as the system
+			is evolving
+	- Search for the problems pre-emptively
+- DO NOT TUNE PERFORMANCE IN PROD
+	- Have that data replicated into DEV and then play around with the query tuning
+	THERE
+	- If you fixes and checks pass, THEN, **send that into prod**
+
+=== Query Optimization Lab
+
+We will work on AdventureWorks
+
+**Understand the database schema and design**
+
+Just remember that you literally press a small button to say "Include Execution Plan",
+and then after the query runs you can see a tab that says `Execution Plan`. And
+in here you can see all the steps that MSSQL took to get to the results you
+requested. It's easy to identify possible _bottlenecks_ by just looking at
+the percentages stating how much of the computation power a step is taking for
+the whole execution plan.
+
+And **an amazing** feature, is the fact that you can run a query with the execution
+plan enabled, and in case it detects an issue, (such as we are doing a full table),
+it will show you suggestions "CAN ADD AN INDEX", and if you Right Click > Index,
+it will open up a SQL Editor with the whole script ready for you to apply the
+index, indexes usually follow a nomenclature:
+
+````
+IDX_<NameOfTable>_<NameOfColumn>
+````
+If you run before and then after, you will notice how the warning won't show up
+anymore but also how the Execution Plan changes and instead of a `full table scan`
+it is just doing an Index Seek.
+
+Now again, this is sometimes really empirical, you have to analyze for queries
+that are being underperforming and focus your efforts on tuning those. For example
+the [SalesOrderDetail] might benefit from an index, but only if it's big enough,
+and you **don't know when it is considered big enough**. You can detect trends
+probably, how some queries are degrading and so on, and THEN start taking some
+measures, don't let problems grow unchecked.
+
+[IMPORTANT]
+====
+Avoid using `SELECT *`, just get WHAT YOU NEED And also, _if you include an
+Execution Plan it also makesyour query slower_
+====
+
+Look at this tuning of (don't use subqueries):
+
+[source, sql]
+----
+SELECT LastName
+FROM [Person].[Person]
+WHERE [BusinessEntityID] IN (SELECT BusinessEntityID from [Sales].[SalesPerson] WHERE [SalesQuota] = 300000.00)
+----
+
+This might be fast in AdventureWorks, because the database is really smol. **But**,
+on bigger and bigger datasets, life won't be as kind.
+
+And so, if you identify subqueries, you can refactor them to joins:
+
+[source, sql]
+----
+SELECT LastName
+FROM [Person].[Person] p
+JOIN [Sales].[SalesPerson] s
+ON p.BusinessEntityID = s.BusinessEntityID
+and s.[SalesQuota] = 300000.00
+----
+
+**Use Stored Procedures**
+
+Again, for specific queries, specially if they are extremely complex, you don't
+want for the overhead of compiling it, getting the better execution plan, you
+want stuff fast. Stored Procedures are the KEY to making those queries faster,
+on top of helping with abstraction, first run will be pre-compiled.
+
+[source, sql]
+----
+CREATE TABLE NewEmployees
+(FirstName nvarchar(50), LastName nvarchar(50))
+
+CREATE PROCEDURE AddNewEmployee
+@FirstName nvarchar(50),
+@LastName nvarchar(50)
+AS
+BEGIN
+	INSERT INTO NewEmployees (FirstName, LastName)
+	VALUES (@FirstName, @LastName)
+END
+GO
+
+EXEC AddNewEmployee 'John', 'Doe'
+----
+
+**Not use functions in `WHERE` clauses**
+
+````
+SELECT * FROM [Sales].[SalesOrderDetail] WHERE YEAR([ModifiedDate]) = 2011
+
+SELECT * FROM [Sales].[SalesOrderDetail] WHERE [ModifiedDate] BETWEEN '2011-01-01' AND '2011-12-31'
+````
+
+**Pagination**
+
+[source, sql]
+----
+SELECT * FROM [Sales].[SalesOrderDetail]
+ORDER BY SalesOrderID
+OFFSET 50 ROWS
+FETCH NEXT 10 ROWS ONLY
+----
+This is a really quick recipe to just get a specific subset of the database,
+that runs faster, way faster than some sort of filter or whatever. A literal
+cheat code
+
+**Declare variables to hold parameter values**
+
+[source, sql]
+----
+DECLARE @LastName nvarchar(50), @FirstName nvarchar(50)
+
+SET @LastName = 'John'
+SET @FirstName = 'Doe'
+
+SELECT LastName, FirstName FROM [Person].[Person] WHERE LastName = @LastName AND FirstName = @FirstName
+----
+Literally instead of `WHERE LastName = 'John' AND FirstName = 'Doe'`, if you change
+to using parameters you will make the query more performant in the long run.
+`Parameters are considered prepare statements`, these statements are pre-compiled
+ONCE, and then run with multiple values.
+
+So the first run will be the slowest, it will generate an execution plan, but later
+runs will re-use the **same execution** plan.
+
+_Possible extra study:_ Table Partitioning.
+
+=== SQL Server Performance Tuning Using Artificial Intelligence
