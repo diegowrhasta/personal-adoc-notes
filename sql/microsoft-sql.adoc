@@ -10855,3 +10855,217 @@ if the suggestions do hold any weight.
 The result is not going to match the effort that we are applying, and that's one
 example of how some suggestions should be just ignored. Still, you learn so much,
 and you get insights and ideas from having this exchange with AI.
+
+=== SQL Server Performance Tuning Using Artificial Intelligence - Part 2
+
+We went through a query and how SQL Server queries can be improved with AI.
+In this lesson we will ask ChatGPT to rewrite the code of a SP.
+
+[source, sql]
+----
+CREATE OR ALTER PROCEDURE UpdateProductPricesUsingCursor 
+AS 
+BEGIN 
+    DECLARE @ProductID INT;
+    DECLARE @IncreaseAmount DECIMAL(10,2) = 20.00; -- Fixed amount to increase
+
+    -- Cursor to iterate through all products
+    DECLARE product_cursor CURSOR FOR 
+    SELECT ProductID  
+    FROM Production.Product 
+    WHERE StandardCost > 0;
+
+    -- Open cursor
+    OPEN product_cursor; 
+    FETCH NEXT FROM product_cursor INTO @ProductID; 
+
+    WHILE @@FETCH_STATUS = 0 
+    BEGIN 
+        -- Update each product's ListPrice by reducing it
+        UPDATE Production.Product 
+        SET ListPrice = ListPrice - @IncreaseAmount 
+        WHERE ProductID = @ProductID; 
+
+        -- Fetch next record
+        FETCH NEXT FROM product_cursor INTO @ProductID; 
+    END 
+
+    -- Close and deallocate cursor
+    CLOSE product_cursor; 
+    DEALLOCATE product_cursor; 
+END; 
+GO
+----
+This is basically a stored procedure that increases the product amount for each
+record on a table with the help of a `CURSOR`. The `CURSOR` is basically an operation
+in SQL Server that goes through a table row by row applying some custom logic.
+**Cursors are expensive**, and for smaller tables, it's okay. But it's not a
+good practice for really large tables.
+
+Here's also a good way to run a quick performance check on an SP:
+
+````
+DECLARE @StartTime datetime2 = SYSDATETIME()
+
+EXEC UpdateProductPriceUsingCursor
+
+SELECT DATEDIFF(millisecond, @StartTime, SYSDATETIME()) AS DurationInMilliseconds
+
+GO
+````
+
+For example, one run of this took `190 Milliseconds`. 190 Milliseconds to update
+all records from the table. (This good). But _what if this stored procedure is
+executed tons of times?_. Maybe we can optimize this?
+
+Well yeah, we can do a bulk update of the table instead of using a `CURSOR`.
+We have this "idea", rooted in knowledge and experience, and to make things easier
+we can ask AI to help us write the optimization, and we can then go and supervise
+the output, make adjustments and so on.
+
+[IMPORTANT]
+====
+I think this is the biggest takeaway out of everything. You are the one at the
+helm, you have the ideas that came from reasoning, and then save time by feeding
+those hypothesis into ChatGPT and with his help you reach conclussions. I guess
+the hard part, plus also complex, is that people that **don't know**, `will not
+go through this whole process first and just try to get to the result`. Which
+is taking away from the process of thinking, and taking the easy path.
+====
+
+And so, AI can suggest that instead of a `CURSOR` based approach, we can use a `SET-Based`
+approach, this will indeed update the database **in a single query**
+
+[source, sql]
+----
+CREATE OR ALTER PROCEDURE UpdateProductPricesSetBased
+AS
+BEGIN
+	SET NOCOUNT ON
+
+	DECLARE @IncreaseAmount DECIMAL(10, 2) = 20.00
+
+	UPDATE Production.Product
+	SET ListPrice = ListPrice + @IncreaseAmount
+	WHERE StandardCost > 0
+
+END
+GO
+----
+Something nice that ChatGPT for example does, is justify its approach, which are
+amazing techniques to steal from it. E.g., `Performance Improvement`, `Reduced
+Locking & Overhead`, `Cleaner & More Maintainable Code`. And it has some paragraphs
+justifying it even further.
+
+After refactoring our SP, we need to run again the same query with a timer,
+and compare the results.
+
+In the lab it's shown how with the `Set-Based` approach the time to run the
+SP goes down to `5 Milliseconds`. AI can be so smart enough, to understand our
+requirement, to write the code itself and provide arguments and reasonable-sounding
+things.
+
+**BUT IT CAN JUST BE WRONG, IT'S NOT PERFECT BY ANY MEANS**, because it worked once
+out the box, it doesn't mean it will work always. We can't blindly take code and
+put it straight into production.
+
+==== AI and configurations
+
+````
+SELECT *
+
+FROM sys.configurations
+
+GO
+````
+
+This query outputs all the configuration we have on our instance.
+
+We can literally copy all of the rows, and ask AI to have a look at the configurations
+in order to suggest changes that could be applied to it, so that SQL Server performance
+can be improved.
+
+AI goes through the configuration values, and identifies possible values that could
+be tuned so that performance goes UP. This is really insightful and it's possible
+**BECAUSE WE HAVE A WAY TO INTERFACE WITH AI THROUGH TEXT**. Text is indeed, so,
+SO powerful a `KING` format.
+
+The way AI can break down and separate by sub-domain and present that to you in
+a digestible way is so cool, so beautiful.
+
+Your job is to read, to reason, to perhaps find faults in the suggestions. You
+are the supervisor on a 1000x junior engineer. Make sure the changes are not going
+to impact our production environments. Test, re-test, use lower environments to
+run checks and all.
+
+You can also then ask AI to provide you with `commands to perform the changes`.
+Which means it will create the queries to make the changes.
+
+==== Labbing with AI
+
+Hint:: This is a mechanism that you can insert into a query to tell SQL Server
+to do what we want for it to do. They are finer details that you have access to
+to shape behavior even further
+
+[source, sql]
+----
+SELECT p.Name AS ProductName, sod.OrderQty, sod.UnitPrice
+FROM Sales.SalesOrderDetail sod
+INNER JOIN Production.Product p ON sod.ProductID = p.ProductID;
+----
+
+[source, sql]
+----
+--Query with fast 100 hint 
+
+SELECT p.Name AS ProductName, sod.OrderQty, sod.UnitPrice
+FROM Sales.SalesOrderDetail sod
+INNER JOIN Production.Product p ON sod.ProductID = p.ProductID
+OPTION (FAST 100); 
+----
+In order to modify a query with hints, you can do a `OPTION (FAST 100)`, we won't
+go too deep into `FAST`, but the main takeaway from it is that it's a HINT that
+will take a subset of a table, and it won't wait to retrieve all records until
+the end, it will constantly be updating the moment it gets **the first, the second,
+and so on...** rows. It's a sort "live query", that gets updated retroactively,
+and this will happen for the `first 100 rows`. After that it will behave the same
+as a select from all the table. It's just the first 100 rows will have this live
+behavior attached to them.
+
+[source, sql]
+----
+--Query with fast 1 hint 
+
+SELECT p.Name AS ProductName, sod.OrderQty, sod.UnitPrice
+FROM Sales.SalesOrderDetail sod
+INNER JOIN Production.Product p ON sod.ProductID = p.ProductID
+OPTION (FAST 1); 
+----
+
+We have these three queries, and we have this hypothesis that the last one might
+be the fastest. **WHY?**, because he's only getting **ONE** row, and it's in this
+`FAST` mode that doesn't care about results or post-query overhead.
+
+After turning on the statistics: `SET STATISTICS IO, TIME ON`, we can then go
+to AI and copy the whole log of them by the end of the execution of the three
+queries, and tell him to summarize what he sees. With the main question of
+**which query was better?**
+
+It's a **surprise**, but the last query is actually the worst performing one.
+CPU Time is worst, and elapsed time is less than the first query.
+
+Again, **WE CAN (WE SHOULD) REACH THIS SAME CONCLUSSION**, after labbing a lot,
+after spending time taking stats, reading, and testing a lot. But it's thanks
+to AI, that we can actually analyze things and supercharge and make our labbing
+even faster.
+
+AI is making decisions for us, this is the time in which AI can help you with
+choices in your work environment.
+
+[IMPORTANT]
+====
+Enjoy and do it in good faith
+====
+
+=== SQL Server Encryption and Encryption Types
+
