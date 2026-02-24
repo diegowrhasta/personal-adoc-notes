@@ -11069,3 +11069,116 @@ Enjoy and do it in good faith
 
 === SQL Server Encryption and Encryption Types
 
+Used in enterprises a lot. Better to know it when getting into production environments.
+
+**Encryption**
+
+As a DBA, a really important role that you play is to make sure that the data
+we are storing is secure.
+
+- Data protection is critical for ensuring that your organization is compliant
+with regulatory compliance standards like the GDPR and for meeting the expectations
+of your clients and business partners.
+	- We setup permissions, criteria and we also make sure that **NO unauthorized**
+	access existss
+	- In case a person gets access to our data, they **should not be able to use
+	it**, that's when `encryption` comes in. So yeah, it can go beyond just compliance,
+	but also adding a mechanism for securing our data.
+	- The data will be readable only to the people that **have the encryption keys**
+- Not only can data breaches result in large fines, but the reputational damage
+can be just as great
+	- People are trusting us with their data, if they don't trust us, they won't
+	make business with us
+- Encryption is the process of obfuscating data by the use of a key or password
+- This can make the data useless without the corresponding decryption key or
+password
+- Encryption does not solve access control problems. However, it enhances security
+by limiting data loss even if access controls are bypassed
+- For example, if the database host computer is misconfigured and a hacker obtains
+sensitive data, that stolen information might be useless if it is encrypted
+
+**Encryption Types**
+
+- **SSL Transport Encryption** (Secure Sockets Layer Transport Encryption)
+- Like websites that secure traffic between browser and server, SQL Server can
+be configured to use Secure Sockets Layer (SSL) to encrypt traffic as it travels
+between the server instance and client application.
+	- This is a transportation protocol which makes sure that the data that is
+	traveling from client to server is encrypted, no one should be able to poke
+	into the data
+- Aditionally, the client can validate the server's identity using the server's
+certificate
+- SSL only protects data **as it travels across the network**, and amongst all
+the other forms of SQL Server encryption, SSL is available in all supported
+versions of SQL Server and in all editions
+	- SQL Server's SSL encryption is only at **TRANSPORTATION**, data is not
+	protected at source nor destination
+- Before enabling SSL, you'll need to install a certificate on the SQL Server.
+The best way to do this is by requesting a certificate from your own enterprise
+certification authority (CA)
+
+The next most commonly type is (we will also lab this type):
+
+- **SQL Server Transparent Data Encryption (TDE):**
+- Transparent Data Encryption (TDE) in SQL Server protects data **at rest** by
+encrypting database data and log files on disk.
+	- The nuance here is that the encrypted data is the one that is **at disk**,
+	so any data that lives in memory, **will not be encrypted**
+	- `.mdf` and `.ldf` files are the things that get encrypted
+- It works transparently to client existing applications, so they don't need to
+be changed when TDE is enabled
+- TDE uses real-time encryption at the page level
+	- As data is getting updated, then it is also getting encrypted
+- Pages are encrypted before they are written to disk, without increasing the size
+of your data and log files, and pages are decrypted when read into memory
+	- When you have TDE enabled, and you insert/update a row, before this row gets
+	written to disk, TDE encrypts the page and **then** it gets written into disk
+	- And when you are about to read a row (so put it into memory), the data is
+	decrypted right there before reading, and then dumped into memory
+- TDE is only available on Enterprise and Developer editions
+
+- **Column/Cell-Level Encryption:**
+- Available in all editions of SQL Server, cell-level encryption can be enabled
+on columns that contain sensitive data
+- The data is encrypted on disk and remains encrypted in memory until the DECRYPTBYKEY
+function is used to decrypt it
+	- So you have to literally manually treat the column and tell SQL Server to
+	**DECRYPT THIS**, if you want to see the contents
+- Therefore, although the SQL data is encrypted, it is not secure beyond simply
+using a function in the user context to decrypt it
+- Aditionally, because a function is needed to decrypt the data, client applications
+must be modified to work with cell-level encryption
+	- Here's the biggest and major difference, this type of encryption will affect
+	consuming applications, so the code needs to change
+
+- **Backup Encryption:**
+- Backup Encryption works like TDE but encrypts SQL backups instead of the active
+data and log files
+- Backup Encryption is available in SQL Server 2014 and later
+- You can specify AES 128, AES 192, AES 256 or Triple DES encryption, and use
+either a certificate or asymmetric key stored in EKM
+- Aditionally, it is possible to enable TDE and Backup Encryption simultaneously,
+although you should use different certificates or keys
+	- In theory you can use the same, but that is going to reduce your security
+	level
+- Just as with TDE, if you enable Backup Encryption, you must also back up the
+certificate or key. Without the key or certificate, the backup file can't be used
+to restore data
+	- So we need to also keep this in mind
+- You must have the original certificate when restoring data
+
+**Always encrypted:**
+- Always Encrypted encrypts sensitive data in client applications without revealing
+the encryption keys to the database engine
+- It provides separation between data owners and data managers
+- For example, with Always Encrypted, you can be sure that your database administrators
+won't be able to read sensitive data. As the name suggests, data is encrypted at
+rest
+	- **ONLY THE APPLICATIONS ARE ABLE TO READ THE DATA**
+- Always Encrypted can be configured for individual database columns
+- The encryption process is transparent to client applications but requires a
+special driver on client computers
+	- We don't need to make changes to code, but each client needs this specific
+	driver configured
+- Always Encrypted is available in SQL Server 2016 and later, but only in Enterprise
+editions
