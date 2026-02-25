@@ -11182,3 +11182,274 @@ special driver on client computers
 	driver configured
 - Always Encrypted is available in SQL Server 2016 and later, but only in Enterprise
 editions
+
+=== Transparent Data Encryption (TDE), Configuration and Restore of TDE Databases
+
+- With the release of SQL Server 2008, Microsoft expanded the database engine's
+security capabilities by adding Transparent Data Encryption (TDE), a built-in
+feature for encrypting data at rest
+- TDE protects the physical media that holds the data associated with a user
+database, including the data and log files and any backups or snapshots
+- Encrypting data at rest can help prevent those with malicious intent from being
+able to read the data should they manage to access the files
+- SQL Server TDE takes an all-or-nothing approach to protecting data. When enabled,
+TDE encrypts all data in the database
+	- We are in theory encrypting backups, live files, and everything. Because this
+	works for "data-on-rest"
+	- If a person gets somehow access to files, he wouln't be able to read them,
+	data will be useless
+	- Also, don't forget that you are offloading possible security risks by using
+	encryption keys, that should be also safely kept, and that you should restore
+	**first**, and **then use it to decrypt** the data
+- You cannot pick-and-choose like you can with column-level encryption.
+	- THE WHOLE DATABASE gets encrypted
+- TDE is relatively easy to enable
+- TDE requires planning but can be implemented without changing the database
+
+**TDE Encryption Hierarchy**
+
+image::tde-hierarchy.png[TDE Hierarchy]
+
+- Starting with the Windows DPAPI at the top and the SQL Server data at the bottom
+	- The Windows Data Protection API (DPAPI) sits at the top of the hierarchy
+	- At the bottom we have the SQL Server data
+- The next level down our hierarchy is a certificate, which you also create in
+the master database
+	- The `service master key` protects the database master key in the master
+	database
+- The DMK (database master key) protects the certificate, and the certificate
+protects the database encryption key (DEK) in the user database
+	- The `database master key` protects the certificate's private key in the
+	master database
+	- So it's a chain, literally to make things harder for bad actors, a key,
+	for another key, for a certificate's private key
+	- The `certificate` then protects the database encryption key in the user
+	database
+- The database encryption key (DEK) protects the data in the user database
+	- The DEK is specific to TDE and is used to encrypt the data in the user
+	database in which the key resides
+- We can deduce that to implement TDE on a user database, we must take the following
+steps:
+	- Create the DMK in the master database, if it doesn't exist already
+	- Create a certificate in the master database for securing the DEK
+	- Create the DEK in the user database to be encrypted
+	- Enable TDE on the user database
+
+**TDE Keys Management**
+
+- We touched on **keys**, which are specific pieces of data that when it comes
+to encryption, **_become really important_**.
+- It's extremely important to back up the SMK, DMK, and certificate
+- If anything goes wrong in our production environment or we need to restore or
+move an encrypted database, we might need those keys or certificate, so we better
+make sure we have copies of them, stored securely in a separate location
+	- Once you enable TDE on a database, the database will be fine as long as you
+	are in the server. But if for some reason something happens and production
+	goes down, and you need to restore that database, you need certificates,
+	SMK, DMK to restore the database
+	- If you lose these things, you esentially **LOSE YOUR DATA**
+	- SO SECURE THEM. ALWAYS SECURE THEM AND TRIPLE CHECK YOU HAVE THEM AND ARE
+	USABLE. It's as important as having a backup.
+
+**LAB**
+
+TDE gets enabled on the server level, and after that we head to the database to
+enable it there specifically for **that database**
+
+We'll use the `DbTest` database as our testing grounds, simply take a full backup.
+You can open up these backups in notepad. And whilst it's binary and it's a bit
+scrambled up, you can make out some of the info, it's not in a format that a
+good sniffing and reconstructing tool can put together and extract some info
+out of it. (But yes, this is still a very expensive process).
+
+But you don't even have to go that far, if someone has the backup file as is,
+he can just go and plug it into SSMS, and restore the database. And he now has
+access to your whole database's data.
+
+**NOTE:** If you want to restore the same database in our named instance, you
+have to change the name of the database and the log file to something else because
+it will conflict with names (since we are restoring both instance files in the
+same folder)
+
+So steps are as follows:
+
+Step 1: Creating the master key with a query:
+
+````
+USE master
+GO
+CREATE MASTER KEY ENCRYPTION
+BY PASSWORD='Passw0rd'
+GO
+````
+**NOTE:** This query will only work in Enterprise and Dev MSSQL editions.
+
+Step 2: We now need to create a certificate **WITH THIS MASTER KEY WE CREATED**
+
+````
+USE master
+GO
+CREATE CERTIFICATE tdeCert WITH SUBJECT = 'TDE Certificate'
+````
+
+_Optional Step 2.1:_ You can always check the certificates that were createdat the master database with:
+
+````
+USE master
+GO
+SELECT name, pvt_key_encryption_type_desc FROM sys.certificates
+WHERE name = 'tdeCert'
+````
+
+_Notice how in step 1 we have a `MASTER KEY ENCRYPTION` option, if we look at
+the result of the above query, it will indeed say something like `ENCRYPTED_BY_MASTER_KEY`_
+
+Now, notice that we can take a backup of this certificate, that is also done with
+a query.
+
+Step 3: Backup the certificate and keys
+
+````
+BACKUP CERTIFICATE tdeCert TO FILE='C:\DEVEncryptionCert.certbak'
+WITH PRIVATE KEY (
+	FILE = 'C:\DEVEncryptionCert.pkbak'
+	ENCRYPTION BY PASSWORD = 'Passw0rd'
+)
+````
+**Don't forget you will need this password when restoring**. And in my specific VM,
+I couldn't save in the root of `C:` so I created a folder `Encryption` and edited
+the query to save under that subfolder (that was safe).
+
+With this command, you are backing up the certificate and a private key paired up
+with the certificate. (Which of course is paired with our public key which in
+MSSQL terms is the `MASTER KEY`)
+
+Now, we need to create the database encryption key. Everything up until now,
+was created at the `master` level.
+
+Step 4: Create a database encryption key
+
+````
+Use [OurFirstDatabase]
+GO
+CREATE DATABASE ENCRYPTION KEY
+WITH ALGORITHM = AES_128
+ENCRYPTION BY SERVER CERTIFICATE tdeCert
+````
+As you can see, we switch to the database that we want to encrypt, and we feed
+parameters to encrypt it, at the very last line we point to the certificate we
+created in `Step 2`
+
+[IMPORTANT]
+====
+The **database encryption key** will be encrypted with the server certificate.
+Master Key => Certificate => Database Encryption Key
+====
+
+**Optional Step 4.1:_ You can run a query to check what databasese are encrypted:
+
+````
+USE MASTER
+GO
+SELECT name, is_encrypted FROM sys.databases
+````
+If you run this query, then we would see how `OurFirstDatabase` is still with
+`0`, because **WE JUST CREATED THE DATABASE ENCRYPTION KEY BROTHER**
+
+Step 5: Encrypt the database
+
+````
+ALTER DATABASE OurFirstDatabase SET ENCRYPTION ON
+````
+
+_NOTE:_ Once you enable TDE on a SQL Server, `tmpdb` will also be encrypted **BY
+DEFAULT**. If you want to "remove TDE" you will have to turn it off in your
+database that was encrypted. And then drop all the keys you created. **After a
+restart, `tmpdb` will come back online unencrypted**
+
+[NOTE]
+====
+If you encrypt a backup. YOU WILL NO LONGER BE ABLE TO COMPRESS IT. IT WILL BE
+THE FULL SIZE. And if you open the encrypted backup with notepad, you will be
+able to see how the info, really is all GARBLED UP.
+====
+
+And even if you try to restore this backup on an instance that does not have
+the keys that were used for the encryption. It will also fail. You get an error
+along the lines of `Cannot find server certificate with thumbprint xxxxxxx`
+
+**TIP:** A good way to visualize error messages is to script an execution and
+run the query.
+
+You need to put the certificate in the instance. (And also create a master key).
+The master key **CAN BE DIFFERENT**, and HAVE A DIFFERENT PASSWORD ALSO IS POSSIBLE.
+
+**Restore a certificate into a server**
+
+Use a query, and reference the backups we took of the certificate and the private
+key:
+
+````
+CREATE CERTIFICATE tdeCert
+FROM FILE = 'C:\Encryption\LABMSQLEncryptionCert.certbak'
+WITH PRIVATE KEY (FILE = 'C:\Encryption\LABMSQLEncryptionCert.pkbak',
+DECRYPTION BY PASSWORD = 'Passw0rd')
+GO
+````
+**NOTE:** Notice how we need to use the same password that was used for creating
+the backups. This is a really important security mechanism so that we can't just
+import a certificate without some sort of "passkey"
+
+After we run the query, we can now attempt to restore the encrypted backup again,
+and it should work.
+
+**BIG NOTE:** If you try to restore a database with a Query, it inevitably **fails**.
+Lmao. The GUI doesn't do. (At least for this specific use case)
+
+**LAST QUESTION**
+
+What if I want to disable TDE altogether?
+
+There comes a time in where the company says "okay we are done with TDE". So
+we can disable completely by going backwards in our creation process.
+
+Step 1: Disable the TDE on the database
+
+````
+Use [OurFirstDatabase]
+ALTER DATABASE [OurFirstDatabase] SET ENCRYPTION OFF
+GO
+````
+
+Step 2: Drop the database encryption key
+
+````
+DROP DATABASE ENCRYPTION KEY
+````
+
+Step 3: Drop the certificate
+
+````
+USE master
+GO
+DROP CERTIFICATE TdeCert
+GO
+````
+
+Step 4: Drop the master key
+
+````
+USE master
+GO
+DROP MASTER KEY
+````
+
+**Optional Step 4.1:** You can run the query to check databases and if they are
+encrypted
+
+(There's another query you can get to get the encryption progress of the databases),
+and also shows which ones are encrypted completely.
+
+We can get that info at `sys.dm_database_encryption_keys`
+
+=== Quiz 11: Advanced SQL Server Administration Topics
