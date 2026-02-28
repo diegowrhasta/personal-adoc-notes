@@ -11453,3 +11453,57 @@ and also shows which ones are encrypted completely.
 We can get that info at `sys.dm_database_encryption_keys`
 
 === Quiz 11: Advanced SQL Server Administration Topics
+
+What is the role of the Log Shipping Monitor in SQL Server?
+
+R - To monitor and manage the Log Shipping configuration and status
+
+What is the primary goal of implementing high availability in a SQL Server
+environment?
+
+R - To ensure downtime and ensure data availability
+
+Which type of replication in SQL Server allows updates to be made at both the
+publisher and the subscribers?
+
+R - Merge Replication
+
+In SQL Server, what does Log Shipping involve for achieving high availability?
+
+R - Synchronizing transaction logs between primary and standby servers
+
+Which SQL Server recovery model is required for Log Shipping to work?
+
+R - Full Recovery Model
+
+In Log Shipping, what is the primary purpose of the transaction log backup job
+on the primary server?
+
+R - To capture changes made to the database
+
+What is the role of the Secondary Copy in Log Shipping on the secondary server?
+
+R - To synchronize transaction logs from the primary server
+
+Which statement is true about the role of the Standby Mode in Log Shipping?
+
+It allows read-only access to the secondary database
+
+What is the purpose of the "No Recovery" mode in Log Shipping on the secondary
+server?
+
+R - To prevent read-only access to the secondary database
+
+Which statement is true about restoring a TDE-encrypted database on another server
+with a different master key?
+
+R - It is not possible to restore the database
+
+What is the process for restoring a TDE-encrypted database to another server?
+
+R - Restore the database, restore the master key, and recreate the DEK on the new server
+
+In TDE, what is the role of the Database Encryption Key (DEK)?
+
+R - It encrypts the entire database at rest
+
