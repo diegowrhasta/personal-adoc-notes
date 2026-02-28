@@ -1,0 +1,208 @@
+= MSSQL Linux Labbing
+
+Notes gathered across practicing the usage of MSSQL in a docker container and
+its management with DBeaver on Linux.
+
+== Initial Thoughts
+
+As we all know, Microsoft will always try to make things as unusable as possible
+in other platforms that aren't theirs. So you have to get creative and go sometimes
+in really roundabout ways to use a database.
+
+And the fact is, **you will never get all the features that SSMS provides to you**.
+
+But at the very least, we can leverage **queries**, because, almost everything,
+`can be turned into a query`.
+
+**Backups and restoration**
+
+[NOTE]
+====
+First of all, if you are going to restore a backup, you need to copy it to the container
+itself, since that's where the service will look to restore.
+
+Example:
+`sudo docker cp /home/diego/Documents/projects/AdventureWorks2019.bak sqlserver2019:/var/opt/mssql/backup/`
+====
+
+After that you can then run a backup restore in the form of a query:
+
+[source, sql]
+----
+USE master
+GO <.>
+
+RESTORE DATABASE [AdventureWorks2025]
+FROM DISK = N'/var/opt/mssql/backup/AdventureWorks2019.bak' <.>
+WITH 
+    MOVE N'AdventureWorks2019' 
+        TO N'/var/opt/mssql/data/AdventureWorks2019.mdf', <.>
+    MOVE N'AdventureWorks2019_log' 
+        TO N'/var/opt/mssql/data/AdventureWorks2019_log.ldf', <.>
+    REPLACE,
+    RECOVERY,
+    STATS = 10
+GO
+----
+<.> DBeaver doesn't recognize GO as a delimiter, it's multi-vendor purpose and
+doesn't adhere more than a generic SQL syntax highlighter. You can configure it
+to cater to that specifically, but don't know if that's really worth it
+<.> As you can see, this is the path to which we copied previously from the host machine
+<.> And then we have to move both the database file to a path the service understands,
+a simple restore tries to use windows conventions like "C:\" and the container which
+is Linux will not work at all, we have to manually tell it the path
+<.> Same for the log file
+
+After running the query, we should have successfully restored the `AdventureWorks`
+database and we should be able to start running queries on it.
+
+_And of course, we can start generating the diagrams that DBeaver does amazingly
+well_
+
+Will start with this specific blog:
+
+https://learnsql.com/blog/sql-project-sales-dashboard-adventureworks/
+
+Apparently it used the MSSQL v16 backup, and yeah, there's definitely schema
+differences... Might have to restore that one specifically if I want to work
+with the course expectations.
+
+So, query has to change a bit, because logical file names are different on the
+16 version:
+
+[source, sql]
+----
+RESTORE DATABASE [AdventureWorks2025]
+FROM DISK = N'/var/opt/mssql/backup/AdventureWorks2016.bak'
+WITH 
+    MOVE N'AdventureWorks2016_Data' <.>
+        TO N'/var/opt/mssql/data/AdventureWorks2025.mdf',
+    MOVE N'AdventureWorks2016_log' <.>
+        TO N'/var/opt/mssql/data/AdventureWorks2025_log.ldf',
+    REPLACE,
+    RECOVERY,
+    STATS = 10;
+
+RESTORE FILELISTONLY
+FROM DISK = N'/var/opt/mssql/backup/AdventureWorks2016.bak'; <.>
+----
+<.> This is a logical name for the database file, in `v19` this doesn't have the
+`_Data` suffix so it ran fine, in this instance it was failing
+<.> And this is algo the logical name for the log file, this was fine
+<.> If you want to make sure that you are restoring the correct file names you
+need to run this query to analyze the backup you are about to restore, this indeed
+lists `_Data`, which then gave us all the info needed in order to correctly fix
+the query and successfully restore v16's
+
+And yes, with this, we can indeed now start working
+
+**Sales Dashboard Adventure Works**
+
+Cool cheatsheet:
+
+https://learnsql.com/blog/sql-basics-cheat-sheet/
+
+== Scoping your SQL Project
+
+- We want to build a sales dashboard for AdventureWorks. How should you start?
+A great starting point is to determine the scope of the project. Which is:
+
+Create a list of questions you want to answer with your data:
+
+- What are the total monthly sales?
+- What are the monthly sales by country?
+- Which products are our top sellers?
+- Which stores perform the best?
+- What is the average size of each order?
+- What is the average customer lifetime value in each country?
+
+As we dive into the data and write our queries, **we may refine these questions and
+adjust our queries accordingly**
+
+This is how you should always start your SQL projects: write a list of questions
+you have for the data and then write the queries that will give you the answers.
+_As you work through the queries and data, new questions will come up. Try to answer
+them with your queries too_
+
+=== Report 1: Monthly Sales
+
+**Question: What is the company's revenue for each month**
+
+The course uses syntax that's not `T-SQL`, like, wtf.
+
+[source, sql]
+----
+SELECT
+	YEAR(soh.OrderDate) AS OrderYear, <.>
+	MONTH(soh.OrderDate) AS OrderMonth <.>
+FROM Sales.SalesOrderHeader soh 
+GROUP BY
+	YEAR(soh.OrderDate), <.>
+	MONTH(soh.OrderDate) <.>
+ORDER BY
+	OrderYear DESC, <.>
+	OrderMonth DESC
+----
+<.> We are using the `T-SQL` function to extract the year of a date column
+<.> We are using the `T-SQL` function to extract the month of a date column
+<.> We are also using the same conversion of year for grouping
+<.> We are also using the same conversion of month for grouping
+
+So, I know this rule from the course I did:
+
+[IMPORTANT]
+====
+Avoid functions on columns in the WHERE clause (when filtering on indexed columns)
+====
+
+So, `WHERE YEAR(OrderDate) = 2014`. Is **bad for performance**, **_if `OrderDate`
+is indexed_** because:
+
+- SQL Server must compute `YEAR()` for every row
+- The index cannot be used efficiently
+- It often results in an index scan instead of an index seek
+
+Better:
+
+````
+WHERE OrderDate >= '2014-01-01'
+  AND OrderDate < '2015-01-01'
+````
+**This allows an index seek**
+
+- Group By => HAPPENS AFTER FILTERING. So it's normal to use functions in these
+statements
+- Select => Functions are fine here also
+
+**Functions are dangerous when they prevent index usage on:**
+
+- WHERE
+- JOIN
+- ON
+- HAVING
+
+If you frequently group by year/month, a production-grade solution can be:
+
+**A persisted Computed Column**
+
+[source, sql]
+----
+ALTER TABLE Sales.SalesOrderHeader
+ADD OrderYear AS YEAR(OrderDate) PERSISTED; <.>
+
+CREATE INDEX IX_OrderYear ON Sales.SalesOrderHeader(OrderYear); <.>
+----
+<.> This is a computed column, but that is also saved to disk. **And automatically
+is recomputed on update (and of course on insert)**
+<.> This indexes the computed column so that queries are faster
+
+But only do this if:
+
+- You frequently filter/group by year
+- Table is large
+- Read-heavy workload
+
+It has tradeoffs, of course, because of the extra computation, but they should be
+minimal in the face of making reads faster. But it's something big, and you'd
+be jumping the gun if you go all in from the start. Always look at the results,
+at the demand first.
