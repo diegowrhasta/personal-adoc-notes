@@ -206,3 +206,92 @@ It has tradeoffs, of course, because of the extra computation, but they should b
 minimal in the face of making reads faster. But it's something big, and you'd
 be jumping the gun if you go all in from the start. Always look at the results,
 at the demand first.
+
+Okay, lastly we actually want an aggregation, cuz right now the query is just
+imputting all the years and months lmao.
+
+[source, sql]
+----
+SELECT
+	YEAR(soh.OrderDate) AS OrderYear,
+	MONTH(soh.OrderDate) AS OrderMonth,
+	ROUND(SUM(soh.TotalDue), 2) AS TotalRevenue <.>
+FROM Sales.SalesOrderHeader soh 
+GROUP BY
+	YEAR(soh.OrderDate),
+	MONTH(soh.OrderDate)
+ORDER BY
+	OrderYear DESC,
+	OrderMonth DESC
+----
+<.> And so, after we have grouped by the two columns, we are going to aggregate
+the `TotalDue` amount with `SUM` and then have the result rounded to **two
+decimal points**
+
+**NOTE:** This is literally a query on **ONE TABLE**, so it's really simple
+if you look at the bigger picture, the biggest "take-away" from here is that
+we are leveraging groups, orders, and aggregator functions (on top of formatting
+such as `ROUND`)
+
+=== Report 2: Monthly Revenue by Country
+
+**Question: What is the monthly revenue for each country?**
+
+We would like to see the total revenue for each month (of each year) for every
+country in the database. The result should be sorted in chronological order, with
+the more recent dates coming first. We can use this data to plot trend lines for
+each country or analyze the data as-is.
+
+Okay, so this is interesting we are now going `cross-schema`. We were at the
+`Sales` schema for Report 1, but now we will jump to the `Person` schema for
+two tables that live there and are connected to our `SalesOrderHeader` and
+`SalesTerritory`.
+
+[source, sql]
+----
+SELECT
+	cr.Name as Country, <.>
+	YEAR(soh.OrderDate) as OrderYear,
+	MONTH(soh.OrderDate ) as OrderMonth,
+	ROUND(SUM(soh.TotalDue), 2) AS TotalRevenue
+FROM Sales.SalesOrderHeader soh
+JOIN Sales.SalesTerritory st <.>
+	ON soh.TerritoryID = st.TerritoryID 
+JOIN Person.CountryRegion cr
+	ON st.CountryRegionCode = cr.CountryRegionCode 
+GROUP BY
+	cr.Name, <.>
+	YEAR(soh.OrderDate),
+	MONTH(soh.orderDate)
+ORDER BY
+	OrderYear DESC,
+	OrderMonth DESC,
+	Country <.>
+----
+<.> We are building on top of the previous query we made, just adding a new `Country`
+dimension to it.
+<.> But in order to get to this new dimension (table) we have to start joining with
+other tables, and in here you see how we are passing from `Sales` to `Person` (all
+tables have as a prefix the name of the schema they belong to)
+<.> We are also adding the new country name dimension as a grouping parameter so that
+we get the aggregation for the respective records
+<.> And we also want the country to be alphabetically ordered
+
+So this is really, really interesting. I like that we are building on top of the
+previous query, adding extra concepts one by one, and introducing new ideas and
+things along the way.
+
+It's funny how sometimes we use the aliases and other times the fully qualified name,
+we should remain as consistent as possible. Besides that I **really like** the
+way we are formatting the SQL, it looks so neat.
+
+_Note:_ There's a lot of data, about 228 rows are returned from the previous query
+
+=== Report 3: Bestselling Products
+
+**Question: What are Our Bestselling Products?**
+
+We would like to add a list of the bestselling products together with some relevant
+information like lifetime sales and customer reviews. The report should show
+reasonably recent data.
+
