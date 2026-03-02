@@ -295,3 +295,230 @@ We would like to add a list of the bestselling products together with some relev
 information like lifetime sales and customer reviews. The report should show
 reasonably recent data.
 
+The main metric in the query is the total quantity sold for each product, which
+can be obtained by using the combination of `SUM(OrderQty)` and `GROUP By ProductId`.
+
+**But here's the kicker,** just doing that, would display to us some `ProductId`s
+records, which is just **hard to read**. We need more information if we want
+to give to the public useful info.
+
+_Note:_ And here comes another lesson on both database design and overall expectations
+for data model structures: `Not everything will be connected logically`. But you
+can always rely on the fact that your **NAMES** should help you bridge gaps. Another
+great argument to keep naming conventions, and naming consistency.
+
+As the result of the query only on `SalesOrderDetail` would be hard to read,
+we can use its `ProductId` column to join to the `Product` table of the `Production`
+schema. If we join the two tables, we can access each `ProductId`'s `ProductName`,
+which leaves us this query:
+
+[source, sql]
+----
+SELECT TOP (10) <.>
+  p.ProductId,
+  p.Name AS ProductName,
+  SUM(od.OrderQty) AS TotalUnitsSold <.>
+FROM Sales.SalesOrderDetail od
+JOIN Production.Product p
+  ON od.ProductID = p.ProductID <.>
+GROUP BY
+  p.Name,
+  p.ProductId
+ORDER BY TotalUnitsSold DESC
+----
+<.> The website we are using to study uses `LIMIT 10` at the end, but that's not
+valid in MSSQL, for getting only a subset we use (generally) `TOP`
+<.> An easy alias application for the aggregation of the quantity of ordered
+items
+<.> Here comes the joining on the `ProductID` column, notice the exact same name,
+which gives us a clue into the fact that these two columns hold the same values.
+
+_Note:_ Besides naming conventions being good contextual clues, it's worth
+pointing out that this is a possible risk/issue if a developer just doesn't know
+about the convention. Worse if your names have no relation at all, it turns into
+you just "having to know somehow". And memory is fragile. It always is.
+
+==== Foreign Key Constraints
+
+For a quick TL;DR:
+
+- Use foreign keys by default
+- Disable only when you have a specific performance reason
+
+_Most systems are harmed more by missing constraints than by having them_
+
+But, if we want to go a bit deeper:
+
+A `JOIN` only requires matching values - not a constraint.
+
+So you might ask:
+
+> If joins work anyway, what do FK constraints actually give you?
+
+In Microsoft SQL Server, the advantages are significant.
+
+**Reason 1:**
+
+Without a foreign key:
+
+````
+Orders.CustomerID = 9999
+````
+
+Even if customer 9999 does not exist, SQL Server will happily allow this.
+
+With a FK constraint:
+
+````
+ALTER TABLE Orders
+ADD CONSTRAINT FK_Orders_Customers
+FOREIGN KEY (CustomerId)
+REFERENCES Customers(CustomerID)
+````
+
+With this, SQL Server guarantees:
+
+- You cannot insert an order for a non-existent customer
+- You cannot delete a customer that still has orders (unless cascade is defined)
+
+This prevents:
+
+- Orphaned rows
+- Silent data corruption
+- Broken business logic
+
+And that is no _small benefit_, it's structural safety
+
+**Reason 2:**
+
+Query Optimizer Improvements. The SQL Server's query optimizer can use FK relationships
+to:
+
+- Eliminate unnecessary joins
+- Improve cardinality estimation
+- Generate better execution plans
+
+Example:
+
+If a FK guarantees that every `Order.CustomerId` exists in `Customers`, SQL Server
+knows:
+
+- The join cannot multiply rows
+- The relationship is 1-to-many
+- Certain joins may be simplified
+
+Without the FK, the optimizer must assume less.
+
+So yes - performance can improve
+
+**Reason 3:**
+
+Self-Documenting Schema
+
+With FK constraints, someone inspecting the database instantly understands:
+
+- Which tables relate
+- How they relate
+- Cardinality direction
+
+Without FKs, relationships exist only in the developer knowledge. **In large systems,
+that becomes dangerous**
+
+**Reason 4:**
+
+Cascading Rules (Optional but Powerful)
+
+You can define:
+
+`````
+ON DELETE CASCADE
+ON UPDATE CASCADE
+`````
+
+This makes the database enforce relational behavior automatically
+
+Without FKs you'd need:
+
+- Triggers
+- Application logic
+- Manual cleanup
+
+Which increases bug risk.
+
+So yeah, you can trigger a delete and that can cascade across all related tables
+that have a constraint connecting them (making your life easier if you are just trying
+to tear down everything)
+
+**Downsides?**
+
+There's always a tradeoff:
+
+- Slightly Slower Writes: On INSERT/UPDATE/DELETE, SQL Server must check referential
+integrity
+- Bulk Loads can be Slower: In data warehouse staging, people sometimes disable FKs
+for performance
+- Migration Order Matters: You must insert parent rows before child rows
+
+So, _when do people avoid FKs?_
+
+Some teams skip FKs in:
+
+- High-throughput logging tables
+- Data warehouse staging
+- Distributed microservices
+- Systems where integrity is enforced at application layer
+
+But in OLTP systems? - FKs are almost always recommended
+
+=== Back on track with Mission 3
+
+With a ProductId, a ProductName and the total number of units sold, the result
+data set is already a viable dashboard element. But we can go _further and
+beyond_.
+
+So our first part of the query already gives us a lot of leeway, we now have a
+foundation to work with products, _we have effectively established the bridge
+to go from `Sales` to `Production`_.
+
+We want to also add the product ratings, for an even deeper insight into our
+data.
+
+**IMPORTANT:** Do not try to build everything on the big query, you can divide
+and conquer, so we can start on the other side of the spectrum, and start shaping
+the data we want extracted from there (write a simple separate query first).
+
+So, when it comes to product ratings, we have the `ProductReview` table of the
+`Production` schema. In there we care about `ProductId` and `Rating` left by
+the customer. To get a better insight, we'll average the rating scores and group
+the data by `ProductId`
+
+[source, sql]
+----
+SELECT
+  ProductId,
+  ROUND(AVG(Rating), 1) AS ProductRating
+FROM Production.ProductReview
+GROUP BY ProductId;
+----
+Pretty easy to get, right? Just by looking at the result we can also infer even
+more. Not many people write reviews, we literally have only 3 products with reviews
+and data to work with. Which is also key information for the building of the bigger
+query that will join this rating data with what we had with total number of
+units sold.
+
+We will now learn about a new concept that's really cool, and helps us in not
+making ugly joins/where statements that do full table searches because we are using
+IN or subqueries (not performant).
+
+And that's: `Common Table Expressions` (CTE).
+
+There's a guide:
+
+https://learnsql.com/blog/what-is-common-table-expression/
+
+But as cliff notes here are some great advantages they provide:
+
+- More readable queries
+- Manage format differences between table data and report data
+- Avoid bad-performing sql by simply computing data separately into a "virtual
+table", that we can then work with
