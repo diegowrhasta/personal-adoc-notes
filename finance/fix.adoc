@@ -1,0 +1,86 @@
+= Notes
+
+Notes based on the book: "FIX Protocol In Plain English" by Thomas V. Trex.
+
+On top of small PoCs in order to test out things in actual code
+
+== Introduction
+
+FIX can be as complex as it can be. There are some key concepts to put a pin on
+such as:
+
+- Order Flows
+	- FIX engines, FIX adapters
+	- NewOrderSingle
+- FIX architecture
+	- Message Modeling
+- Reliable Sessions
+	- ResendRequest
+	- SequenceReset
+- Drop Copy
+	- ExecutionReport
+	- TradeCaptureReport
+
+Some extra concepts to keep in mind: Clocks, durable message stores, recovery playbooks,
+
+== Foundations of Electronic Trading and FIX
+
+Before even trying to read a single FIX tag with confidence, you need to see the
+battlefield it lives in:
+
+- Traders
+- Algos
+- Venues
+- Networks
+- Clocks
+- Symbols
+
+[NOTE]
+=====
+All colliding in microseconds
+=====
+
+**WHAT YOU NEED:**
+
+Every field needs to have a story, a business reason, and a place in your mental
+map.
+
+=== The Electronic Trading Ecosystem & Market Roles
+
+Many people would attribute FIX to simply being a messaging standard:
+
+- Tags
+- Fields
+- Sessions
+
+A vague idea of sending orders and receiving executions.
+
+But to truly understand, we need to change perspective a bit:
+
+**This is not just a protocol on the wire**, it is the wiring diagram of the trading
+business itself.
+
+Based on:
+
+. Who are you on the market?
+. What is your role?
+. What are your obligations?
+. What is your risk appetite?
+
+This will proportionately dictate actions such as:
+
+- Whom you connect to
+- The direction the information flows
+- How many FIX sessions you need
+- What each session is allowed to do
+
+[IMPORTANT]
+=====
+If you know who are the main actors in the electronic trading ecosystem. You can
+then easily make the connection as to how their business relationships connect to
+FIX connectivity patterns.
+=====
+
+_If you understand how the business relationships map to FIX connectivity patterns,
+then you will easily understand many of the infrastructure decisions in real FIX
+applications, these design decisions will no longer feel 'arbitrary' but with INTENT_
