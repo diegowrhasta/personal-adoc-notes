@@ -1,0 +1,295 @@
+= Notes
+
+(Slightly) blind test and exploration of .NET Aspire and its capabilities, see
+the opportunities to apply it in real world scenarios.
+
+== Repository
+
+== Theory
+
+.NET Aspire is a solution to build **cloud native, distributed applications** in
+.NET. It solve many problems _out-of-the-box_
+
+Aspire: Produces a deployable system - IT IS NOT YOUR PRODUCTION RUNTIME ORCHESTRATOR
+
+To get something at production-grade:
+
+- Use Aspire to define everything
+- But export/run via container tooling
+
+`docker/podman` should take care of orchestration.
+
+Aspire = architecture + wiring + config
+Podman = runtime + lifecycle + resilience
+
+To get an actual working artifact to then spin up, **we will have to containerize
+each service OURSELVES**
+
+- So build `Dockerfile` images for all services
+- Use a compose file to get all things up and running
+
+Aspire should be used for:
+
+- Service wiring
+- Environment variables
+- Connection strings
+- Observability setup
+
+**We then have to mirror that config in our container setup**
+
+Running everything on a single computer **DOES NOT** make the system a distributed
+application. But it does, _ENABLE_ the possibility of making the architecture
+of distributed applications. A docker-compose on the **same computer** is just
+10 different processes that are running on ONE server.
+
+== First Prototype
+
+_Created this with JetBrains Rider_
+
+We will use a .NET Aspire Starter Application template to explore the possibilities.
+
+- The solution that gets scaffolded from the get-go contains **4 projects**
+- There's a Restful API under `ApiService`
+- And then a Blazor Web Application under `.Web`
+
+These projects are pretty "normal and common"
+
+The interesting project is `AspireApp.AppHost`
+
+- .NET Aspire gives a way to configure all different services inside of an Aspire
+application, and then running all of them together
+	- So it's a C# layer for configuring infrastructures
+- The starter project lets us run caches, web apps, Restful APIs, and attach to
+each of them many cross-cutting concerns with ease
+
+A great project that is also created is:
+
+`.ServiceDefaults` => This provides a simple centralized Extensions method so that
+we can call from a `Program.cs` file and then apply all sorts of cross-cutting
+concerns to the application.
+
+[NOTE]
+====
+There's a really interesting method called `AddServiceDiscovery()`. When this is
+added to the app builder, we can then leverage other methods to dynamically have
+Aspire resolve the addresses to connect to the other orchestrated components.
+====
+
+So an example of how to configure these "names" that our different apps will take
+in the Aspire infrastructure you would do something like this:
+
+[source, sql]
+----
+var apiService = builder.AppProject<Projects.AspireApp_ApiService>("apiservice")
+
+// And on consuming apps you woudl reference these very same names as so:
+builder.AddRedisOutputCache("cache");
+builder.Services.AddHttpClient<WeatherApiClient>(
+	client => client.BaseAddress = new("http://apiservice")
+);
+----
+
+Another part of the `ServiceDefaults` is that it sets up all resolved http clients
+to have resilience and other good things injected by default.
+
+Then there's an already decided `ConfigureOpenTelemetry`.
+
+Out of the box the telemetry is put on for:
+
+- AspNetCore
+- GrpcClient
+- HttpClient
+
+And we can then put exporters to the open telemetry setup so that we redirect all
+the telemetry info to stuff such as Prometheus, AzureMonitor, and so on `AddOpenTelemetryExporters`
+
+[IMPORTANT]
+====
+Out of the box the telemetry works ONLY IN MEMORY
+====
+
+**Another out of the box defaults are healthcheck endpoints**, `/health` and `/alive`.
+
+=== Blazor App
+
+We are using Nuget packages so that we can integrate with backing services easily,
+by just using identifiers instead of connection strings all over the place. It's
+great.
+
+=== The Dashboard
+
+In the end, after we get the whole orchestrated environment up. We can see the logs,
+traces, metrics, and if we use the urls we can easily get to the websites of the
+respective service. And we can then interact a bit, play around and see how that
+information is then visualized in the Aspire Dashboard
+
+== Open Telemetry
+
+This is a standard for metrics. You can use it to get data in a specific format/
+structure that can then be exported (parsed) towards a "client" that interprets
+it, processes it and then shows other cool things with it (Grafana, Aspire Dashboard).
+
+This is the crash course on Open Telemetry:
+
+- You have your services that are instrumented with open telemetry, and they push
+telemetry data into an OpenTelemetry Collector
+- Infrastructure components can also be instrumented and they can push to the
+OpenTelemetry Dashboard
+	- A frontend (dashboard) should be able to grab the data from the collector
+	and visualize it
+
+The "data" that is collected is called "Signals" there are different types:
+
+- Traces
+- Metrics
+- Logs
+
+All of these have their use case and specific details. But in the end they are
+data that goes to the collector and can then be queried.
+
+To start configuring OpenTelemetry we can install these Nugets:
+
+- OpenTelemetry.Extensions.Hosting
+- OpenTelemetry.Instrumentation.Http
+- OpenTelemetry.Exporter.OpenTelemetryProtocol
+- OpenTelemetry.Instrumentation.AspNetCore
+- OpenTelemetry.Instrumentation.EntityFrameworkCore
+
+We can configure OpenTelemetry as any other service:
+
+````
+builder.Services.AddOpenTelemetry()
+	.ConfigureResource(resource => resource.AddService("CoffeeShop"))
+	.WithMetrics(metrics =>
+	{
+		metrics.AddMeter(
+			"Microsoft.AspNetCore.Hosting",
+			"Microsoft.AspNetCore.Server.Kestrel",
+			"System.Net.Http"
+		);
+	})
+````
+This will then add the name of the resource that will have all sorts of signals
+attached to it. And you can add "manually", with some built-in meters that are
+inside of the framework. However, because we installed instrumentation packages,
+we can use that instead of the magic strings here:
+
+````
+builder.Services.AddOpenTelemetry()
+	.ConfigureResource(resource => resource.AddService("CoffeeShop"))
+	.WithMetrics(metrics =>
+	{
+		metrics
+			.AddAspNetCoreInstrumentation()
+			.AddHttpClientInstrumentation();
+
+		metrics.AddOtlpExporter();
+	})
+	.WithTracing(tracing =>
+	{
+		tracing
+			.AddAspNetCoreInstrumentation()
+			.AddHttpClientInstrumentation()
+			.AddEntityFrameworkCoreInstrumentation();
+
+		tracing.AddOtlpExporter();
+	});
+
+builder.Logging.AddOpenTelemetry(logging => logging.AddOtlpExporter());
+
+````
+
+As you can see we are configuring these "baseline" concerns to be automatically
+feeding metrics, tracing and logs, all with their respective extension methods that
+are ready to simply call.
+
+**So far this was agnostic of .NET Aspire, this is simply `OpenTelemetry` stuff**
+
+This is good, we are collecting telemetry data, but we aren't really sending it
+anywhere, no "sink" exists that will process and display our telemetry data. If
+you leverage `docker-compose` this becomes super easy, you can actually get a
+`aspire dashboard` container inside, and then send through `GRPC` to it all
+telemetry:
+
+````
+environment:
+	- OTEL_EXPORTER_OTLP_ENDPOINT=http://coffeeshop.dashboard:18889
+
+coffeeshop.dashboard:
+	image: xxxx
+	container_name: dashboard
+	ports:
+	  - 18888:18888
+	xxx
+````
+
+We can literally use environment variables to configure the endpoint to which
+our applications will post the telemetry.
+
+And if you then open up the dashboard's web app. You will see all the telemetry
+data inside. Pretty, PRETTY cool. Now, we are using the Aspire Dashboard as a simple
+visualization application, nothing more than that. All of the other aspire features
+are just not used for this use case. And that's **okay**
+
+[NOTE]
+====
+On some early tutorials and docs, the starter project was integrating with a Redis
+cache. But later that was removed, yet this shows the possibilities. You can get
+traces that piece together a whole request/journey from client to server and its
+response back
+====
+
+**Logs are indeed good messages of what is happening**. **Traces on the other hand
+are specific signals that allow you to see how a request behaved across many boundaries
+in distributed applications**. We can collect multiple traces, and then debug and realize
+what the hell happened with our request.
+
+=== Custom Metrics
+
+You can collect custom telemetry data that's specific to your application, a good
+pattern is to put everything behind constants:
+
+[source, csharp]
+----
+public static class DiagnosticsConfig
+{
+	public const string ServiceName = "CoffeeShop";
+
+	public static Meter Meter = new(ServiceName);
+
+	public static Counter<int> SalesCounter = Meter.CreateCounter<int>("sales.count");
+}
+
+// And then when configuring metrics you can add meters:
+
+metrics.AddMeter(DiagnosticsConfig.Meter.Name);
+
+// And then you instrument the actual pulses that feed all these capture entities:
+
+DiagnosticsConfig.SalesCounter.Add(
+	1,
+	new KeyValuePair<string, object?>("sales.coffee.type", coffeeType),
+	new KeyValuePair<string, object?>("sales.id", entry.Entity.Id),
+	new KeyValuePair<string, object?>("sales.date", entry.Entity.CreateOnUtc.Date.ToShortDateString()));
+----
+With all of these pieces of code at the right place, we can then literally trigger
+the code that will add to the counter. And then go back into the Aspire Dashboard
+and see the new custom metric, and all the tags that we added can be used to filter
+things. It's pretty accessible and useful.
+
+And this is just an example, you can just as easily integrate with Grafana, Prometheus,
+Prometheus specifically will need an endpoint exposed to it so that it queries,
+and then processes to pass onto Grafana. But the idea still remains, all the foundations
+for the structure, are there, and depending on what service integrates, then you just
+adjust accordingly.
+
+
+== Docker Compose and .NET Aspire
+
+== Sources
+
+https://www.youtube.com/watch?v=8aG410nmjtQ&list=PLYpjLpq5ZDGtGCUub_LP7_a3PRqzWPNoK&index=1
+
+https://www.youtube.com/watch?v=-73fAqw8ckU&list=PLYpjLpq5ZDGtGCUub_LP7_a3PRqzWPNoK&index=3&pp=iAQB
+
+https://www.youtube.com/watch?v=-73fAqw8ckU&list=PLYpjLpq5ZDGtGCUub_LP7_a3PRqzWPNoK&index=3
