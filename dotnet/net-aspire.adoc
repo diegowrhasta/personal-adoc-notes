@@ -324,6 +324,351 @@ and feed traces, logs automatically without you having to do much.
 	- dotnet run --publisher manifest --output-path manifest.json
 		- A high level abstraction of how the whole environment comes together
 
+== .NET Aspire if Finally Awesome in .NET 9
+
+- `dotnet workload uninstall aspire`, `dotnet new install Aspire.ProjectTemplates`
+
+**Don't need to install the workload separately** it comes `pre-packaged`.
+
+- Aspire got start/stop buttons
+- Dashboard is also mobile (why?)
+- You can now wait for a resource to be enabled, to then start acting, attempt
+to start => `.WaitFor(maindb)`, `.WaitFor(rabbitmq)`
+- Healthcheck integration was also done-in
+- The idea is to wait for a dependency, and for it to report that it's healthy
+- You can then extend the healthcheck endpoints with an extension methods:
+`.WithHttpHealthCheck("/health")`
+- You can now have persistent containers:
+	- Everytime you run the API, Aspire can kill all containers and delete them.
+	Or not, so that the start-up is faster, and you can also focus more on
+	development efforts (state can be kept)
+		- If you see a `pin` on a component in the dashboard, that means that this
+		is a persistent container
+		- Simplifies debugging, one execution to another, etc.
+- All the components are now registered under ONE network
+
+[NOTE]
+====
+You can literally start Redis, WITH Redis Insight as a web client to manage it.
+====
+
+[IMPORTANT]
+====
+Azure Function support
+====
+
+**.NET Aspire** has a different support model. Different release cycle. They want
+to move fast, but no LTS, STS support. If a new version drops, the old one is
+literally scrapped.
+
+== .NET Aspire Tutorial For Beginners 
+
+Notes taken from https://www.youtube.com/watch?v=41PD08tSH4E
+
+- dotnet clone
+- aspire run
+- Access a URL
+- Hit an endpoint
+
+The pitch:
+
+**Clone > F5 (run) > Ready!
+
+.NET Aspire is a development stack that handles infrastructure setup to clone
+and start building from day one.
+
+The tool is at a stage that should give: Enhanced development experience > Deployment.
+
+=== What is .NET Aspire
+
+It's a set of Tools, Templates, Packages to build: `Observable`, `Prod-ready`,
+`Distributed apps`.
+
+- Simplified Dev Experience
+	- Booting a whole application infrastructure right after a clone
+- It has dozens of pre-built building blocks for popular backing services that
+seamlessly connect to the app you are building, with no extra config
+- Aspire lets you define your infra entirely on C# making builds predictable,
+easy to reproduce and easy to put from dev all to the way to production
+- It includes a real-time dashboard to monitor the whole infrastructure in order
+to detect slowness, dependency failures in dev before this hits prod
+
+**Production-ready**
+
+- An app with a scalable database (Postgresql)
+- A caching service (to improve response times and reduce database load)
+- Resiliency: Smart retry-policies to handle inevitable service failures gracefully
+- Health Checks: The application can self-heal through these alerts that are raised
+when dependencies or apps themselves have issues
+- Observability: Having enough logs, traces, to troubleshoot the application effectively
+
+The app we are going to use as a model for Aspire integration is a games' portal.
+
+- Sqlite database => Pretty easy to start straight away.
+	- For production, you need a scalable database. So you would have to move away
+	from sqlite to PostgreSQL
+	- We need to get Postgres installed in our box, and the traditional approach
+	would rely on actually installing the service. But ideally we should aim
+	at using containers, they make life easier.
+
+`connectionstrings.com` => Great cheatsheet for connecting to many different
+backing services (since they all have different connection strings)
+
+`Npgsql` => official package to connect to Postgres in .NET. (Need EntityFramework)
+
+- You can use .NET Aspire to integrate Postgres into the app, in a more **streamlined
+way**
+
+`AppHost` => Orchestrator of the whole solution of the application.
+
+The whole `AppHost.cs` file is referred as `the Application Model`. In here
+yes you will define the .NET components for the application, **ON TOP** of external
+dependencies.
+
+- Hosting Integration: Nuget packages that we can consume and he will take care of
+provision the docker container for the respective backing service
+	- The available integrations are many, Postgres is one of them
+		- There's client integration and server integration. We are going to focus
+		in **SERVER**
+
+`builder.AddPostgres("postgres");` => With a one-liner you can literally tell Aspire
+that the application model should have a postgres backing service, and it will
+spin it up immediately.
+
+- `aspire run` => And this should show the dev certificate trust stuff
+
+If you run the aspire solution, and go to the dashboard you should be able to see
+the details of a database such as postgres and see its connection string if
+you ever need access to it. Environment variables are also another things that
+you can access pretty easily. A bunch of smart defaults are already baked-in so
+that you focus on building the application.
+
+- By default, it assigns a random port to a database resource, but if we don't
+like it. You can literally "hard code" the port, that should always be one specific
+port. You can also customize a specific image, a specific image tag.
+
+And you can then start building child resources of resources, the database use case
+is great to show case that, since a database "service" will hold inside of it many
+`databases`. So you can literally add `AddDatabase("GameStore")` and on the dashboard
+you will see it listed under the parent `database` resource.
+
+Thanks to how we are declaring the Application Model through the extension services,
+all the services are configured and spun up seamlessly, everything gets wired in
+the background for you to readily just start using and developing. Even path binding
+is already understood.
+
+=== App Host and the application model
+
+The Application Model is a blueprint that defines all the application resources
+that are used. E.g.,:
+
+- PostgreSQL Resource
+- PostgreSQL DB Resource
+
+AppHost.cs is an orchestration layer, but that doesn't do it on its own, it leverages
+the `DCP (Developer Control Plane)`, which delegates to a container runtime such
+as Docker the spinning up of specific containers. And lastly the DCP will launch
+the Aspire Dashboard.
+
+=== Client Integrations
+
+So Aspire even has its own set of Client extension integrations, so that under
+the understanding that the underlying gel is actually Aspire, it will also integrate
+seamlessly with all the information and baselines put in charge by a database resource
+modeled by hosting integrations. Adds resilience, health checks and telemetry.
+
+E.g., `dotnet add package Aspire.Npgsql.EntityFrameworkCore.Pgsql`
+
+We can then use an extension method to then simply declare the name of the database,
+and everything under the hood will take care of hooking up our service to the
+orchestated resource. It's really "magical", the ConnectionString will end up
+allocated dynamically from now on.
+
+- And to then get the database with the right structure and even seeded data,
+you should create migrations. (Since this example is of a database that used to
+integrate with Sqlite that also was integrated through EF Core and had migrations,
+you have to delete those migrations and run the EF core tool again so that we now
+generate migrations that should adhere to Postgres)
+
+=== Resiliency
+
+Sometimes you will have to deal with Network hiccups, planned maintenance,
+throttling => When a database is temporarily brought offline for a bit. (This is
+really common on the cloud apparently, but yeah even in some environments that
+are interconnected across countries and stuffs)
+
+In this instance, you don't want for your application to fail immediately, you
+might want to wait a bit, and retry the query/connection. If that fails again,
+you wait a _a bit more_, and you try again. You can then **increase the delay**,
+until the issue resolves, and your flow continues. Resiliency is the ability of
+your system to react to failure and still remain functional, it goes beyond just
+retries, it can extend to recover from failures, and return to health.
+
+**Because we can use the Dashboard to start/stop components at will, we can easily
+simulate a resource being dead**. So we can stop a database, and then try to use
+a Web API service.
+
+- We will immediately see how in our client, we don't see an immediate error,
+and if we check the logs in the API, we will see how the application keeps retrying
+the database connection automatically. The client integration for Postgres is
+wired up immediately for resiliency. You get that AUTOMATICALLY if you use the
+client extensions. **So that's another big value**
+	- You can then turn on the database, and you can then see how the application
+	responds to the client
+
+=== Health Checks
+
+How can you tell if your backend application is alive?
+
+ASP.NET Core API => Container in the Cloud. Mobile devices and desktop apps could
+be talking to it. If the application starts getting hit with too many requests,
+the container might collapse. Health checks can become crucial for this possible
+risk.
+
+We would have an orchestrator, and he would be pulling all of the containers under
+his care, the moment he stops getting responses on health checks from a specific
+container, then the orchestrator can spin up a new container to take its place so
+that users are served, whilst the orchestrator gets the original container back
+up again.
+
+[NOTE]
+====
+An API can also extend the readiness check so that all the backing services (dependencies),
+also can become part of the healthcheck. That way if a database (e.g.) is dead,
+the API will respond with an error as well.
+====
+
+An easy way to check the issue is to stop the database, and see how the API marks
+as healthy still.
+	- But because we know the database is down, we know the API's service will be
+	faulty. We should have a way to detect this error easily, which brings us to
+	healthchecks.
+
+**ServiceDefaults:** This default list of templates that we can wire to our projects
+that are under a specific project should be used as much as possible so that all
+the services keep a consistent behavior and configuration.
+
+`AddDefaultHealthChecks()` => This is a small extension method that adds the
+healthchecks middleware, it has an `alive` tag, and it also wires the healthcheck
+to the service itself. Bear something in mind, all the client extensions for
+external dependencies **WILL ALSO INTEGRATE SEAMLESSLY INTO THE HEALTHCHECK ENGINE
+SO THAT THE BACKING SERVICES BECOME PART OF THE HEALTHCHECK AS WELL**
+
+Another part of the healthchecks infrastructure is the `MapDefaultEndpoints()`
+extension that takes care specifically on development environments to expose the
+health check endpoints. It maps two endpoints, one for readiness (`/health`) and
+another for liveness (`/live`).
+
+Invoke `AddServiceDefaults()` and `MapDefaultEndpoints()`, so that all the
+smart defaults are integrated seamlessly.
+
+We should let the application model understand **there's a health check integration
+on a service**. And that is done with a simple extension: `.WithHttpHealthCheck("/health")`.
+That way .NET Aspire integrates with the service's health check endpoints.
+
+And we can chain another call so that we wait until the database is ready with:
+`.WaitFor(database)`. This will wait for the database to start, and it will also
+wait for the healthchecks to pass.
+
+- This is so powerful, because the integrations with external dependencies can
+be monitored easily, and we can find issues way faster and easier than without
+all of this architecture and wiring. That way the orchestrator can report and
+take action if configured to do so.
+
+- Healthchecks are not that critical locally, but as soon as you deploy, .NET
+Aspire helps you with smart defaults, the dashboard also helps with testing and
+scenario mocking.
+
+=== Observability
+
+- App is deployed, clients start complaining
+	- What happened?
+	- How is the app performing?
+	- Where is the bottleneck?
+	- If you have a blackbox of an application, you will be blind, and won't know
+	exactly where to start looking for the problem
+
+**You should aim at having a transparent application**. How can you make your
+application transparent?
+
+- You should feed metrics into it, so that you can see how the application is
+performing
+- Logs that can tell you exactly what went wrong
+- Traces that help you find bottlenecks across the system, and also troubleshoot
+faulty dependencies
+
+**These three elements are the pillars of Observability**. Observability is the
+ability to measure and understand the internal state of a system based solely
+on its external outputs.
+
+**Best way to enable all the observability elements is through: `OpenTelemetry`**.
+This is an observability framework and toolkit designed to facilitate the generation,
+export and collection of telemetry data.
+
+It facilitates the instrumentation of application data so that we emit signals
+(logs, traces, metrics), and it also faciliates the way we output all of that
+telemetry into visualization tools, and stores. (E.g., .NET Aspire Dashboard).
+All of that is through the Open Telemetry Protocol (OTLP), it helps emitting
+info through GRPC and Rest endpoints.
+
+`ServiceDefaults` is pre-wired with OpenTelemetry. What we add in these smart
+defaults is `Metrics, Tracing, Logs`. The Metrics can be defaults, or custom
+metrics as well. Tracing helps correlating and piecing together data flow across
+components.
+
+The Dashboard exposes an endpoint that will collect telemetry data. Any other
+telemetry tool or visualization tool can use the telemetry data that's emitted.
+
+Even when integrating with `Redis` you can add the Redis spin up, and also install
+the Aspire Redis Client and wire it up to the respective resource name.
+
+[NOTE]
+====
+When working with the redis Nuget, sometimes it adds too much noise on the logs.
+So a good way of stopping that is to add its namespace in the log config value
+under `appsettings.json`: `"LogLevel": { "StackExchange.Redis.ConnectionMultiplexer": "Warning" }`
+====
+
+Because of the OpenTelemetry integration it's easy to search for specific values
+or parameters. We get `Trace`, the TraceIds are used to then reconstruct the entire
+story of an HTTP call.
+
+With OpenTelemetry's traces, you can clearly see all the actors involved in a call
+and easily identify the bottlenecks.
+
+**Metrics:** We even get metrics that are coming from the client integrations.
+Such as `Npgsql`. You can TOTALLY add your own metrics and observability, however
+the defaults are really nice.
+
+=== Clone + F5
+
+The biggest advantage you get from Aspire is the amazing on-boarding experience.
+It's literally a Clone + F5. The configuration can "just work" without extra
+overhead.
+
+What are other integrations that .NET Aspire provides:
+
+It can interface with Identity Providers:
+
+- Keycloak
+- Entra ID
+
+It can integrate easily with Azure Services:
+
+- PostgreSQL
+- Key Vault
+- Blob Storage
+
+It can work with multiple frontend stacks:
+
+- React
+- Blazor
+
+It can deploy everything to the cloud with:
+
+- Container Apps
+- Biceps
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
