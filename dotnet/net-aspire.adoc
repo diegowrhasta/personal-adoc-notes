@@ -1,5 +1,409 @@
 = Introduction
 
+== Why ASP.NET Core developers will love Aspire?
+
 Notes taken from a [youtube video](https://www.youtube.com/watch?v=aHqw6mPpJSc).
 
-== 
+Some stats:
+
+Know what Aspire is? - 76%
+Believe Aspire is relevant to their current projects? 46%
+
+_One of the goals of the .NET Aspire team is: **_We want for EVERY .NET developer
+to think of a Aspire as a tool they could use_**_.
+
+Think Aspire is mature enough for production use? 22%
+
+May 2024 => Built for GA (General Availability)
+
+- Aspire deployment => Least Mature of the features of Aspire.
+
+**Please do not change your deployment right now for Aspire, DON'T TOUCH IT**
+
+A Dev Tool => You can use on your team, you can share, and do cool stuff with it,
+YES PLEASE. It's being USED in production.
+
+- It doesn't blow up your apps, the idea is to add an extra layer of support, and
+fix.
+
+**.NET Aspire is currently the most fast growing of the .NET enviroment**. The
+platform is moving quickly, whilst keeping the retro-compatibility.
+
+Think Aspire is easy to add to their projects? 22%
+
+- If you give it your best shot. IT CAN BE SO EASY
+
+Use Aspire regularly? 21%
+
+A couple of millions
+
+Are likely to use Aspire in the next 6 months? 39%
+
+=== The Investment
+
+.NET Aspire is one of the largest investments that the .NET team has made in a
+really long time.
+
+- Build, test, and deploy apps seamlessly from code to cloud
+
+- Streamlined Inner-Loop
+- Developer Dashboard
+- Integrations
+- Deployment
+
+**Add to Any App. Ready for Any Cloud.** `dot.net/aspire`
+
+- "... it's not for container developers, for Azure developers, there's a lot of
+value and gains that you can take advantage of from the toolkit"
+	- Again, **Every single developer of ASP.NET Core**
+
+- You don't have to use the `deployment model`, but you can still take pieces of it
+and gain something out of it.
+
+**WHAT IS .NET ASPIRE**
+
+- It's a bundle of tools, templates and packages for MODERN applications. It's like
+**glue**, something you build on top of, and turn into whatever you want. But
+you are **NOT STUCK WITH IT**. It connects things you already have.
+
+- **Everything is glued together through the central AppHost project. It's simple
+C# code**
+	- Declaratively in C# you say: I have this project that's a Web API, this is
+	a Frontend, there's a database that I will run locally with docker/podman/rancher,
+	and all of these things need to talk to each other.
+		- Because it's C#, you have IntelliSense and type safety
+- People that are already in Docker Compose might argue that they already have
+all of that setup
+	- But what if you could tab - complete in Docker Compose, or if you get a
+	squiggly line telling you that you can't do that, or you couldn't really debug
+	your docker compose
+
+- Example use case:
+	- We install extensions, for example, Redis, and that allows you to declare
+	with C# that you will spin up a Redis instance, and through an API we expose
+	the internal Redis configurations so that you set it up as you see fit, and the
+	application itself takes care of spinning up a container for it and glue it
+	together with all the other components.
+
+It tries to bridge the gap/trivialize setup tasks that are a bit annoying everytime:
+
+- Setup your logging
+- Setup Https correctly
+
+There's an opinion, recommendation on how all these things should be setup, and that
+is by default already solved/figured out. Exposed to you to start consuming it,
+with the option to change it as you see fit.
+
+`ServiceDefaults` => Real Template => It wires up directly all services to start
+adhering to Open Telemetry, (to avoid teams incurring in tech debt, Aspire does all
+of that for you). There's resilience already built in, so that apps retry requests
+if they fail to hit a container. **This feels like boiler-plate**, and that is
+given directly to us. (You can comment things you don't like).
+
+All of the things that Aspire uses are currently existing features of the language/
+framework probably for a long time. But many people don't know about them or find
+them too obtuse to work with. So an Aspire solution, will sort of give you
+code samples of how things should be used or can be used. Things that the .NET
+team believes should be in your applications, not the framework, yet go that
+extra mile to show you a guideline. **Every ASP.NET Core could benefit from this**,
+these are defaults for existing .NET projects. (That doesn't tie you to Azure)
+
+**Please don't touch deployment**. That's a growing fear. But the idea is to not
+mess up with that. What the team sees in the AppHost.cs file, is a blueprint, that
+you can run some tools against to generate something usable for you on your deployment
+processes:
+
+- JSON file
+- Bicep Template
+- Docker-compose
+- Something else that is usable on CI/CD pipelines to then generate artifacts
+
+Everything is opt-in, NOTHING is forced. However, many successful use cases see
+how the deployment process is simplified through the usage of aspire and its
+deployment features.
+
+=== Dashboard
+
+It's probably the biggest piece of the tool that gives it its purpose and value.
+When you run an Aspire solution you see everything that the app is running, ports,
+logs, you don't have to click through 100 console windows, and you see all the
+data flowing between them.
+
+All the open telemetry data streams into the user interface, and it even has
+some integrations with AI to analyze and understand the data.
+
+"Modeling your system to enable anything and everything" - Onboarding, installation,
+dev cycle, testing, autodocumentation of the real architecture.
+
+- I have an IIS cluster, can I still use Aspire? - YES
+
+[IMPORTANT]
+====
+Your AppHost.cs class, is NOT A DEPLOYABLE ASSET. The description of the whole
+architecture/app. You don't put in a server, a service. It's a manifest with types
+and debugging options.
+====
+
+However: **there's service discovery baked into the mix**, and this lets Aspire handle
+the ports, and communication amongst components. (But you can turn that off, or
+just change the name of services in the build/deployment scripts so that it integrates
+seamlessly). You don't have to change your deployment pipeline/process at all
+whilst still getting the benefits of the development experience full time.
+
+MsBuild => But better. With C# code, not XML.
+
+- Distributed tracing also a big added value.
+
+**The deployment sub-domain is completely optional, and you can choose to adhere
+to it or not. Although it's recommended if you want to simplify things with it**
+
+- Happy path deployments to Azure (because this is .NET/Microsoft)
+
+=== How to get started
+
+[NOTE]
+====
+NO VENDOR LOCK. YOU CAN USE DOCKER, PODMAN, RANCHER. Aspire integrates with any
+of these.
+====
+
+By default, everything uses OpenTelemtry. So you get structured logging and
+structured traces.
+
+**It's a good F5**. Just use the AppHost.cs
+
+````
+We want an experience that can literally be: Bob walks into a project, clones it,
+and runs it. No issues.
+````
+
+- There's even integrations with Add Python, Add Java. Literally just running
+executables, nothing fancy. So you can declare your architecture in a polyglot
+environment.
+	- AppHost.cs => Magical clone and run enabler
+
+**The extension methods:**
+
+- It doesn't do anything more than codify/abstract how most tutorials or most
+people that know a certain service/technology bootstrap it with .NET. So the
+extension methods in Aspire simply take those opinions/conventions and expose
+all of that through an extension method.
+	- **Codifying opinions**
+
+**We don't have in built-in support for IIS debugging** => Most people use docker
+now. IIS is somehow hooked in for local development, it is possible. (You won't
+get the features of aspire with it though)
+
+Through `ServiceDefaults.cs` all projects you create, will have the same behavior,
+the same configuration, everything turned on. Repeatable, interchangable!
+
+**All opt-in, IF YOU DON'T WANT TO, DON'T**
+
+=== Service Discovery
+
+Port conflicts are a big issue. And clone - and run gets threatened by them.
+
+**There's no real service discovery, it's just environment variables**
+
+On your AppHost.cs => You give a name to the service, a magic string. And on
+your client, you can reference that same name, an internal proxy resolves what
+container/service needs to respond to that.
+
+- Dashboard => It's all a Blazor Server App
+
+**What if there are existing apps**
+
+Not crazy heavy-lift.
+
+`Launch profiles` => And you set `if (IsDevelopment())`, `if (IsMobile())`
+
+- `appsettings.json` is the `.env` version in .NET
+	- User Secrets => Has support built in, but ENV VARIABLES are still usable
+
+- Central package management = A bit iffy. But it works.
+
+Copilot? MS Docs MCP. Copilot instructions can also help. But raw copilot, is still
+developing.
+
+- Even in a monolith => Still use Aspire, because you get the dashboard for free,
+and best codified practices.
+
+== What Is .NET Aspire? The Insane Future of .NET!
+
+Notes taken from: https://www.youtube.com/watch?v=DORZA_S7f9w
+
+**Project TIE:** Superset over TIE, without deployment stuff.
+
+- We tend to sometimes develop architectures of small components, or components
+in general that have to intercommunicate amongst themselves. And Aspire is trying
+to bridge the gap, to stop making this configuration/wiring a pain point. It wants
+to streamline it. Everything should be really easy to implement.
+
+=== DEMO
+
+You have a web app, and then a Web API. When you have services coming together in
+one environment. **You can nail everything down as things change**. But as the
+app evolves, then things get out of sync easily, and the orchestration falls
+apart.
+
+Aspire is trying to solve that issue, by changing how things are coming together
+and are wired.
+
+- `dotnet install workload aspire`
+- `dotnet new aspire`
+
+**You need to install Aspire SDK to start working with Aspire**
+
+- ServiceDefaults => That you can change how you see fit.
+
+The Aspire project is an `Sdk` project, with a small flag to mark it as `Aspire`.
+
+VS Tooling can help you implement Aspire and configure everything by default
+for you. _Literally a right-click away_.
+
+- You should right click all the projects you want to wire through Aspire to then
+let the IDE do all the heavy lifting.
+
+````
+The VS tooling just adds an extra support. Rider, and other IDEs should still
+work seamlessly.
+````
+
+If you setup the aspire project in a way such as:
+
+[source, csharp]
+----
+var builder = DistributedApplication.CreateBuilder(args);
+
+var api = builder.AddProject<Projects.WeatherApp_Api>("weatherapi"); <.>
+
+builder.AddProject<Projects.WeatherApp_Web>("frontend")
+	.WithReference(api);
+
+builder.Build().Run();
+----
+<.> Based on the name that you add under a resource in the `AppHost` project,
+you can then reference from other components this identifier, that way you stop
+hardcoding ports and hosts, and just use identifiers instead. (Aspire under the hood
+takes care of proxying and wiring things seamlessly).
+
+**And again => This becomes a Super F5**
+
+- You can see all the environment variables with a click. (Many are Open Telemetry
+ones)
+- You can see logs
+
+You get out the box metrics, out the box logs, traces. Everything "just werks"
+because it's cleverly set up with standards.
+
+- Even if you want to add `Redis` you can also add things with extension methods
+such as `OutputCache`.
+
+[NOTE]
+====
+Apparently you can cache web pages themselves in Redis. WHAT?? A literal blazor
+component can be put into cache. (With `[OutputCache]`)
+====
+
+**Redis is a standard for distributed applications hence Aspire comes with it
+pre-installed**
+
+And how can you prove fast-easily that you are hitting the cache? By simply
+going to the `Traces` that are in the dashboard, we should be able to see how
+a request hits the API, and even talks to Redis, and subsequent requests are not
+by any means doing these operations.
+
+- Everything "just werks" because the _"aspire components"_ are already instrumented,
+and feed traces, logs automatically without you having to do much.
+	- You can also see how the **Redis cache gets hit**
+
+**HOW DO YOU DEPLOY?**
+
+- Microsoft chose to not do it.
+	- Deployment is tricky because everyone does it differently
+	- dotnet run --publisher manifest --output-path manifest.json
+		- A high level abstraction of how the whole environment comes together
+
+== Highlights of Container support
+
+- The .NET Team has assumed containers to be the **Primary Deployment Model**
+
+Containers became the assumed target for the new .NET features, not an afterthought.
+
+[quote, Conversation about containers]
+----
+It's now just assumed as the primary deployment model for new features and
+scenarios... It's also the way our TechEmpower benchmark tests are run.
+----
+
+- CGOATs as the Biggest Cloud Trend
+
+The team explicitly identified containers as the most important trend in cloud
+computing, requiring major investment
+
+[quote, The best of Docker – NET5 further embraces container technology]
+----
+We think containers are the most important cloud trend and are investing
+significantly in this area.
+----
+
+- Environment Consistency
+
+Containers provide an unmatched guarantee that your application will run identically
+from development to production
+
+[quote, Conversation about containers]
+----
+They provide a greater level of assurance that your build output will work in
+your target environment than we have ever had before... All the requirements,
+including the old runtime they work with, are encapsulated in that one Docker
+artifact.
+----
+
+- Security & Supply Chain
+
+Immutable containers that dont' change as they move between environments align
+perfectly with modern secure software supply chain standards
+
+[quote, Conversation about containers]
+----
+[The container image] isn't changed—and shouldn't be changed—as it goes through
+the environment promotion process. As image signing becomes more commonplace,
+this model will become standard.
+----
+
+=== Example Scenarios
+
+- "Lift and Shift" (Legacy Modernization)
+
+**Goal:** Get existing .NET Framework apps (like WebForms or WCF services) into
+containers without a full rewrite.
+
+- We can get containerse with a full Windows Environment ensuring compatibility.
+- You can dramatically improve the deployment and DevOps processes for and old
+app without re-architecting it immediately
+
+- High-Density, Cost-Effective Hosting
+
+**Goal:** Run many small .NET services on a single server to maximize hardware
+usage and reduce cloud bills
+
+- The focus on tiny image sizes, fast startup times, and runtime awareness of
+resource limits
+- A .NET app in a container is lightweight and starts quickly, meaning you can
+pack far more of them onto a single VM than a traditional .NET Framework app
+
+- Cloud-Native Development (.NET Aspire)
+
+**Goal:** Make the entire developer experience for building distributed, containerized
+apps not just possible, but simple.
+
+- The .NET Aspire tools can even build automatically container images for you
+- This automates manual, error-prone work of creating Dockerfiles and orchestrating
+multi-container apps, letting you focus on code
+
+=== Sources
+
+- https://devblogs.microsoft.com/dotnet/conversation-about-containers/?ref=daveabrock.com[Conversation about containers]
+- https://cloud.tencent.cn/developer/article/1958158?from=15425
+- https://aws.amazon.com/cn/blogs/modernizing-with-aws/modernize-legacy-net-apps-to-amazon-eks-using-windows-containers-and-cloudhedge-chai/?nc1=b_rp
