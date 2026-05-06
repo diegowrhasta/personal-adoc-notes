@@ -810,6 +810,223 @@ check
 	- It makes lifes easier, faster, better as developers
 	- Try to use the latest bits
 
+== Build Better Apps with .NET Aspire - Complete Beginner's Guide & Tutorial 
+
+Notes taken from video: https://www.youtube.com/watch?v=e36NEWqO7GQ
+
+What do applications need to be?
+
+- Observable: Want to see what's inside of the application, see logs of what's
+happening, so that we diagnose problems
+- Resilient: If things go wrong, or some service goes down we should have a way
+to handle that gracefully
+- Scalable: As needs are introduced and applications grow, we need to have a clean
+getaway solution to scale up or down
+- Manageable: Easy to get up, get down, easy to scaffold our architecture and
+add more services in
+
+`.NET 8` incorporates more patterns and templates so that all the applications are
+more: **Observable, Resilient, Scalable, Maneagable**
+
+However, it's not easy to set all of this. But:
+
+- Complex
+- Getting Started is Hard
+- Too Many Choices
+- Not a clear path
+
+There's so much you can choose from, and not much time to test all of it. How do
+we get rid of all of that complexity and choices as developers?
+
+Aspire is the solution to that: A cloud ready stack for building observable,
+production ready, distributed applications. (NO MATTER WHAT YOU ARE BUILDING)
+
+- What does that mean? Who should use it?
+
+Aspire grows and scales WITH YOU.
+
+=== Use Cases
+
+You might even prototype, and Aspire can be used at that stage. You grow a bit
+that prototype, Aspire still will hold.
+
+Complex architectures and orchestration of services => Aspire will STILL hold up,
+if anything it will shine even further.
+
+.NET Aspire => Are building blocks for cloud native development, distributed applications,
+ANY application:
+
+- Smart Defaults
+- Developer Dashboard
+- Orchestration
+- Service Discovery
+- Integrations
+- Deployment
+
+The components are meant to be used to make developers more productive.
+
+=== Adding .NET Aspire to an existing project
+
+- If you want to start multiple projects you need the Multiple Project Startup
+and you have to run and get 10 tabs, 10 console windows. Navigating amongst all
+of those is a hassle, and you get confused pretty quickly.
+
+_How can this be smoother?_
+
+Add .NET Aspire into the project.
+
+The easiest way to make work of it, is by using Visual Studio and `Right Click >
+Add Aspire Orchestrator Support`.
+
+This does a lot in the background:
+
+- Adds an AppHost project
+- Adds a ServiceDefaults project
+- Sets the Aspire project as the startup project
+
+**If you analyze the ServiceDefaults:** You can see how all of these opinions are
+ready to be wired up to any application. One of the great things of the design
+choices here is that the OPTL configuration is open to modifications, meaning that
+you can pipe into any other exporter/collector you want, not just the aspire
+dashboard.
+
+- **The orchestrator needs to reference all other applications**, that way it
+generates auto-generated classes to then hook up and orchestrate accordingly.
+
+[NOTE]
+====
+By default, the resiliency smart defaults will attempt to retry to connect to
+a dependency. (E.g., If an API is failing, we try a few more times because it
+has `AddStandardResilienceHandler()`)
+====
+
+- If we want to deploy the same exact application, we would just update an environment
+variable to refer the specific .NET Aspire application setup.
+
+**We get rid of a lot of developer toil**, service discovery with a few lines of
+code helps us getting back on track of app development.
+
+[NOTE]
+====
+There are two parts to the integrations of Aspire: Integrations for the AppHost,
+and integrations for the projects that are wired to Aspire. (Even if you deploy
+them, these integrations, working with the default open telemetry standard and
+all the principles of Aspire, the clients will seamlessly be instrumented with
+telemetry data)
+====
+
+`RedisCommander` => A Redis inspector client.
+
+You can use [OutputCache] to literally cache ENDPOINT RESPONSES.
+
+[NOTE]
+====
+The difference between a `healthy` and `alive` endpoint is that healthy will show
+healthy only if ALL DEPENDENCIES ARE ALSO HEALTHY. `alive` will show healthy if
+the component itself is good. (It won't go and double check dependencies)
+====
+
+=== Deployment
+
+This is complicated.
+
+- Every Apps Is Different
+- Tons of Choices
+- IT & Security Requirements
+- Complex
+
+There's no "ONE" solution at the end of the day. But there are nice ways of exposing
+an API that we can opt-into and that be seamlessly integrated.
+
+- If you are already deploying your application, you can keep using the same thing.
+	- ConnectionString updates, adjust to a Schema that Aspire uses.
+	- There's nothing in Aspire that don't get deployed
+		- You still deploy your individual components
+
+**But there's an easy way to streamline deployment:**
+
+- AWS CDK
+- Azure Dev CLI
+- Visual Studio
+
+- You generate a .NET Aspire Manifest => And that can be read and then translated
+to different technologies' manifests.
+	- Turn things into a definition for Kubernetes
+	- Turn it into a definition for Azure
+
+- You can literally use the IDE, to right-click and Publish the "Aspire project"
+
+This is a magical way that abstracts everything from you. But we can analyze and
+rebuild what's happening with commands:
+
+````
+dotnet run --publisher manifest --output-path aspire-manifest.json
+````
+
+This creates a `json` file that will describe everything that the `AppHost` project
+holds inside of it. It's a great way to see how everything is brought together,
+and how they reference each other in a really clever way.
+
+**Extra key insight:**
+
+If you want for a specific component to not be just working internally (privately
+exposed to the architecture), but also the outside you can literally add a small
+extension method:
+
+- `.WithExternalHttpEndpoints()`
+
+Manifest => Doesn't really do anything, it's a simple spec and description. The
+Azure CLI can read it though, and turn it into something that then is deployed.
+
+However, there's a community tool that can translate it to Kubernetes
+
+`azd` => Azure Developer CLI. `az` => Azure CLI
+
+- `azd init` => Detects an Aspire project and can offer you a possible strategy
+to deploying it
+- `azd infra synth` => Output files that `azd up` will create on its own, without
+actually running them. It literally has different yaml/bicep files for each resource
+that is declared in the AppHost
+- `azd up` will then start creating and doing everything for you based on the
+generated manifests/artifacts
+
+And once you go to Azure you should see the whole **resource group** with all the
+components that should be a 1:1 parallel to what you had in local.
+
+[NOTE]
+====
+When you deploy to Azure, things are dropped as Container Apps, but you also get
+the Dashboard for free? And it has ALL THE OPTIONS?? Is this a Azure Cloud only
+option? Besterds
+====
+
+Dashboard => Is more real-time. If you want more in-depth analysis of the logs and
+stuffs. You need to go to other services.
+
+=== Aspire goes Beyond .NET
+
+- You can integrate React, Vue, Angular and pass env variables to them
+- You can add Python projects
+
+**Developer Dashboard in my machine**
+
+You can also use the Dashboard **Standalone**. You pipe telemetry into it, that's
+it.
+
+`aspiredashboard.com` => Community built info on .NET Aspire
+
+You can spin up a docker container that will have the Aspire dashboard in **Standalone
+version**
+
+And then you can integrate whatever application you want, (say a `ConsoleApp`),
+and you can see how all the telemetry information will be fed onto it seamlessly.
+
+In short, the way that other technologies integrate with Aspire is by using the
+open telemetry framework (there's an npm package for it) and it will allow you
+to connect to an OPTL endpoint (that will be our dashboard) and we will start
+visualizing these application traces/logs. That way, you can integrate with
+ANY APPLICATION that's out there.
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
