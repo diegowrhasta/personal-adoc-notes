@@ -669,6 +669,147 @@ It can deploy everything to the cloud with:
 - Container Apps
 - Biceps
 
+== Intro to Aspire 9.5 - Get Started Quickly with This Essential Tool
+
+Notes takes from https://www.youtube.com/watch?v=x2KAfsFydIo
+
+[IMPORTANT]
+====
+Take INFORMED DECISIONS. Based on facts and knowledge.
+====
+
+_Apparently you can just install the Aspire Templates and then everything should
+work...?_ But yeah, the CLI could be the best thing to get.
+
+What is .NET Aspire? Why is it so valuable?
+
+AppHost => This is a project that becomes a launching point for the whole application.
+LOCALLY.
+
+[IMPORTANT]
+====
+This is all about local development. Making our local development, much much easier,
+making developers much more faster and efficient.
+====
+
+`ServiceDefaults` => Adds a lot of extensions that many developers might not be
+doing.
+
+_I don't understand any of the extensions?_ Well, great, it's time to learn about
+them.
+
+**What's the point?**
+
+Imagine you don't have aspire. You have a web project, web api project. You have
+a hosting service. You have redis also hosted somewhere else. (This is prod/deploy)
+
+Locally, we do not have access to those services. Containers, through a container
+runtime, we can get all those dependencies up and running and ready to be used
+by our application.
+
+You need to setup things manually to get everything working, api depending on web.
+
+- What if we didn't have to worry about spinning containers even?
+	- What if it all just worked?
+	- When we are wiring our services, we reference identifiers, no hard-coded
+	urls or ports. **Service discovery handles everything for us**
+- EVERYTHING IS DONE FOR US THROUGH THE ASPIRE AS THE HIGH LEVEL APPLICATION MODEL/
+BLUEPRINT.
+
+Using methods such as: `WithReference()` and `WaitFor()` helps us wire up things
+through service discovery. And once we launch the project through the Aspire launch
+profile/project. We will run into a Dashboard. The Aspire Dashboard.
+
+_Small tip:_ If something is wrong, maybe your container runtime is not running,
+or some other external problem, the Aspire Dashboard gives you a lot of alerts
+and understandable messages to help you troubleshoot.
+
+- When you are working with systems and resources that it's not just one monolith,
+the Dashboard allows you to visualize the interactions and connections. Also to
+manage, to troubleshoot, to debug.
+
+**Clone + F5 + Ready!**
+
+Whether it's a simple or complex project, you get more information in a graphical
+manner, and helps you wrapping your head around the whole app more easily.
+
+- You can see all your logging _LIVE_ at the same time
+- There's structured logging OUT THE BOX ready for you to consume
+- Tracing => See what's happening in the application and track commands that are
+taking place
+	- You can see all the information in regards to multiple components and their
+	interactions. The whole story, all the interactions, everything gets logged
+	into one trace statement. So you get even further information into how your
+	application is working, how it's interacting.
+
+**Million Dollar Question:**
+
+How do I deploy then? The dashboard into Azure?
+
+- You don't want to do that
+	- Well you kinda want to, at least the dashboard?
+- This is all focused on our local development experience, bringing more value to
+users and the systems faster and with much more in-depth knowledge
+	- The goal in production is not to track so many things
+		- Not done this way
+
+- So apparently the "typical scenario" is that in production you get access to
+all of this services, setups that are great for debugging and stuffs. But on local
+you didn't have access to all of these things, apparently, what? So now Aspire
+brings all of that richness into local development.
+	- You don't want to test in production, do you?
+
+=== Extending Aspire defaults
+
+Finally found an answer for the recommendation on logs to use parameter names
+such as:
+
+````
+LogInformation("Counter value is {Counter} and it's {EvenOddResult}", counter, (counter % 2 == 0) ? "even" : "odd")
+````
+
+By putting these specific parameter names, when outputting the logs as structured
+logs, we gain these fields as searchable/queryable fields.
+
+That way we can filter out logs, we can filter out many things.
+
+When you see errors on the structured logs, if you have launched Aspire with
+your IDE and it's integrated with Copilot, you will get access to the copilot
+chat to explain errors, or just overall, integrate with everything else. And give
+you support. (The idea is that Copilot is aware of both the code, and the running
+error, it can give you pointers to what file, and  how to fix the error even)
+
+**Span ID:** The ID that is passed around services. It's so easy to track down how
+everything is done, what is going on.
+
+**There's only a couple of things to go through:**
+
+- AppHost project => The project you launch. And you write on its Application Model
+all the things you want to spin up.
+- You have a `ServiceDefaults` with all codified industry standard setups for
+observability, traceability.
+- Any project you want to wire with Aspire, needs to reference the AppHost
+
+=== Deployment
+
+Everyone wants Aspire to deploy. There's more and more things moving Aspire towards
+the deployment side of things.
+
+**Aspire was meant to be for local development**. So don't feel as though it's
+"incomplete", its original intention was local development enhancements.
+
+Aspire is open source.
+
+- Deployment of the dashboard not a wise idea (apparently)
+	- Your open telemetry integrations should integrate easily with the whole
+	architecture
+
+- Aspire can integrate with React, Python. Not just c# projects
+- You get so much information, that you can limit test your changes, you can performance
+check
+	- It makes lifes easier, faster, better as developers
+	- Try to use the latest bits
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
