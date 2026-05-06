@@ -283,8 +283,76 @@ and then processes to pass onto Grafana. But the idea still remains, all the fou
 for the structure, are there, and depending on what service integrates, then you just
 adjust accordingly.
 
+== Dev Tunnels
+
+A pretty "hot" feature, the Nuget is actually still marked as `pre-release`, you
+literally can make usage of cloud tunnels so that your locally hosted application
+can be exposed to the outside world through the internet and wired through a tunnel.
+
+Pretty easy to set it up once you know what's happening:
+
+````
+var tunnel = builder.AddDevTunnel("my-tunnel")
+    .WithReference(web);
+````
+_Don't forget to install in the `AppHost` project the `Aspire.Hosting.DevTunnels`
+Nuget package_
+
+In _Linux_ specifically you might have to do a bit of hacking around to get the
+CLI tool working:
+
+- https://aspire.dev/integrations/devtools/dev-tunnels/[Aspire Docs]
+- https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=linux#install[Dev Tunnels Docs]
+
+In Manjaro, the best thing you can do is download the CLI tool directly, and manually
+add it to both your shell environment `e.g., ~/.zshrc`, and also establishing a
+syslink so that when starting the Aspire application it can find the CLI tool that
+is somewhere "manually dropped". E.g., `sudo ln -s ~/Programs/linux-x64-devtunnel /usr/local/bin/devtunnel`
+
+You only need a Microsoft Account, or GitHub account to login and then just use
+completely telemetry and info-stealing infrastructure on the cloud to tunnel
+your app and expose it to the outside.
 
 == Docker Compose and .NET Aspire
+
+=== .NET Aspire integrations
+
+What if you wanted to add an external database (not managed by .NET Aspire) to
+the dashboard and the "ecosystem"?
+
+Well, you have different choices:
+
+- Make a probe service that's sole purpose is to keep pinging the database and
+make sure its healthchecks are integrated
+- Don't, and manage the database in the orchestrated environment as well
+
+We can install Aspire as a dotnet tool (and that's probably the easiest way to
+get it on a machine, but don't get me wrong. Installing it through the script
+should also work, but be aware there's a way to install it as a dotnet tool)
+
+We can leverage the `Aspire.Cli` so that we run `dotnet publish -o infra`, which
+if run at the root of the Aspire solution, we will create an `infra` folder and
+inside we will have a docker-compose and an `.env` file. This is a great way to
+scaffold these files and not have to build them from scratch.
+
+**BUT BE WELL AWARE THAT THE SCAFFOLD WILL BE FAR FROM BEING A PLUG AND PLAY, IT'S
+JUST SOMETHING TO GET STARTED AND THAT YOU SHOULD TUNE TO YOUR LIKING, AND TO A
+WORKING MANIFEST**
+
+[NOTE]
+====
+Be really careful around the way the `.env` variables are named, it might interfere
+with OS variable names, and you might get weird behaviors on some systems. For example,
+on rabbit, if the `.env`'s variable is `$USERNAME` it can bleed over from zsh, and
+take a different name. So make them unique enough
+====
+
+_Extra tip:_ You can check the containers env variables that were assigned to double
+check if everything looks in order:
+
+````
+docker-compose exec rabbitmq env | grep RABBITMQ
+````
 
 == Sources
 
