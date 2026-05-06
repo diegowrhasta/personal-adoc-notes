@@ -1027,6 +1027,102 @@ to connect to an OPTL endpoint (that will be our dashboard) and we will start
 visualizing these application traces/logs. That way, you can integrate with
 ANY APPLICATION that's out there.
 
+== Aspire: Cloud-Native Development Simplified
+
+What is Aspire?
+
+- It's a lot of things. So better to talk about it by mentioning the things that
+it helps with:
+	- Modern applications => Service, container, database, cache, many microservices,
+	monolithic but with a bit of modularity.
+		- The more cloneable, the more reproducible you want your app to be
+- Aspire is a tool for code-first, extensible, observable dev and deploy
+
+**Anatomy of an Aspire App:**
+
+- Aspire AppHost + CLI
+- Aspire Integrations
+- Aspire Dashboard
+
+`aspire update --self` => We are in Aspire 13.
+
+- There's now a template for React (vite), and FastApi (python)
+
+**There's an Aspire extension in VS Code**
+
+And the extensions with other technologies:
+
+[source, csharp]
+----
+var frontend = builder.AddViteApp("frontend", "./frontend")
+	.WithReference(app)
+	.WithNpm(install: true)
+	.WaitFor(app);
+----
+
+Your c# organizes your javascript, your python. The simplification of things is
+done with intent and purpose. We are using c# to describe how the application
+should fit together.
+
+````
+builder.AddCSharpApp("api.cs");
+````
+
+You can debug csharp code on VS Code, and you can even debug PYTHON. You should
+be able to run all three languages at once and debug ALL of them.
+
+=== DevTunnels
+
+**Dev localhost URL:** Support for more custom URLs. Don't have to remember ports,
+URLs. But an URL.
+
+This is a hosted service, code spaces uses it, visual studio and visual studio
+code use that.
+
+`aspire add devtunnel` => We can model a dev tunnel inside my aspire project.
+
+[source, csharp]
+----
+builder.AddDevTunnel("devtunnel")
+	.WithReference(webfrontend)
+	.WithAnonymousAccess();
+----
+Apparently dev tunnels are this interesting tool that helps you expose a localhost
+"thing" to anyone through the internet, with a static URL. More info at https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=linux[Docs]
+
+Yeah, Aspire now has devtunnels integration.
+
+_Deployment story has been getting more investment_
+
+- Deployment needs to be more flexible
+	- People want to hook things into workflows
+	- People want to run mocks
+
+`publish` - `deploy` were too chunky.
+
+`aspire do <>`
+
+You can still do `aspire publish`, `aspire deploy`.
+
+But `aspire do` runs under the hood now.
+
+With these new developments in the deployment story, we can now model not just the
+architecture, but the DEPLOYMENT.
+
+That's how we can see that with the patterns:
+
+````
+builder.AddAzureContainerAppEnvironment("cae");
+builder.AddDockerComposeEnvironment("env");
+````
+
+All of these are Nugets, that focus a specific deployment strategy. You target
+any deployment strategy.
+
+- New deployment pipeline, but integrated with Aspire.
+
+- aspire.dev => New site
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
