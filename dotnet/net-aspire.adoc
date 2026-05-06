@@ -1029,6 +1029,8 @@ ANY APPLICATION that's out there.
 
 == Aspire: Cloud-Native Development Simplified
 
+Notes taken from https://www.youtube.com/watch?v=aXouOsBh4ro
+
 What is Aspire?
 
 - It's a lot of things. So better to talk about it by mentioning the things that
@@ -1122,6 +1124,47 @@ any deployment strategy.
 - New deployment pipeline, but integrated with Aspire.
 
 - aspire.dev => New site
+
+== Modernize Legacy .NET Projects With Aspire
+
+Notes taken from: https://www.youtube.com/watch?v=hEKEBCShBLM
+
+The idea is that Aspire, the dashboard, can show you a lot of information, but
+a lot of things have to be put in place.
+
+You can have an application be "integrated" yet not being able to feed really
+anything to the dashboard. So the `ServiceDefaults` is this extra codified convention
+bundle that gets added to your C# app and then starts integrating with the OpenTelemetry
+framework.
+
+**Aspire is an upgrade to the Debug experience (local)**
+
+- The Local Development **Story** in .NET was really weak
+	- It was really clunky
+		- And we can now check into source control all the right settings, the
+		right order. A super F5
+
+An interesting improvement on the default docs approach for Aspire:
+
+[source, csharp]
+----
+new(builder.Configuration["Api"])
+----
+
+That way we avoid magic strings and have them behind configuration values, however
+the actual value should also be an ID, not a localhost or specific port. We should
+try to integrate with the Service Discovery addresses that are solvable.
+
+Never forget that this is trying to stop you from doing the Multi Project startup,
+per machine, per user configuration. But if you put into source control. The
+onboarding is streamlined so much.
+
+So Aspire, is designed to be added to existing projects, there can definitely be
+more complicated setups, more complicated projects. However, to get things up and
+running and improve the local development experience.
+
+Aspire => More than just .NET. It's built in it, but you can integrate with many
+other things.
 
 == Highlights of Container support
 
