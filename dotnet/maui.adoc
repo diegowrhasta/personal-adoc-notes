@@ -1,0 +1,96 @@
+= Notes
+
+Part of exploring new things and just finally getting around to getting that
+goddamn 家計棒 out the way. These are notes on MAUI (native cross-platform framework
+for mobile and desktop on .NET)
+
+== Getting started
+
+No idea if this is convention, or if Visual Studio just abstracts a lot, but following this
+small introduction:
+
+https://www.youtube.com/watch?v=LH4z74QBWU8&list=PLdo4fOcmZ0oUBAdL2NwBpDs32zwGqb9DY&index=3
+
+In `Linux` and on `Rider` it's not as straightforward as it might seem. You need
+to install JDK and Android SDK, and not just that, you need to have Android API
+installed in the SDK (whatever that means)
+
+The SDK folder should have `platforms/android-36/`.
+
+=== Installation
+
+With `yay` you can literally start like:
+
+- `yay -S android-sdk`
+- `yay -S jdk21-openjdk` => REALLY IMPORTANT TO INSTALL JDK 21, apparently the
+android sdk (at the time of writing) is only written against this specific version,
+so don't try to get the latest one, because that's NOT GOING TO WORK
+
+If you install through these package manager ids, you should get the sdks in the
+respective paths:
+
+- `/opt/android-sdk`
+- `/usr/lib/jvm`
+
+The way to verify they exist or there are things inside, is by listing contents
+in those paths:
+
+- `ls -la /opt/android-sdk`
+- `ls -la /usr/lib/jvm`
+
+A nice way to check what SDKs are installed is by using the `sdkmanager` tool inside
+of the android-sdk folder: `/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --list`
+
+[IMPORTANT]
+====
+Only installing `android-sdk` will not give you all the neccesary tools and specific
+things that are needed for Rider to start up and work with a project
+====
+
+So you have to install all these extra SDK components:
+
+````
+yay -S android-sdk-cmdline-tools-latest android-sdk-platform-tools android-sdk-build-tools
+````
+
+After this all the components for wireless debugging, and many other QoL necessary
+things for a nice Mobile Development experience will be installed. After that we
+can point to the default paths on Rider so that it detects all the SDKs.
+
+[NOTE]
+====
+In case you have mistakenly installed the latest JDK version, you can always go
+and install the other version (Version 21), luckily in the default path, the
+versions can co-exist and its a matter of simply pointing to the right folder
+====
+
+**Lastly: You need to install a version of Android to develop against**.
+
+And for that you can use the `sdkmanager` that's part of the android-sdk:
+
+````
+/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-36"
+/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+````
+
+Be sure to run the first command as `sudo` because it might fail. And besides that
+you need to accept everything (all licenses)
+
+Once all of this is done, YOU CAN ACTUALLY LAUNCH THE STARTER MAUI APPLICATION.
+
+/opt/android-sdk/cmdline-tools/latest/bin/sdkmanager "platforms;android-36"
+
+== Wireless Debugging
+
+And also, you get access to `adb` which allows to connect to the IDE through an
+Android device, (through a private wifi) and then somehow pass onto it a build
+of the app you are developing.
+
+- You have to enable developer mode
+- And then on developer mode you need to go to `Wireless Debugging`
+- And then scan a QR code that `Rider` should provide to pair the IDE with the
+Android device
+
+This way, we can finally start-up the application (and after taking ages), it
+can actually boot up in our Android device, and be fully debuggable through our
+IDE, which is kinda insane tbh.
