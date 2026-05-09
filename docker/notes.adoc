@@ -1,0 +1,60 @@
+= Notes
+
+These are notes in general about Docker usage, cool findings or overall concepts
+that (hopefully) are applied across different container runtimes.
+
+== CyberDock
+
+So apparently you can get up and running a local docker registry with an admin
+UI pretty fast by doing:
+
+````
+docker run -d --name cyberdock -p 5000:5000 mattrogers/cyberdock:latest
+````
+
+Just wait a bit, and then access `localhost:5000` need to access it through https
+and you need to accept the custom certificate.
+
+=== How to push and pull
+
+So you need a local image already built, you have to tag it with an address
+that can resolve to the local registry:
+
+````
+docker tag your-application:latest localhost:5000/your-application:latest
+docker push localhost:5000/your-application:latest
+````
+
+So just some extra notes:
+
+- Images are pushed in a **compressed** form, because the image that you might
+have locally can be 200 MBs, yet in the registry it can be reduced to 99 MBs.
+**So keep that in mind**
+
+And lastly, a quick test to see if we can get the image from the registry instead
+of docker hub or local, you can delete the image yourself:
+
+````
+docker rmi -f <ID>
+````
+The `-f` is so that it deletes both tags and the image itself, because when you
+tag, you effectively are making an alias. The image HASH is actually the same,
+it just has different names to point to it. One is the "local" tag and another
+can be a specific registry's identifier.
+
+And then when trying to get a project backup, so that we go to the specific registry
+to try and get the image from there you need to qualify it correctly, this is
+an example:
+
+````
+localhost:5000/aspireapp1.apiservice
+````
+
+That way, when spining up the container, or spining up the whole orchestrated
+composed env. You need to change the image to that "fully qualified" name, otherwise
+your container runtime will try to fetch the image from Docker Hub, or in any case
+if you have tons of registries, it won't know to which registry it should go to,
+so through naming you help it understand from where it should try to pull an image.
+
+_Note: And yes, you can even choose to later locally tag that remote pulled image
+with a much easier to access name_
