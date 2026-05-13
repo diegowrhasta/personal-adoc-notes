@@ -1166,6 +1166,109 @@ running and improve the local development experience.
 Aspire => More than just .NET. It's built in it, but you can integrate with many
 other things.
 
+== Aspire in Action
+
+Notes taken from https://www.youtube.com/watch?v=7RnRks0Bg6k
+
+Some issues, pain-points:
+
+**Complex dev, complex deploy**
+
+````
+Dev Loop
+
+> Impossible to "clone and run"
+> No easy way to add new services
+> Local dev does not reflect actual running system
+
+Deployments
+
+> Fragile, always-changing assets
+> Complicated handoffs for architecture changes
+> "Only in prod" observability
+````
+
+Aspire > Tool for code-first, extensible, observable dev and deploy.
+
+I have this app, and I want to get everything up and running as close as prod
+as possible. On-boarding > Way easier, Aspire can streamline that. And now deployment
+is also being covered (still ongoing effort)
+
+**Docker-compose ++ that's debuggable**
+
+- There's an Aspire CLI
+- There are many integrations
+- Visual Studio and VS Code have great coverage
+- Telemetry > Turned on by default
+
+=== Side Project DEMO
+
+- Aspire **IS NOT MAINLY FOR AZURE**
+	- Any infrastructure, with the CLI you can make it a Kubernetes cluster, or
+	docker-compose (even just locally)
+	- AWS
+	- Digital Ocean (Nugget)
+
+[IMPORTANT]
+====
+You can apparently declare prod/dev "paths" on the `AppHost` so that depending on
+the environment you get up or tap into a cloud resource or whatever, or you simply
+spin up a Docker container and work that way
+====
+
+**NOTE:** So I had this idea based on the talks and videos I saw. A great usage
+of EF Core and interfaces, can be that your local database is `sqlite`, and you
+develop against that. But when deploying to dev, int, prod. You should swap that
+out the DI to an actual database integration. There can be a world in which this
+makes sense to do. However, I think that with Docker, having your **OWN** local
+instance in a container, is more than enough to be there without bothering anyone,
+and dev can then be used by someone else (like a QA or someone testing)
+
+`if (builder.ExecutionContext.IsRunMode)` => Run an emulator.
+
+The `AppHost.cs` is a "Model". Where you define your infrastructure with code.
+
+- Structured Logs, Traces, Metrics => Open Telemetry, a standard to pass information
+about your service.
+	- Service Defaults, they take care of turning on all of that.
+	- Most people spend time on structured logs, traces. And all of these things
+	get turned on by integrating with Aspire
+
+**Migrations**
+
+- Pretty common database problem
+	- When you update production, you want for things to work
+	- When you are in local seeding data
+	- Aspire can help with migrations/seed
+
+Deploying with Aspire:
+
+- azd init
+- azd up
+
+The azure developer CLI understands Aspire, so it looks at the `AppHost.cs` and
+it generates all the bicep files that are needed to spin up a infrastructure in
+Azure.
+
+**You can even create CI/CD pipelines with the Aspire CLI**
+
+- aspire run
+- The Visual Studio Code extension can attach to the `aspire run`
+
+- aspire publish
+	- If your AppHost is already setup to deploy to Azure, it will generate
+	`.bicep` files
+	- There's AWS plugin
+	- There's Digital Ocean plugin
+
+For a company, you need to make sure the assets you are deploying are good,
+so you can generate all the deploy artifacts/manifests.
+
+- aspire update
+
+**Aspire is not just for building microservices**. Even monoliths, can benefit
+from Infrastructure as Code-like semantics, and you set everything up.
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
