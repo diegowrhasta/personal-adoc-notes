@@ -1269,6 +1269,206 @@ so you can generate all the deploy artifacts/manifests.
 **Aspire is not just for building microservices**. Even monoliths, can benefit
 from Infrastructure as Code-like semantics, and you set everything up.
 
+== .NET Aspire Beyond the Introduction
+
+Notes taken from https://www.youtube.com/watch?v=4bvkIajqDjQ
+
+- **How does it work?**
+
+**DCP** => Distributed Control Plane (go-based executable). It's responsible for
+running your workloads on your machine. It's Kubernetes compliant, and hence it
+leverages a Kubernetes API. (Please run this thing for me, run this for me).
+It's not Kubernetes itself, it's just its API that gets run.
+
+Basically the `AppHost.cs` reads the Application Model, and sends payloads to
+spin up resources to the DCP. The DCP understands the structures, and then
+accordingly, spins up all the required services.
+
+There are tree main processes:
+
+- `dcp.exe` - This it the Kubernetes-like API to which the events are being sent
+by the `AppHost.cs`
+- `dcpctrl.exe` - This is a specific watcher on the `dcp`, if there are changes or
+if there are new objects that need to be spun up, it grabs the signal and takes
+care of running the respective workload
+- `dcpproc.exe` - This is a specific daemon that is monitoring constantly if there's
+a _kill signal_ when you stop debugging and so on, and it will cleanup containers
+and other things alike
+
+=== DEMO
+
+In theory you could do `kubectl` and hack things. `DCP` => Go based. Because of
+these specific tools, the integration with Python, JavaScript, seems to be possible.
+
+````
+var neo4j = builder.AddContainer("neo4j", "neo4j");
+	.WithEnvironment("NEO4J_AUTH", $"neo4j/P@ssw0rd123!")
+	.WithEndpoint(targetPort: 7687, port: 7687, name: "bolt", scheme: "neo4j")
+	.WithEndpoint(targetPort: 7474, port: 7474, name: "adminUI", scheme: "http")
+	.WithVolume("data", "/data");
+	.WithHttpHealthCheck("/", endpointName: "adminUI");
+````
+Neo4j is a graph database. _Note:_ This is amazing syntax to give much more of a
+shape to a container.
+
+**Note:** Apparently Aspire reads the `launchSettings.json` of each wired-up project,
+so you can turn on the auto-browser launch there. (But I never ran into this issue?)
+
+In the Aspire dashboard, we tend to see tons of endpoints in there, and sometimes
+it generates tons of noise, we might not like that, so we can configure what do
+we show, and how:
+
+````
+var neo4j = builder.AddContainer("neo4j", "neo4j");
+	.WithEnvironment("NEO4J_AUTH", $"neo4j/P@ssw0rd123!")
+	.WithEndpoint(targetPort: 7687, port: 7687, name: "bolt", scheme: "neo4j")
+	.WithEndpoint(targetPort: 7474, port: 7474, name: "adminUI", scheme: "http")
+	.WithUrlForEndpoint("adminUI", x =>
+	{
+		x.DisplayLocation = UrlDisplayLocation.SummaryAndDetails;
+		x.DisplayText = "Admin UI";
+	})
+	.WithUrlForEndpoint("/bolt", x => { x.DisplayLocation = UrlDisplayLocation.DetailsOnly; })
+	.WithVolume("data", "/data");
+	.WithHttpHealthCheck("/", endpointName: "adminUI");
+````
+
+**But bear in mind, even like this, if you click on the resource line item, you
+will still get to see all the URLs, just less annoying**
+
+So now you don't see a full URL, but a descriptive title on the initial grid.
+
+_You can also build custom URLs, I want a thing that points to a swagger endpoint,
+or to this other thing_.
+
+You can also tell which launch profile to use:
+
+````
+var apiService = builder.AddProject<Projects.AspireDemo_ApiService>("apiservice", "https")
+	.WithEndpointsInEnvironment(x => x.UriScheme == "https")
+	.WithHttpHealthCheck("/health");
+````
+The **second** parameter for the `AddProject()` method can be fed to state which
+launch profile you want to use for spinning up the project. Otherwise it will grab
+the first one on the `.json`. Also with the `WithEndpointsInEnvironment()` you can
+literally register a callback to which every single endpoint map will be called against,
+in this instance if the endpoint that is going to be mapped is `https` it will be
+registered, otherwise the endpoint will not be registered.
+
+**Which in short** this will allow us to spin up a project fully on `https` and
+no `http` will be present.
+
+There are tons of great extension methods that abstract complexity and keep `AppHost.cs`
+pretty lean. But we can build our own extensions, for example all this wiring and
+plumbing can be abstracted behind an extension method and a `ContainerResource`
+class in a _Class Library_, and on the `AppHost.cs` we can simply reference said
+extension method and things will all work seamlessly.
+
+**Hard Coding things**
+
+- Not good to to hard code? So you might want to pass values that are configurable.
+
+Example: I don't want to hard code the volume path, and/or you don't want users
+to be tied to volumes for docker containers (i.e., I want ephemereal data).
+
+````
+public static class Neo4jResourceExtensions
+{
+	public static IResourceBuilder<Neo4jResource> WithVolumeStorage(
+		this IResourceBuilder<Neo4jResource> builder,
+		string? name = null)
+	{
+		return builder.WithVolume(name, "/data");
+	}
+}
+
+var neo4j = builder.AddNeo4j("neo4j", password.Resource)
+	.WithVolumeStorage("data");
+````
+And so you are essentially building your homegrown implementation for adding a
+resource into an `AppHost.cs`.
+
+Really cool.
+
+Another way to also format the dashboard better is by adding relationships amongst
+resources, so that you get master line items that can encompass other resources:
+
+````
+var password = builder.AddParameter("neo4j-password");
+
+password.WithParentRelationship(neo4j);
+````
+After this, under the `neo4j` resource, we will see the parameter resource.
+_Small note:_ Seems that resources should actually be hidden by default on the
+dashboard, but I don't know, this seems deliberate, and I think a great use
+case for the usage of resource relationships.
+
+Lastly, to avoid slow start-ups, you can always set your container resources to
+be "persistent" which just means that the container won't die when the Aspire project
+stops, it will remain running, and when you restart the Aspire project, it will
+auto-connect to that previously started container. So your dev time is used better.
+
+And on top of that you can extend the abstracted function so that it also can be
+referenced by other resources by using Metadata classes and more extensions so
+that `WithReference()` and `WaitFor()` work.
+
+=== Seeding with Aspire
+
+So seeding seems to be possible with a Custom Command and an Http Command. Seems
+we can run and manage it through the dashboard also.
+
+This is super cool, and SO customizable. You create classes that implement interfaces,
+and then wire them up to resources, and you can literally click a resource and
+run the commands (they appear as options of the contextual menu), so you can customize
+what logic runs, what icon it has, tons of stuff. Even if the command is successful
+and what the success alert looks like.
+
+You can also configure an `http` request to hit a service, and that service runs
+logic on its own. So your dashboard can become this control center to run different
+things, that perhaps on onboarding, or some specific scenario you get to add
+and customize.
+
+=== Secrets and parameters
+
+You can even set parameters as `secret` and Aspire is **SO INTELLIGENT** that it
+can literally detect if you haven't set the secret correctly, and then it gives
+you a whole input and control experience to set a secret, to set a value, and then
+saves it so that on the next run you have them under `secrets.json`. So you are
+safe when trying to commit to VC. And the onboarding can be so cool, and nice.
+Because you get pop-ups telling you to add a value for a specific parameter that
+will be saved as a secret.
+
+_And you get to customize how the parameter name looks like, how the message and
+placeholder looks like, so cool_
+
+=== External services
+
+You can literally declare external services by pointing to their root URL (external
+API for example), and even configuring a health check by pointing to a specific
+endpoint.
+
+And later if your othere resources reference this custom resource, you can make
+usage of the **resource name** to make Aspire resolve the correct path, and then
+hit a specific endpoint. It's cool, a lot of abstraction and convention awareness
+needed for this though. Still, you can enable this way a lot of swapping of endpoints
+with mock APIs and the like. And perhaps other use cases such as external resources
+that you might need to hit.
+
+=== Custom Publishers
+
+Sky is the limit here. We have Kubernetes publisher, a docker compose. And many
+things. But if you build your own, you can literally "program" how to **publish**
+your whole architecture.
+
+It can be actually saying stuff like:
+
+- Okay, take these 2 resources, publish them to Kubernetes
+- Okay, take these 2 resources, publish them to Azure
+
+The talk actually brings a really interesting implementation which will sent
+to IT an instruction on how to deploy things, and how act based on each resource
+that is being enumerated.
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
