@@ -1690,6 +1690,31 @@ all C#
 	- You can override and extend behavior if you want from Aspire, because most
 	classes are public and inheritable.
 
+== Easily Deploy Aspire to Azure with GitHub Actions
+
+Notes taken from: https://www.youtube.com/watch?v=Hjm-K8454tE
+
+If we want to deploy: `azd init`, `azd up`, `azd deploy`. Aspire integrates with
+the azure developer cli. Because it can actualy recognize that the current project
+is an Aspire project.
+
+- `azd pipeline config -e`
+
+The idea is that you need a provider, because we want to run GitHub Actions, you
+can select `Github`
+
+_Seems you can use authorization providers to authenticate with azure your pipeline_
+
+It autogenerates a full `yml` with some basic actions and authentications with
+azure.
+
+And it auto creates azure resources, it auto creates and hooks up good practices and
+ideal constructions. And yes **YOU GET THE FULL ASPIRE DASHBOARD EXPERIENCE IF
+YOU ARE IN AZURE**.
+
+- Even in the CI/CD pipelines of GitHub, and the repository, it auto adds all the
+necessary variables, and many things that wire-up and make the whole thing "just werk"
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
