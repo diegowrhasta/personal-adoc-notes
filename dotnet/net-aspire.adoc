@@ -1469,6 +1469,227 @@ The talk actually brings a really interesting implementation which will sent
 to IT an instruction on how to deploy things, and how act based on each resource
 that is being enumerated.
 
+== Aspire - Beyond the Basics
+
+Notes taken from: https://www.youtube.com/watch?v=rZQbhDfj7ek
+
+**Aspire's main purpose is the F5 + GET UP AND RUNNING IN NO TIME**
+
+- Aspire is a project you add to your C# solution, and then it spins up and configures
+all projects in order to wire them and orchestrate them.
+
+- Apparently Aspire can help you deploying into different environments?
+
+The `AppHost` does not actually do a lot of heavy lifting, it generates an
+acyclic graph that encapsulates all the resources that are declared in the
+Application Model of aspire (AppHost.cs), and that definition is sent to a helper.
+Which is the DCP, the DCP as we know _from the previous talk_ does the grunt work
+of getting resources up and running, watching them, killing them, and he also
+has another helper next to him. So it's a lot of "delegating" that is done across
+specific services.
+
+Really cool to see that keeping things lean or at least separation of concerns is
+a latent pattern used even for these new tools.
+
+DCP - API Server & Brain
+DCPCTRL - Controller & reconciler (Capabilities to launch projects)
+DCPPROC - Per-process supervisor (Monitoring process)
+
+- The reason why Aspire debugging is possible, is because the DCPCTRL process
+talks and makes a handshake with the `AppHost.cs`. And the IDE becomes the
+orchestrator, he runs and attaches a debugger for the DCPCTRL and then that
+gets up and running.
+
+It's interesting how we get a much "richer" experience with the Development
+mode of the Dashboard. And that is because each process (service/app) that runs
+has a monitor attached to it, so the monitor is what gathers all of the extra
+telemetry that perhaps in OTLP may not all be there. Hence we get such a rich
+and broad experience.
+
+**Note:** If you kill a `dotnet process` that is, the Aspire process, everything
+will die.
+
+The reason we get wiring and all the goodness in Aspire is because it actually
+has a built-in reverse proxy installed inside. When a frontend wants to talk
+to an API launched through the Aspire startup project, it will actually talk to
+the internal proxy and the proxy will redirect the traffic appropriately.
+
+Having this proxy enables you to launch multiple instances of a single application
+at the same time without worrying about port conflicts, because Aspire sort of
+ignores your `launchSettings.json`. You can enable `side-by-side` integration
+testing, and you can even enable behaviors such as _"hot reload"_ in the sense
+that you can set multiple services that take the place of a dying service in
+case an issue arises.
+
+_When I say "it sort of ignores `launchSettings.json`, I mean that the info is
+indeed read and used, but not attached to the process of the specific project,
+the proxy assumes the ports that should be exposed "outside", the processes of
+the projects are launched in random ports"_
+
+- Whenever the `AppHost.cs` launches.
+	- It will create a config file, pass over that file to DCP
+	- He will start all the initial parameters based on the config (that holds
+	the graph of all dependencies)
+	- It will then pass over a instruction to DCPCTRL to attach itself to him,
+	and then to read the config file (that way everything interconnects, it all
+	goes around)
+
+- We have running a DCP API, that actually uses the kubernetes API, you can run
+`kubctl` against it if you want. You can even analyze config files that it holds,
+and they are `yaml` and they have the syntax for the manifests that kubernetes
+uses.
+
+In short, it's a big orchestration engine enabled by the groundwork made for
+kubernetes. They are all web-servers, APIs talking to each other through the
+network card, and resolving things with clever configuration and delegation.
+
+DCP is **NOT IN KUBERNETES**. It just uses the same API.
+
+**DON'T RUN DCP IN PRODUCTION**
+
+`DCPCTRL` is like a Kubernetes worker node
+
+=== Service Discovery
+
+Frontend needs to know where the API is, where a model is. The technology that
+is used here is `AspNet.Core` it's not DCP.
+
+We can provide configurations to images with templates:
+
+- `Services__{name}__{endpoint}__{i}={uri}`
+Example: `Services__imageapi__http__0="localhost:5062"`
+
+The nice thing of this approach is that it dynamically constructs literal env
+variables that simplifies service discovery.
+
+DCP => Runs everything, so it knows where everything lives, that way it can add
+configurations to all the resources it manages.
+
+`AddServiceDefaults` => Amongst many things, sets up service discovery.
+
+`Zero code changes` with configurability, settings and variables are what enables
+us this degree of flexibility and modularity
+
+=== Resource Types
+
+**EVERYTHING IS A RESOURCE IN ASPIRE**
+
+- ContainerResource
+- ExecutableResource
+- ConnectionStringResource
+- ParameterResource
+
+- Interfaces define capabilities
+
+Projects are a resource, dependencies can be a resource, etc. That way an application
+graph can be built. Which also means **you can attach behavior as code**.
+
+- E.g., I have an http endpoint, I am a container.
+
+The behavior part is really important, because the Application Model wants to know
+as much details as possible so that it then builds the components and their relationships
+when getting them up and running through DCP.
+
+The graph that is generated is then kept in memory. (Kubernetes manifests probably)
+
+=== Custom Integrations - Extending Aspire
+
+We need to add an extension method to add into the `AppHost`. You can add a new
+project to the solution. And you can name it `Aspire.Hosting.XYZ` => The `host`
+is part of DEV. NEVER TO SPIN UP THINGS IN PRODUCTION.
+
+Your client should also integrate with the container. Both in production and in
+a local machine. These are the `client integrations`: `Aspire.XYZ`.
+
+_Community extensions:_ Before building an Aspire extension, check if the community
+didn't already build an extension for your use case.
+
+- The Hosting extensions are simply there to simplify your developer experience.
+
+- Client integrations are not needed always, but it makes a lot of sense to have
+them too.
+
+This talk made a custom ollama container, that sets up a whole container resource
+to get it up and running.
+
+- You can hook into the dashboard, with `IDistributedEventSubscriber`. And you
+can then act on the dashboard to notify to the user about changes, or about progress.
+Because you don't want the developer to panic because something doesn't seem to
+work (because maybe a container takes a long time to boot up). So you wanna keep
+a feedback loop going.
+	- You can literally see a progress bar, and stuff like that.
+
+=== Deploying to other environments
+
+`Don't run the AppHost in production`.
+
+- Your app can be in Docker Compose
+- You capp can be in Kubernetes
+
+Because there's a whole graph that is built from the Application Model the app
+graph can be made to model manifests that are for deployment.
+
+**There are publishers, made by the community**, and people have started to make
+things by using graphs.
+
+- Hit F5 on your publisher
+	- Infrastructure will be generated in Azure and application will be pushed there
+	immediately
+	- App Services too
+	- Kubernetes => Slightly different, because it has manifests, so it has a way
+	to provision the deployment, so the manifests
+	- Docker compose files will be generated and the container orchestrator
+		- Docker compose can be used in production, but it's lightweight, and there
+		are other orchestrators that are more robust
+
+=== Aspire pipelines
+
+Things that are similar to Github Actions, Azure Pipelines. You can build them
+in your Azure AppHost and run them to then deploy things directly into production
+and stuffs.
+
+> Workflow to deploy app
+	> E.g., compile, build image, push, deploy
+> Added to App Host
+> Test steps using `aspire do`
+> Run using `aspire deploy`
+	> This runs the entire pipeline
+
+build-aspireservice, provision-container-registry, push-apiservice, provision-cosmosdb,
+provision-identity, deploy-apiservice
+
+[IMPORTANT]
+====
+You can extend your publishers with these pipelines:
+
+````
+builder.AddDockerComposeEnvironment("compose")
+	.WithPipelineFactory(context =>
+	{
+		return new PipelineStep
+		{
+			Name = "CustomDeployStep",
+			Action = (ctx) =>
+			{
+				Console.WriteLine("Executing custom deploy step...");
+				return Task.CompletedTask;
+			},
+			RequiredBySteps = [WellKnownPipelineSteps.Publish]
+		}
+	})
+````
+The way to run it: `aspire do CustomDeployStep`. You would add code into your
+pipeline that you programmed. You can hook up your own code, so you type anything
+that you need. It's async, so you can do resource deployment as you see fit.
+====
+
+- You can also have Build Steps, Test Steps
+- By chaining many of the calls, you can do whatever you want. Because that is
+all C#
+	- DCP is what it does a LOT of heavy lifting
+	- You can override and extend behavior if you want from Aspire, because most
+	classes are public and inheritable.
+
 == Highlights of Container support
 
 - The .NET Team has assumed containers to be the **Primary Deployment Model**
