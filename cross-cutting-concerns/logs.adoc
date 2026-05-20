@@ -1,0 +1,198 @@
+= Notes
+
+== Structured logging, Serilog, Seq, Rust, and .NET 8 with Nicholas Blumhardt
+
+Notes taken from: https://www.youtube.com/watch?v=AHw15plsuN0
+
+- Serilog it's a logging structure that looks like any other logging library
+- But in the background/hunder the hood, it smuggles all this structure and
+metadata richness that should help make things much more easier when debugging
+issues.
+	- Many people consume the libraries, without knowing the full capabilities,
+	and without really appreciating how amazing it can be to have a rich event
+	stream flowing out of applications for free
+	- The ideas in Serilog, `Microsoft.Extensions.Logging` are many amalgamations
+	of ideas, of compatibility, and improvements of the tooling and the ecosystem
+	overall
+		- Logs into strings
+
+**Structure Logging:** Completely different story to the usual story of "producing
+text logs". It really is about producing an event, a log event, in such a format,
+that you can then refine, query, and overall bend to your will. _In a human
+friendly way_. The idea is to keep the events rich with correlation info. So
+you can slice the data, and navigate the events, and finally reach to that one
+thread that explains the cause of your bug, your outage. Etc.
+
+- **Flame Charts won't write themselves**
+
+=== DevOps and Observability
+
+Ten years ago, the DevOps territory was a bit "subversive". No one came to a project
+with budget to automate deployments or testing or builds or to build runtime information
+like instrumentation into an app. It was always something the developers had to kind
+of _squeeze_ in. **In the crumbs of the time left**.
+
+_Now ten years later, it's the imperative to make_. Everything automated, repeatable,
+instrumented, observable.
+
+**As developers we should be careful to not lose our claim to that territory**.
+
+- Structured Logging
+- OTEL
+- Traces
+- Metrics
+- Single pane glasses
+
+**Observability trends**
+
+- But we always made apps be observable, there were always techniques and ideas.
+	- You wouldn't look at logs or whatever.
+		- You would use an endpoint hit with Postman, and do an "EXPLAIN" query
+		to the database.
+			- You would get timings, execution plans, everything would be so
+			good. (AND THIS IS BUT ONE OUT OF A MILLION)
+
+_The focus on traces, logs, has made it so easy to comoditize_. But as developers
+and ops people we need to creatively build observability and internal state
+visibility.
+
+_A lot of what makes DevOps amazing is practices and how devs engage with what
+they are doing_
+
+- People, Process AND tools
+
+=== Datalust - Seq
+
+- Logs => Are easy to understand with ONE application
+	- But most applications today, are more than just one application. They are
+	an orchestra
+		- Logging is CHAOS in these environments
+			- It creates a lot of noise, and you need to somehow make sense of that
+
+Seq => The power of this tool is that when you have data coming from 10 million
+places, like an orchestra, LOTS of noise, you simply walk up, write a query. And
+you instantly can hear the music of what melody is being played in an app.
+
+- Seq was built to scratch an itch, **there was a gap between log files and something
+(a consulting team)**, the creator was built as something close to a log file, but
+with extra bells and whistles. (Reports, easy filtering).
+
+- Use signals
+- Filter everything else
+
+_Being able to pick any aspect, go and follow all the events and follow the story,
+the trace_.
+
+Seq => Whatever you attach to your logs, Seq doesn't have an off-the-shelf interface,
+you create the developer interface that you want. Seq surfaces that implicit schema.
+
+[NOTE]
+====
+For things you are investing in a long time. Big systems, lots of requirements,
+microservices. **Think about your goals for instrumentation and diagnostics**.
+Think about how to trace in the domain that you are going to build for.
+====
+
+Seq => Parses it all. And we get to search in what is gotten there.
+
+[IMPORTANT]
+====
+If you build instrumentation from the beginning. You get a feel for what it pays
+for itself, and you can tune data collection based on issues and bugs. And all other
+things.
+====
+
+- When you don't think about observability and logs
+	- You just have to create a huge search index over a pile of questionable stuff
+		- If you don't build it from the start, you lose the navigation and events,
+		and things you can focus on
+		- Everything becomes robust if you are actively focusing on this
+		- Correlation helps moving from one system from another really seamlessly
+			- Deployment ID
+				- When recording log events
+
+Once you have all of the data in there
+
+You get to chart as much as you want.
+
+- Seq => True observability. "You need to observe your apps running in the wild".
+Things catch on fire, and things get progressively worse. Seq helps with all of
+that.
+
+- Log events as a basis for observability => If you are instrumenting a program
+you pretty quickly find out is that the only thing you can attach meaningfully to
+it is **EVENTS**.
+
+You can't really bind some state into a live-running application, you have to
+surface out your app's state through events. In the least kind of intrusive and
+destructive way.
+
+- You can construct events to build up metrics
+	- Count the order of numbers
+		- By not adding it explicitly to your app
+- Traces are also the same, events that have to be correlated
+	- **BUT YOU CAN'T GO THE OTHER WAY**. Traces are a high level construct.
+
+- PLEASE KICKSTART THINGS WITH CORRELATION IDs.
+
+The neat thing about logs is that you can see all the individual things that happened
+when an app reacted and an event took place.
+
+=== Seq CLI
+
+Seq has an API.
+
+Octopus => They rewrote their CLI from C# into Go. And we are (2023) in a CLI
+tool renaissance.
+
+There's a "Cobra" framework for CLI tools in Go. C# also has a library for building
+CLI tools.
+
+- CLI is a big integration point for automatically provisional a process in Datalust
+
+- Seq's idea => You are searching for newer logs, you are going to get them faster,
+we build things from recent to older in terms of speed also.
+
+- Seems they used Rust to build the Seq baseline. (Gotta go FEST)
+
+_It's hard to achieve sweet spots for use cases in which the Garbage Collector
+gets in the way_ That's the reason moved onto Rust.
+
+HCL => Hashicorp Configuration Language. Widely popular for Infrastructure as Code.
+
+_Hopefully .NET world embraces Rust_
+
+- FrozenDictionary => Interesting class that you initialize, and it then optimizes
+itself for future lookups
+
+- Native AOT = It would be nice if .NET goes further into the way Rust deals with
+native compilation.
+	- Go it's a good middlepoint with "fast enough", and "optimized enough"
+	- Go => Choose over Rust if you don't deal with enough of the problems Rust
+	aims to solve
+
+Rust => Great ecosystem, kinda like Nuget. Most ecosystems are pretty robust, and
+you can operate with most OS features plus services.
+
+=== Open Telemetry
+
+Metrics, Logs, Traces.
+
+- It was an initiative around 2023. And if you adhere to it, you can get high
+quality log data into it
+	- "Reduce the total number of standards". But don't think it's the be-all-end-all
+	- It would be nice that everything speaks to the same Protocol
+		- Gilf is another standard for logs
+	- Issues with interops efforts, _on the surface everything seems to work well_,
+	but actually getting consistent useful data out of all streams is challenging
+		- We should not get too distracted by the transport
+		- We should focus on the quality of the data we put it
+			- If you don't write useful logs, if you don't control the volume of
+			data, (DEVELOPERS ARE RESPONSIBLE OF PRODUCING QUALITY DATA). You need
+			to think of how to instrument your domain, and how to make that work
+			for you
+
+Open Telemetry => They are writing custom sources, sinks, so they are giving
+implementations for their spec and things that are useful for the broad community.
+
+- **It's all down to practices, not tools**
