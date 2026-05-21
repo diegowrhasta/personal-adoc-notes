@@ -84,3 +84,134 @@ FIX connectivity patterns.
 _If you understand how the business relationships map to FIX connectivity patterns,
 then you will easily understand many of the infrastructure decisions in real FIX
 applications, these design decisions will no longer feel 'arbitrary' but with INTENT_
+
+==== Four Core Role Families
+
+Most electronic trading ecosystems can be put into 4 main buckets:
+
+- **Buy side:** Investors and propietary traders who ultimately decide what risk
+to take
+- **Sell side:** Brokers-dealers and prime brokers who intermediate between clients
+and markets
+- **Execution venues:** The "places of execution" where orders actually match and
+_become trades_
+- **Service providers:** Firms that support trading (data, software, connectivity,
+clearing, etc), but typically do not trade on their own account with you via
+FIX
+
+[IMPORTANT]
+====
+These labels are entirely legal and regulatory roles, **not technologies**. Some
+organizations can wear multiple hats, (a big bank that is both sell-side broker and
+a venue operator)
+====
+
+There is a specific way that these 4 families connect.
+
+The business imperatives can be related back to concrete FIX session patterns
+
+Buy-Side (Asset Managers, Hedge Funds) - Risk Decisions, Portfolio Management
+=> [Fix order flow] => Sell-Side (Broker-Dealers, Primes) - Client access, risk
+checks => [FIX executions] => Execution Venues (Exchanges, ATS/MTF) - Order matching,
+trade prints
+
+Sell-Side ---> [Drop copy/fills?]
+
+Execution Venues ---> [Drop cop / trade feed]
+
+Buy-Side ==> [Routing Analytics] ==> Service Providers (OMS/EMS, Market Data, Networks,
+Clearing) - Tools, plumbing, post-trade
+
+Sell-Side ==> [Clearing, reporting] ==> Service Providers
+
+=== Buy-Side: The Origin of Investment Intent
+
+**Who is the buy-side?**
+
+On the buy-side we find:
+
+Asset managers:: Mutual funds, pension funds, insurance portfolios
+Hedge funds:: Often more active, using leverage and derivatives
+Proprietary trading firms:: Trading their own capital, sometimes very high-frequency
+Wealth managers and family offices:: Managing money for individuals or families
+
+What unites them is that they represent (or are) the ultimate owners of risk. Their
+job is to decide _what_ to own or short, in what quantities, and on what time
+horizon.
+
+**Commercial incentives and constraints**
+
+Key incentives and constraints for buy-side participants include:
+
+Best execution:: Achieving good prices and low trading costs for their investors,
+often measured relative to benchmarks or volume-weighted average prices.
+Minimal operational risk:: Avoiding fat-finger errors, missing fills, or misbooked
+trades that could damage investor trust
+Confidentiality:: Protecting trading intentions from leaking to the broader market
+Regulatory obligations:: Complying with reporting rules, investor disclosure, and
+sometimes explicit best-executions regulation
+
+All these factors influence how they use FIX. Most buy-side firms do not connect
+directly to every exchange. Instead, they rely on sell-side brokers and service
+providers.
+
+**Typical Workflows**
+
+From the buy-side perspective, a trading day often looks like this:
+
+- A portfolio manager decides to buy or sell a basket of instruments
+- Orders are entered into an **Order Management System (OMS)** or an **Execution
+Management System (EMS)** 
+- The OMS/EMS routes child orders to one or more brokers via **FIX order-entry
+sessions**
+- Execution reports, fills, and status updates flow back on the same or closely
+related FIX sessions
+- At the end of the day, the buy-side reconciles positions and cash using its own
+records plus **drop copies** and end-of-day reports from brokers and custodians
+
+
+== Own research and thoughts
+
+So, imagine you want to pipe into a Broker directly. To get execution reports,
+because we want to get trade order data, to book it somewhere else.
+
+- The protocol itself **HAS NO BROADCAST MECHANISM**. FIX Sessions are stateful.
+
+A sesion tracks:
+
+- Sequence numbers
+- Resend requests
+- Gap fills
+- Recovery state
+- Heartbeats
+
+If 5 consumers independently attached to one execution stream: **each would need
+independent sequencing/recovery semantics**
+
+That naturally becomes:
+
+- Separate FIX sessions
+- Or an internal pub/sub layer
+
+Which is exactly what firms implement
+
+**Most Common Industry Solution**
+
+- External connectivity: FIX sessions
+- Internal distribution: Message buses/event streams
+- Regulatory/risk copies: Drop copy FIX sessions
+
+So, if you really want Execution reports from a trader's perspective to sent
+into your system that can be a FIX client receiver: **Ask the broker for a separate
+drop copy service/session**. That is typically part of the broker's **rules of engagement**
+or service offering, and FIX's own guidance treats drop copy / secondary data distribution
+as a distinct use case rather than ordinary order routing.
+
+The idea is for the server to send a message back to a **specific counterparty/session**.
+The idea is to write logic that handles a request of getting an execution report that
+was executed for a specific order.
+That would then get routed to chosen FIX session (your listening session)
+
+The code should decide which session gets which report. If an application duplicates
+an execution into multiple sessions, that is an application design choice. Drop copy
+is the standard way to do that cleanly and explicitly.
