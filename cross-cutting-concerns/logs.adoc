@@ -196,3 +196,137 @@ Open Telemetry => They are writing custom sources, sinks, so they are giving
 implementations for their spec and things that are useful for the broad community.
 
 - **It's all down to practices, not tools**
+
+== OpenTelemetry Deep Dive: Resilience & High Availability in the OTel Collector
+
+Notes taken from https://www.youtube.com/watch?v=sSFxavH7S1E
+
+== You are doing logging in .NET wrong. Let’s fix it. - Nick Chapsas - NDC Oslo 2023
+
+Notes taken from https://www.youtube.com/watch?v=d1ODcHi5AI4
+
+**You don't need logging**
+
+- Optimization of string allocations
+
+`logger.LogInformation("Hello!");` => What is this?
+
+=== Rule 1
+
+"The message is actually the message template and shall be treated as such"
+
+If you want to get useful information out of your logs, if you do log messages
+bad, that will be a challenge.
+
+=== Rule 2
+
+"I shall not use string interpolation or concatenation in the message template"
+
+- Structured Logs
+
+`logger.LogInformation("Payment with id {PaymentId} failed with status {PaymentStatus}", id, status);`
+
+When you add these template names, you will have them available for query purposes,
+you can isolate parameters for specific questions you might have
+
+**BUT THIS IS STILL BOXING**
+
+- Yeah, but we will allocate once this string at the beginning of the application.
+	- For each message, this is something that cannot be done with the other
+	string allocation tecniques.
+
+=== Rule 3
+
+"I shall use structured logging and give good names to my parameters"
+
+Choose a name, and have that name be consistent, be universal even. That way you
+will make **sense of what the parameter belongs to**
+
+- Serilog => Prevents Boxing
+
+**Log Level:**
+
+Verbose,
+Debug,
+Information,
+Warning,
+Error,
+Fatal
+
+- Any log and trace you are pushing is associated with a log level.
+
+The way logs are "filtered" is because of a **threshold**. You set a threshold,
+and that lets different levels go in.
+
+=== Rule 4
+
+"I shall preven unnecessary boxing for inactive log levels"
+
+**Logging source generator**
+
+_GENERICS DO NOT BOX_
+
+=== Rule 5
+
+"I shall consider using source generated loggers"
+
+If you want SUPER DUPER FAST LOGS
+
+**You can build your custom interpolated string handler** So that it's efficient
+and you can parse interpolated strings without boxing nor anything. AND THEIR
+PARAMETERS ARE EXTRACTED IN LOG ANALYSIS TOOLS.
+
+=== Rule 6
+
+"I shall not get too clever with tooling"
+
+Log Level
+
+- Default level if Information for .NET
+	- Microsoft.AspNetCore => "Warning" (Why? Because for a single request you
+	get a sea of logs)
+
+Logs are just a single tool - Don't use them for everything. You can use something
+as simple as Prometheus, Grafana.
+
+- You only take a look at logs when something goes wrong, and you need to fix it.
+
+**You don't need most of your information logs**, and you certainly don't need them
+for all the domain and subdomains of your app.
+
+You mostly care about critical, error logs. Yet, you still need sometimes information
+logs to put together what the heck happened.
+
+And so, what if you make a log category? A custom one, and what if you inject it
+there? So that only when you use that category you see Information? Even then,
+LOG SPARSELY.
+
+- Good Practice: Set things to warning
+
+**LOG WHAT REALLY, REALLY MATTERS**
+
+=== Rule 7
+
+"I shall consider using Warning as the default LogLevel"
+
+[IMPORTANT]
+====
+Premature optimization is the root of all evil.
+
+DON'T USE THIS QUOTE TO TAKE RESPONSIBILITY OF US DOING THINGS RIGHT. Performance
+is a happy little accident of learning about logs and performance with them.
+====
+
+- **Why do we log?**
+
+- Treat logging, and writing logs, as the things that you can use to put together
+a story. You need to be a story-teller.
+	- Aim to be concise, and still know what happened from beginning to end
+
+- Log accurate, descriptive and short messages
+- System consistent parameter names
+- Properly utilized log levels
+
+=== Rule 8
+
+I shall log only what's necessary to tell a good story
