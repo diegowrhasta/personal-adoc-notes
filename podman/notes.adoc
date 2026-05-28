@@ -1,0 +1,324 @@
+= Notes
+
+Container runtimes are not just **Docker**. There are tons of them out there,
+just to name a few:
+
+- Docker
+- Podman
+- Rancher
+
+Amongst the options that are available for OSs such as **Red Hat** we have `podman`
+as part of the default tools when it comes to container management.
+
+Installing it in distros such as `arch` can have sometimes issues, so this is
+but logs when trying to install podman (and also configuration of Quadlets in case
+you hate yourself and are constrained by all possible directions)
+
+== Installing podman on Arch
+
+Sometimes by doing a `yay -S`, you might run into issues such as `mirror synchronization`.
+The package may exist in the repo metadata, but some mirrors might not be fully synced
+yet. Which can lead to `404` errors.
+
+You should try to sync the mirrors again:
+
+- `sudo pacman -Syyu`
+- `sudo pacman-mirrors --fasttrack`
+- `yay -S podman`
+
+== Errors on trying to use podman as docker
+
+You might run into an issue such as:
+
+````
+netavark: nftables error: "nft" did not return successfully while applying ruleset
+````
+
+First, why would this pop-up? If you have Docker already working you might wonder,
+**docker works?**
+
+- **Docker** uses its own networking stack (iptables + dockerd daemon)
+- **Podman (rootless) uses:**
+	- `netavark` (network engine)
+	- `nftables` (kernel firewall interface)
+
+So Podman might be trying to configure firewall via `nft` and that might fail.
+
+You can try to restart/reset the nftables state:
+
+- sudo systemctl restart nftables
+- sudo nft flush ruleset
+
+However, the `nftables` configuration might be broken, so you might have to reset
+the file:
+
+- `sudo hx /etc/nftables.conf`
+
+Replace everything with:
+
+````
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority 0;
+    policy accept;
+  }
+
+  chain forward {
+    type filter hook forward priority 0;
+    policy accept;
+  }
+
+  chain output {
+    type filter hook output priority 0;
+    policy accept;
+  }
+}
+````
+
+- `sudo systemctl restart nftables`
+
+Even after all of this, you might try to build a `Dockerfile` with podman and still
+run into issues such as:
+
+NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json
+Resource temporarily unavailable (api.nuget.org:443)
+
+When trying to use network to get data, the DNS might be faulty, so another thing
+to look out for:
+
+- podman run --rm alpine cat /etc/resolv.conf
+- sudo mkdir -p /etc/containers
+- sudo nano /etc/containers/containers.conf
+
+And add:
+
+````
+[network]
+dns_servers=["1.1.1.1", "8.8.8.8"]
+````
+
+You can then try to hit nuget manually with podman and a test image like alpine:
+
+````
+podman run --rm alpine ping -c 1 api.nuget.org
+podman run --rm alpine ping -4 api.nuget.org
+podman run --rm curlimages/curl https://api.nuget.org/v3/index.json
+````
+
+And if you run into any of these commands with an error such as: `ping: bad address 'api.nuget.org'`
+and or `short-name "curlimages/curl" did not resolve
+no unqualified-search registries are defined`
+
+This means that Podman networking might be broken, and also that a default container
+registry might not be set in place. So:
+
+- `sudo nano /etc/containers/registries.conf`
+
+Add inside:
+`unqualified-search-registries = ["docker.io"]`
+
+**Double check if the dns configuration is correctly setup**
+
+After all of that:
+
+- `podman system reset -f`
+- `podman run --rm alpine cat /etc/resolv.conf`
+- `podman run --rm alpine ping api.nuget.org`
+
+== The podman-compose debacle (Quadlets)
+
+There are bugs and edge cases for `podman-compose` involving:
+
+- shutdown ordering
+- sd_notify
+- restart semantics
+- rootless containers
+- podman-restart.service behavior
+
+However:
+
+- Red Hat heavily recommends systemd integration
+- Podman is deeply integrated with systemd
+- Quadlets are becoming the preferred operational model
+
+`systemd` is a process supervisor, not a cluster orchestrator.
+
+What Red Hat actually expects smaller deployments to do:
+
+````
+Podman
++
+systemd / Quadlets
++
+Ansible
+````
+
+`Podman` introduced Quadlets specifically because:
+
+- generating giant systemd units was painful
+- compose semantics were inconsistent
+- people wanted declarative infra
+
+A quadlet looks like:
+
+````
+[Container]
+Image=nginx
+PublishPort=8080:80
+Volume=data:/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+````
+systemd then generates the underlying service. This is much cleaner than raw
+generated unit files.
+
+"Recommendation" is:
+
+If you want:
+
+- single-node orchestration
+- declarative config
+- restart guarantees
+- dependency ordering
+- health checks
+- minimal moving parts
+
+Then you can build a lightweight orchestration layer yourself.
+
+And many companies effectively do.
+
+The simplest and reliable architecture:
+
+````
+Git repo
+  ↓
+Ansible or shell deploy
+  ↓
+Quadlet files
+  ↓
+systemd
+  ↓
+Podman containers
+````
+
+The biggest limitation with `systemd` is though: **No higher-level deployment abstraction**
+
+Compose gives:
+
+- a single application model
+- dependency graphs
+- one-file infra definition
+
+systemd does not naturally model:
+
+-“this whole app stack”
+
+without custom tooling.
+
+Translating a `docker-compose` would mean you would have to create container files,
+network files, and a `target` file
+
+And then executing something like:
+
+````
+systemctl daemon-reload
+systemctl enable --now *.service
+````
+
+This is how a network would be declared so that all the containers can attach
+themselves to it:
+
+````
+# /etc/containers/systemd/aspire.network
+
+[Network]
+NetworkName=aspire
+Driver=bridge
+````
+
+You could leverage an `.env` file, but it's... not really something like in
+docker. However here's how it would look like:
+
+````
+# /etc/containers/systemd/aspire.env
+
+APISERVICE_IMAGE=aspireapp1.apiservice
+APISERVICE_PORT=8080
+
+RABBIT_PASSWORD=12345678
+RABBIT_USERNAME=admin
+
+RABBITCONSUMER_IMAGE=aspireapp1.rabbitconsumer
+RABBITCONSUMER_PORT=8080
+
+SQL_PROBE_IMAGE=mssqlprobe.apiservice
+SQL_PROBE_PORT=8080
+
+WEBFRONTEND_IMAGE=aspireapp1.web
+WEBFRONTEND_PORT=8080
+````
+
+When you save the container files, (will be referred as Quadlet), will become
+a systemd service unit automatically, the name will follow:
+
+`<filename>.service`
+
+Examples:
+
+````
+seq.container  → seq.service
+apiservice.container → apiservice.service
+rabbitmq.container → rabbitmq.service
+````
+
+So actually, Quadlets are **systemd generators**
+
+At boot or during `daemon-reload`, systemd does:
+
+````
+*.container  ──► generates ──► *.service (Podman-managed)
+````
+
+You would start the containers as services through:
+
+````
+sudo systemctl daemon-reload
+sudo systemctl start portainer.service
+sudo systemctl enable portainer.service
+````
+
+So where do the different files go?
+
+- `/etc/containers/systemd`
+	- `*.container`
+	- `*.network`
+- `/etc/systemd/system`
+	- `*.target`
+
+[IMPORTANT]
+====
+Careful, because `podman` tries to work with `rootless` and you can get to build
+the images that way. But system will try to leverage podman `rootful` so unless
+you have the images in the root images layer. Then rootful podman won't be able
+to see them and pull them
+====
+
+So a good workaround is to pull down the images from `rootless` and upload them
+with `rootful`:
+
+- `podman save -o apiservice.tar localhost/aspireapp1.apiservice:latest`
+- `sudo podman load -i apiservice.tar`
+
+And you can see logs as easily as docker:
+
+`sudo podman logs webfrontend`
+
+If you setup the Quadlets as `PartOf=aspire.target` for example, then you will
+gain the behavior of EVERYTHING GOES UP, EVERYTHING GOES DOWN.
+
