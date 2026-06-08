@@ -1,0 +1,345 @@
+= Notes
+
+Overall Notes about .NET and things that might be interesting or worthy of note.
+
+== The Future of Web Development with ASP.NET Core & Blazor in .NET 10
+
+ASP.NET Core:
+
+A complete modern web framework
+
+It comes bundled up with .NET Core, it has everything necessary to build:
+
+- High performant
+- Securable
+- Observable
+- Scalable
+
+WEB APPS
+
+- Blazor => Rich interactive Web UI
+- Minimal APIs => Fast HTTP APIs
+- SignalR => Real-time services
+- gRPC => Backend RPC calls
+- Middleware => Built-in & custom
+- Kestrel - High performance HTTP server
+
+.NET
+
+- Used by 2.2M developers
+- Powers the world's largest services
+- Industry leading performance
+- Foundation of modern cloud & AI powered apps
+
+=== AI
+
+So apparently the team has built a lot of tools and things to leverage AI, which
+is actually interesting.
+
+**Build AI-powered web apps with ASP.NET Core**
+
+- Microsoft.Extensions.AI = AI primitives and building blocks for .NET
+- Evaluations = Evaluate the quality & safety of your API apps
+- VectorData = Integrate with vector DBs for semantic search & embeddings
+- AI templates = Out-of-the-box guidance with code ready to go
+- C# MCP SDK = Extend AI apps with new tools & data
+- Semantic Kernel = Multi-agentic workflows and orchestration
+
+`dot.net/ai`
+
+== .NET Aspire
+
+.NET Core LOVES Aspire apparently. It's actually easy to add this to any existing
+projects too.
+
+- Open Telemetry
+- Resiliency
+- Cloud First
+- Design Time Orchestration
+
+- Integrations => Quickly connect to services
+	- Metrics
+	- Logs
+	- Traces
+- When you are ready to deploy => Push it to any place you want, it has a flexible
+deployment model
+
+`dot.net/aspire`
+
+== What are the focus areas for .NET 10
+
+- Easier to create secure apps
+- App observability & diagnostics
+- Targeted performance improvements
+- Address top pain points & gaps
+
+== Easier to create secure apps
+
+- The idea is to create the most secure apps that you can
+	- Provide support for the latest security standards
+	- WebAuthN & Passkey authentication
+- Make authentication easier to set up & use
+	- Security features should be really accesible
+	- Scaffold auth into an existing app
+	- Identity & authentication docs improvements
+		- Major effort to fix conflicting info and so on
+
+=== WebAuthN & Passkeys
+
+- Passkeys are cryptographic credentials that replace traditional passwords
+- They are phishing-resistant, easy to use, and secure by design
+
+**How Passkeys work:**
+
+- A passkey consists of a public-private key pair, scoped to a specific account and
+origin
+- The private key is stored in an Authenticator
+- The Authenticator requires user verification before allowing authentication
+
+Authenticator:: This is a concept, more than anything, it can be a YubiKey, some
+Mobile App, Some Cloud App. Basically inside of the authenticator, there is your
+private key, you might **sign** with the PK, BUT, IT NEVER GOES OUT.
+
+- **Reliant party:** You can't share passkeys across accounts, across websites.
+
+- ASP.NET Identity can add Passkey support
+	- Will require a database schema migration
+	- Identity is the built-in authentication/auth scaffold/solution
+
+Note: Okay the demo was kinda cool, basically on the scaffolded Blazor template
+that comes with Passkeys built in, it will allow you to add one, and in that case
+Edge seems to have its "virtual passkey vault" that you can attach, and then with
+the fingerprint you can unlock that specific application.
+
+Passkey => Per app, per service (I think)
+
+**We should make thing as easy as possible** => So scaffold will come with a CLI
+helper to add things: `dotnet scaffold`
+
+=== App observability & diagnostics
+
+**We want to make things easier when it comes to monitoring, diagnosing application
+issues**
+
+- More metrics
+	- Memory pool diagnosability metrics
+	- Authentication & authorization metrics
+	- Blazor specific metrics
+- Add activities for Blazor Server for distributed tracing
+	- Page navigation, events firing
+- Diagnostics for Blazor WebAssembly
+	- Performance profiles
+	- Memory dumps
+
+- **Easiest way to show all of the telemetry stuff?**
+	- USE DOTNET ASPIRE
+	- And you can also use the "integration" function in the IDE so that it
+	Aspirifies
+
+Note: In the demo they added specific namespaces for telemetry (Metrics centric),
+for Blazor Server you can see the active circuits (the number of connected users)
+
+**Apparently the circuit has an ID, and it becomes an easily usable trace identifier,
+so you can track ALL THE USER ACTIVITY ON A SPECIFIC CIRCUIT**
+
+=== Targeted performance improvements
+
+- Releasing memory from Kestrel memory pool
+	- Basically, Kestrel scales as more memory is needed, but the thing is that
+	once it hits the big pool, it stayed there, and it made no sense pooling so
+	much memory when it's not being used
+	- Now it will shrink retroactively, when high traffic spikes drop
+	- Better scaling, lower idle costs, smarter resource use
+- API JSON deserialization performance
+- Investigate performance of antiforgery
+- Blazor WebAssembly startup improvements
+
+`<LinkPreload />` => Basically, Blazor has startup time improvements.
+
+=== Address top pain points & gaps - backend
+
+Looking at Github, social media, direct feedback from customers. The idea was
+to fix that, make working with ASP.NET Core a delightful experience.
+
+**Modern Web Stack**
+
+- Minimal APIs => Recommended
+- Minimal API validation
+	- Big feature gap between controllers and Minimal APIs (specially for security)
+- Server-sent events (SSE): A lot of applications will stream LLM data, and Minimal
+APIs are trying to adhere to that
+
+**Ongoing OpenAPI investment**
+
+- Support for OpenAPI v3.1
+- XML doc comments-based OpenAPI descriptions
+- Support emitting OpenAPI documents in YAML format
+
+**JSON Patch** => It required you to bring Newtonsoft. `System.Text.Json` is the
+modern framework that Microsoft is focusing on so it now helps with patch.
+
+.NET 10 => APIs behave correctly, and web app redirects to login. Because they
+got confused sometimes.
+
+**DEMO:** EShop
+
+`CatalogApi.cs` => Minimal APIs, it has `Apis` as a folder, `Data`, `Models`. Because
+Minimal APIs can follow the same structure that you would like, controllers are not
+the only ones giving "structure".
+
+````
+[MultipleOfTen]
+prop
+
+`IEnumerable<ValidationResult>`
+````
+
+You can easily enforce validation rules with decorators, there's even Regex and
+whole object validation. Really simple syntax and built-in.
+
+And you also get really cool error responses:
+
+````
+{
+	"type": ,
+	"traceId": ,
+}
+````
+
+If you add proper Open API comments, `<summary>`, `<example>`.
+
+All of these things get exported to the description, and examples of the OpenAPI
+specs that are generated of your endpoints.
+
+[NOTE]
+====
+And it might be worth pointing out that if you enrich and have high quality metadata
+such as this, Copilot has even more info and context to work with it.
+====
+
+You can even tell Github Copilot to generate tests for `http` files. And based on the
+way you code, it can make even more comprehensive tests.
+
+**Blazor is the recommended UI for C#**
+
+HUH????????????????
+
+**BIG PIN:**
+
+- _'Improve automated browser testing with WebApplicationFactory & Kestrel'_
+
+What does that really mean? - First class support, for automated browser testing,
+apparently.
+
+=== Blazor state persistence
+
+Blazor server app, are **stateful**, that state is called `circuit`.
+
+- Pre-render => Generate the component HTML in browser, and send it flowing as
+fast as possible to the client's browser.
+
+If you already computed a component, you wouldn't want to re-calculate it every
+single time, you can improve that. (it also smooths out user experience)
+
+- Persistent component state
+	- Not the cleanest coding pattern
+	- But now, in .NET 10, it will be smooth (make it really simple)
+- Resiliency
+	- Say the user's circuit dies, Blazor will see that the user is gone, wait for
+	like 3 mins, and if the user doesn't come back, the circuit is **evicted**.
+	If the user eventually does come back, the state is essentially gone, and that's
+	a bad experience.
+	- So now, the state will be persisted before getting evicted
+		- So whenever the user comes back, they recover their session
+- Improve scalability
+	- APIs for proactively persisting & evicting circuits
+		- Resume a circuit, save resources. (This isn't automatic, you set it up)
+
+**Frontend improvements**
+
+- So there's a new property that allows to setup the Not-Found page automatically,
+any 404 will be sent there, you can do that both in the `.razor` and programatically
+in the `Program.cs`
+
+[NOTE]
+====
+The reconnect modal that helps with resiliency is now exposed through a `ReconnectModal.razor`
+component. So now you can customize it to your liking, without cumbersome APIs (that
+used to be the way to customize it before)
+====
+
+**Validation with Minimal APIs**
+
+- This is built on a common foundation.
+- Blazor had validation from the start, but now with the new validation support,
+Blazor has now snatched it and integrated with it.
+
+`builder.Services.AddValidation()` => Now you can run complex validations on objects,
+the whole form, nested structures. Complex structures. Everything can now be validated
+ONE SHOT.
+
+**End to end testing**
+
+- `WebApplicationFactory` => This can set a whole in-memory pipeline, and you can
+even leverage an http client. This works a lot for backend APIs. HTTP request
+and get responses.
+	- Everything was done in-memory, but NOW, you will actually use Kestrel and
+	start an actual port, endpoint, and you can use `Playwright` for actual end
+	to end testing.
+
+````
+[Fact]
+public async Task Page_LoadsSuccessfully()
+{
+	using var waf = new BlazorWebAppFactory();
+
+	waf.UseKestrel();
+	waf.StartServer();
+
+	var weatherPagePath = waf.ClientOptions.BaseAddress.ToString() + "weather";
+	var response = await Page.GotoAsync(weatherPagePath);
+	var content = await response.TextAsync();
+
+	await Expect(Page).ToHaveTitleAsync("Weather");
+	Assert.Contains(TestWeatherService.TestWeatherSummary, content);
+}
+````
+
+**State Persistence**
+
+Pre-render => Used to be tied to this concept
+
+- Annoying problem: Twice you reload because of pre-render.
+	- You had a tedious pattern to implement
+
+On .NET 10
+
+````
+[SupplyParameterFromPersistentComponentState]
+public List<Movie>? MovieList { get; set; }
+
+protected override async Task OnInitializedAsync()
+{
+	MoviesList ??= await MovieService.GetMoviesAsync();
+}
+````
+So yeah, really fast, really concise. This simplifies pre-rendering.
+
+However, this abstraction can be used to make Blazor apps more **resilient**.
+
+- When your circuit is evicted on a page
+	- And you reconnect, then you actually lose your state, entirely.
+
+**However**, if you **decorate your state property with the same thing we used
+to avoid the annoying pre-render double render**. WHEN YOU GET A NEW CIRCUIT,
+THAT STATE WILL BE PERSISTED!!!! That circuit's state will be persisted.
+
+[IMPORTANT]
+====
+They added a lot of more instrumentation possibilities, but you have to TURN THEM
+ON!!! **ALSO** IF YOU GO INTO ANOTHER TAB, THEN THE CIRCUIT DIES!!!! If you want
+to keep things alive in the background, you will have to set that up yourself.
+You can see the active circuits on the server through the built-in telemetry.
+====
+
+`Blazor.pause();` => Close circuit, evict => JS Interpos API.
