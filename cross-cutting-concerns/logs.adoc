@@ -777,3 +777,246 @@ If you use `Activity.Current` you will have spans from perhaps other trace, gett
 attached whatever attributes you are attaching
 
 === Adding Additional Context
+
+In tracing we say "GO WIDE, NOT DEEP". Choose adding more context info, than adding
+more spans. That makes querying and debugging EASIER.
+
+- We are storing for months
+	- Not years
+		- If you are looking at a bug years down the line? There's bigger issues
+		at play
+
+**The more context you add the better** => Lower retentions
+
+If you add an extension method to enrich an Activity, then you can literally attach
+it to any activity, even the ones that are being created by the framework itself.
+**BUT ALWAYS REMEMBER WHICH ACTIVITY YOU ARE ATTACHING METADATA TOO**. That makes
+things easier to debug later.
+
+=== SpanEvent
+
+- In .NET it's called Activity Event
+- Point in time action
+- Context
+- Exceptions
+	- An exception happening during a span
+		- Each would be an event on that span
+- It's like a structured log (Span/TraceId)
+	- It gets better when you get to sampling
+		- Adaptive dynamic sampling lowers costs of tracing
+
+**It's very hard to sample logs** Traces not
+
+- SpanId
+- TraceId
+- SpanEventId
+- Timestamp
+- List of Attributes
+
+[source, sql]
+----
+internal static bool ValidateRequest(AddProductRequest addProductRequest)
+{
+	if (string.IsNullOrEmpty(addProductRequest.ProductName))
+	{
+		Activity.Current?.AddEvent(new ActivityEvent(
+			"ValidationFailed",
+			tags: new ActivityTagsCollection(new List<KeyValuePair<string, object?>> {
+				new("model.type", nameof(AddProductRequest)),
+				new("model.failed_field", nameof(addProductRequest.ProductName)),
+				new("model.failed_value", addProductRequest.ProductName)
+			})
+		));
+		return false;
+	}
+
+	return true;
+}
+----
+This is how you add an event
+
+**IMPORTANT**
+
+In the Otel library you get a QoL method: `RecordException` that will output code
+like the one that's up above:
+
+```` 
+try {
+	var product = _productRepository.GetProductById(productId);
+
+	return product;
+}
+catch (Exception ex)
+{
+	Activity.Current?.SetStatus(ActivityStatusCode.Error);
+	Activity.Current?.RecordException(ex, new TagList {
+		{ "product.id", productId }
+	});
+}
+```` 
+
+**Helper that makes things use the same name**
+
+We might set Error separately, because there might be multiple errors, and perhaps
+an exception is not really "an error" so let's be more mindful and intentional
+
+=== Span Link
+
+- Casual link (vs Causal)
+	- Batch processing => The batch might have a span
+		- Every single message needs to inherit the context where these things
+		were sent from
+- Not a dependency
+- Transitions Trace context
+- Alternative to Parent/Child relationship
+	- This might be really useful for when there's async communication across systems,
+	but you don't want a trace that's HOURS long
+		- But you still want to see that a certain event was caused by another
+		event
+
+[source, csharp]
+----
+var currentContext = Activity.Current?.Context ?? new ActivityContext();
+Task.Run(() => {
+	using var activity = DiagnosticsConfig.Source.StartActivity("Send Email",
+		ActivityKind.Internal, new ActivityContext(),
+		links: new List<ActivityLink> {
+			new ActivityLink(currentContext)
+		});
+});
+
+return Ok();
+----
+We can pass as many links as we want, and they should be rebuilt later, I think??
+
+=== .NET Aspire Dashboard
+
+A system made in Microsoft, making cloud native applications easier.
+
+- Dashboard is amazing
+	- You can see traces
+	- Metrics
+	- Structured Logs
+	- Across Multiple Systems
+
+- OTLP Native protocol to transfer data from applications into the Dashboard.
+- Separate Application
+- Local Debugging
+	- There are tools that are for production scale applications
+	- In-memory, only, FOR DEV, SO EASIER TO WORK WITH OTEL WITH IT
+- It supports all 3 signals of OTel
+- The dashboard should help you understand better how production would behave, and
+how to debug it
+
+=== What are Processors
+
+- Run on Creation/Dispose of the Activity/Log
+- Add additional context
+- Middleware for Tracing pipelines
+- **Performance impact**
+	- It blocks the thread until his work is done
+
+````
+public class TenantIdProcessor : BaseProcessor<Activity>
+{
+	public override void OnEnd(Activity data)
+	{
+	}
+
+	public override void OnStart(Activity data)
+	{
+	}
+}
+````
+
+A clearer example:
+
+[source, csharp]
+----
+private readonly IHttpContextAccessor _httpContextAccessor;
+
+public TenantIdProcessor(IHttpContextAccessor httpContextAccessor)
+{
+	_httpContextAccessor = httpContextAccessor;
+}
+
+public override OnStart(Activity data)
+{
+	var tenantId = _httpContextAccessor.HttpContext?.Request.Headers["x-tenant-id"];
+	if (!tenantId.HasValue)
+	{
+		return;
+	}
+
+	data.SetTag("tenant.id", tenantId.Value.First());
+}
+----
+This is how you would insert "global context" into every activity that you want.
+
+You can hook them up with DI easily, so possibilites are endless
+
+=== Baggage
+
+- Dangerous
+	- But additional context between services
+	- Not multi-span attributes
+- Trace Context => How do we do propagation
+	- Not part of Open Telemetry
+- W3C Trace Compliant
+
+````
+Baggage.SetBaggage("account_name", User.Identity?.Name);
+````
+Use this wisely. It goes everywhere that has an HttpRequest. IT GOES WHERE EVERYWHERE
+HTTP GOES. It's global
+
+[IMPORTANT]
+====
+The original intent behind `Baggage` was to influence how the telemetry that we
+are going to emit is going to look at. So a global "baggage" that you query, and
+then make decisions (if-else) on what tags to set, or how to enrich the context
+====
+
+_You can do a Baggage processor, DON'T_
+
+=== Sampling
+
+Hard, but incredibly powerful
+
+- Head (Application)
+- Tail (Collector)
+- Retain context
+	- Keep all of a trace, or not
+- Reduce storage/ingest
+
+==== Sampling - Head
+
+- Before Activity Creation
+- Removes process overhead
+	- If we know we aren't going to need a span, we can choose not to save it
+- Has access to limited information about the span context
+	- If you are going to take 1 - 10 requests, you might lose actual valuable
+	information
+
+==== Sampling - Tail
+
+- Runs on delay after first trace span
+- Part of the Collector
+- Has access to all span data
+- Has access to all spans in the trace
+- Delays sending spans to backend
+	- In an outage, and waiting to see if your fix works, you might now want this
+	- It's all about tradeoffs
+- Requires Application to send all spans
+
+When it comes to smapling, you can do probabilistic sampling, and take a percentage,
+and you can set it up too.
+
+=== What's coming?
+
+- Semantic Conventions sign-off
+	- Everyone uses the same names, so that all environments are ratified
+- Azure Functions Instrumentation
+- More Libraries
+	- First Class Instrumentation Support
+- More Documentation
