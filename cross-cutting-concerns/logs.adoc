@@ -330,3 +330,450 @@ a story. You need to be a story-teller.
 === Rule 8
 
 I shall log only what's necessary to tell a good story
+
+== Practical OpenTelemetry in .NET 8
+
+Notes taken from https://www.youtube.com/watch?v=WzZI_IT6gYo
+
+**What is Observability?**
+
+_Control Theory => It's not new, it's something we have repurposed_
+
+- Is about understanding and debugging unknown-unknowns; the ability to understand
+any inner system state just by asking questions from outside the system.
+	- Things that we needed to know when we wrote the code
+	- The outputs are "telemetry", "telemetry signals"
+
+The definition doesn't include logs, traces, profiles, events. Nothing of what
+Open Telemetry has currently.
+
+**Observability:** The ability to understand the inner system state. CAN YOU?
+HOW??? **NOT IMPORTANT**
+
+**ASK QUESTIONS**
+
+- What was the impact of my change?
+- Is the code being used?
+- Is the feature being used?
+- Has the time for any action changed?
+- How are those third parties doing?
+- How is cross-region latency going?
+
+CAN WE ANSWER THOSE QUESTIONS?
+
+_Why does Observability Matter?_
+
+- Engineers are overworked
+
+We're asking engineers to:
+
+- Ship more often
+	- Not 6 month-cycle => Customer expectations have changed
+- Produce better code
+- Spend lesse time fixing bugs and more time creating value
+- Decrease downtime
+
+**The expectations of stakeholders, are not where they were**. Now downtime can
+lose you millions.
+
+_Generally, if something goes down for 30 seconds, we will go somewhere else_
+
+- If we don't give engineers better tools, better ways to do all these things with
+these new expectations, is just not sustainable.
+
+=== Working in production is challenging
+
+- There's way more to know
+	- Event Driven Architecture
+	- Multiple Services
+- We're afraid to break things
+- We've forgotten what we've built by the time it ships
+- We can't figure out what's wrong and fix it
+
+**Production is scary**
+
+- How do we move from a scaredy-cat culture, then make production **a member of
+the team**
+	- A way to deliver value to your customers. THAT'S WHERE OPEN TELEMETRY COMES IN.
+
+=== What is OpenTelemetry?
+
+- Protocol
+	- How do we transfer in a standards compliance way all sorts of telemetry
+	data to a backend to which we can then visualize and start answering all the
+	**questions**
+	- _This is what OPTL is powerful_
+		- No vendor
+		- Opinionated on TRANSFER, NO STORAGE, NO ANALYSIS
+- SDKs => You move between different languages, BUT CONCEPTS STICK.
+- Current Signals:
+	- Traces (Stable) => The first thing that was built, and the most stable
+	- Metrics (stable)
+	- Logs (Only Protocol is stable)
+		- .NET is stable with Logs, so you are COVERED
+
+=== What is a Trace?
+
+- The "thing" that is being done
+	- We don't create a Trace
+	- We create spans with the same trace id
+- When we create a span, we use the same trace id
+	- A trace represents a context, a path through your system
+
+=== What is a span?
+
+- Structured Blob of data that also has:
+	- UniqueId (SpanId)
+	- CorrelationId (TraceId)
+	- Duration
+	- Timestamp
+	- CausalityId (ParentSpanID)
+		- Thanks to this, you can get a trace waterfall
+
+Traces => **FANCY LOGS**
+
+=== What is a Log?
+
+- Designed for humans
+	- We took those, threw them into JSON, and made **structured logs**
+- Useful for:
+	- Access logs
+	- Audit logs
+	- Debugging tracing
+
+=== Doing logging wrong
+
+Everything you do on a log, can be replaced by a span, or span event.
+
+You can't? => Legacy systems => Yeah probably logging.
+
+What is a log? - Logs are fine
+
+=== What is Auto-instrumentation?
+
+- Codeless Instrumentation
+- Environment Variable Config
+- Sideloaded
+	- An agent gets in the middle, it wraps exception data, and stuff
+	- An OPTL agent is pretty nice
+- Getting started
+- Verbose
+	- Lacks your context
+	- Because it adds every single action that happens, and that data gets very
+	large. And we are not going towards that. PLEASE BE INTENTIONAL WITH WHAT YOU
+	ADD TO YOUR TELEMETRY.
+
+=== Install with Powershell
+
+There are powershell modules you can bring in, you can also bring stuff in with
+containers.
+
+You get auto-instrumentation, and you can configure with env variables with where
+to send telemetry.
+
+You can START LIKE THAT.
+
+=== Chat is Coded Instrumentation?
+
+- Application Startup
+- Targeted => You target the libraries you think will give you good insights
+	- SqlServer => You want a span?
+	- ITERATIVE PROCESS, add, remove, FIND WHERE YOUR BALANCE IS
+- Full control (what are you instrumenting? How? What context you are adding?)
+- **Intentional**, we are adding OUR context, we are far away from there
+
+=== Adding Logging
+
+- `dotnet add package OpenTelemetry`
+- `dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol`
+
+````
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddOpenTelemetry(loggingOptions => {
+	loggingOptions.AddOtlpExporter();
+});
+
+var app = builder.Build();
+````
+
+=== Adding Metrics
+
+
+- `dotnet add package OpenTelemetry`
+- `dotnet add package OpenTelemetry.Extensions.Hosting`
+
+````
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddOpenTelemetry()
+	.WithMetrics(mp => {
+		mp.AddOtlpExporter();
+	})
+});
+
+var app = builder.Build();
+````
+
+=== Adding Traces
+
+
+- `dotnet add package OpenTelemetry`
+- `dotnet add package OpenTelemetry.Extensions.Hosting`
+
+````
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddOpenTelemetry()
+	.WithTracing(mp => {
+		mp.AddOtlpExporter();
+	})
+});
+
+var app = builder.Build();
+````
+
+[IMPORTANT]
+====
+It's not hard dude. WHY ARE YOU DOING AUTO INSTRUMENTATION?
+====
+
+=== ResourceBuilder Setup
+
+Everything that gets sent to a backend, is separated into two segments:
+
+- Resource Attributes
+	- The moment you set these up, then every single signal that is sent to the
+	backend, will inherit these
+	- Good for data center region, your pod name, pod IP address, start time of
+	your pod, name of your service
+	- DON'T USE SLOTS BECAUSE NOTHING CHANGES UNTIL YOU RESTART AN APP
+
+- You might send 100 spans, but you send resource attributes ONCE.
+
+**Add Attributes, it's not hard**
+
+[source, csharp]
+----
+builder.Services.AddOpenTelemetry()
+	.ConfigureResource(resourceBuilder =>
+		resourceBuilder
+			.AddService("practical-otel")
+			.AddAttributes(new List<KeyValuePair<string, object>> {
+				new("my-attribute", "my-value")
+			})
+	)
+----
+Applies to: Spans, Metrics, Log Entries. Examples: Cloud/Datacentre Region, Pod
+Name, AppService Name, Application Version
+
+=== Instrumentation Libraries
+
+We need to generate span data.
+
+- Language and SDK specific
+- Opinionated Library instrumentation
+	- SQLClient
+	- HttpClient
+	- gRPC/Http
+	- All of the backing services that you have, they might get instrumentated
+	libraries
+
+Basics:
+
+- `OpenTelemetry.Instrumentation.AspNetCore`
+- `OpenTelemetry.Instrumentation.Http`
+- `OpenTelemetry.Instrumentation.SqlClient`
+
+- `AddAspNetCoreInstrumentation()`
+- `AddSqlClientInstrumentation()`
+- `AddHttpClientInstrumentation()`
+- `AddOtlpExporter()`
+
+- `.WithTracing()`
+- `.WithMetrics()`
+
+In `.NET 8` there are some extra meters that you can use:
+
+- `AddMeter("Microsoft.AspNetCore.Hosting")`
+- `AddMeter("Microsoft.AspNetCore.Server.Kestrel")`
+
+With all of these things you can build pretty dashboards. With them you can tell
+management and show what you do.
+
+- _They are not really useful, but yeah_
+
+`Npgsql.Telemetry`, `OpenTelemetry.Instrumentation.EntityFrameworkCore`
+
+- Redis
+- GO TO DOCS AND COPY THE CODE
+
+=== Metric Instrumentation
+
+There is some debate, whether a static class, Singleton, or whatever:
+
+[source, csharp]
+----
+public static class DiagnosticsConfig
+{
+	public const string ServiceName = "practical-otel-bff";
+	public static Meter Meter = new(ServiceName);
+	public static Histogram<double> SalesValue = Meter.CreateHistogram<double>("sales.value");
+	public static Histogram<double> SalesMarkupValue = Meter.CreateHistogram<double>("sales.markup");
+	public static Counter<long> SalesCount = Meter.CreateCounter<long>("sales.count");
+	public static ActivitySource Source = new ActivitySource(ServiceName);
+}
+
+builder.Services.AddOpenTelemetry()
+	.WithMetrics(meterProviderBuilder => {
+		meterProviderBuilder
+			.AddMeter(DiagnosticsConfig.Meter.Name)
+			.AddOtlpExporter();
+	});
+----
+The meter work on the name, nothing else. You would want to create one or two
+meters per assembly. Why the second? That could be the filter level.
+
+In activity sources you can say: Listen to this activity source, but not these
+other activity source.
+
+- Kinda are like log levels
+	- Low Level
+	- High Level
+
+- **We create a Meter, and then we create different instruments**
+	- We register them by adding a name
+		- Everything runs OFF THE NAME, hence that is your ID
+
+[source, sql]
+----
+public static void AddSalesMetrics(int productId, decimal price, decimal priceWithMarkup)
+{
+	var labels = new KeyValuePair<string, object?> (DiagnosticsNames.ProductId, productId);
+
+	DiagnosticsConfig.SalesValue.Record((double)priceWithMarkup, labels);
+	DiagnosticsConfig.SalesMarkupValue.Record((double)(priceWithMarkup - price), labels);
+	DiagnosticsConfig.SalesCount.Add(1, labels);
+}
+----
+**Remember that metric systems are LOW CARDINALITY, they are time series, you shouldn't
+send hundreds of time series to databases**. Every unique combination of labels
+is a unique time series. HIGH LEVEL COST SIGNALS. They can tell something is going
+wrong. It doesn't why WHAT, but a fuzzy idea. Tracing or logs give **GRANULAR
+INFO**
+
+=== Tracing Instrumentation
+
+- Time bound analysis
+	- Span => OTel concept. Activity (that's what is called in .NET)
+	- I want to wrap this piece of code, how long it took. You are scoping bits
+	of code and tracing it through an activity. You want to know the time of.
+- Scoped piece of work
+- Causality
+	- It gives you a trace waterfall
+		- You can debug through the whole thing
+- Correlation
+	- This comes by default => This is our parent, and he has the correlation
+- Useful for measuring complex code
+- ...Everything a log has and more
+
+=== Creating ActivitySource - Static
+
+[source, csharp]
+----
+public static class DiagnosticsConfig
+{
+	public const string SourceName = "product-service";
+	public static ActivitySource Source = new ActivitySource(SourceName);
+}
+
+public IActionResult Load()
+{
+	using var activity = DiagnosticsConfig.Source.StartActivity("Load Page");
+	return View();
+}
+----
+DO NOT SINGLETON, DO NOT SCOPED. But an activity source as a static should be
+wrapped with the DI service.
+
+=== Additional Context Best Practices
+
+If you want to add a ton of data into a span, build extension methods that make
+things standard and clean up code:
+
+[source, sql]
+----
+static class ActivityExtensions
+{
+	public static void EnrichWithPerson(this Activity activity, Person person)
+	{
+		activity.SetTag("firstname", person.Firstname);
+		activity.SetTag("surname", person.Surname);
+	}
+}
+
+app.MapGet("/person", ([AsParameters]Person person) => {
+	Activity.Current?.EnrichWithPerson(person);
+
+	return TypedResults.Ok($"Hi {person.Firstname} {person.Surname}");
+});
+----
+
+**Manual Spans**
+
+- Create an activity that wraps the bit of code that we think will change in
+performance
+	- We will add attributes before, and then after
+	- **We don't know if this will be useful** But we'd like to have that data
+		- Tracing signals are something you keep for a short amount of time,
+		NOT FOREVER
+		- Keep metrics for as long as you want, they are cheap
+			- Since traces should be cleaned up periodically, ADD MORE DATA TO THEM.
+
+CREATE CONSTANTS THAT DEFINE THE CONCEPTS:
+
+````
+public static class DiagnosticsNames
+{
+	public const string ProductCategoryId = "product.category.id";
+	public const string OriginalProductPrice = "product.price.original";
+	public const string NewProductPrice = "product.price.with_markup";
+	public const string CalculateProductMarkupName = "Calculate Product Price With Markup";
+}
+````
+Everybody calls things differently, you don't want to be cleaning up data, because
+everyone chose a different thing and now you don't have anything standarized. And
+not only that, you can add some documentation on top of everything that you are
+putting behind a static class. (When should you use this? How? Why?)
+
+**No magic strings: EASIER TO NAVIGATE**
+
+- Use Extension methods for consistency, not wrapper
+	- Add the parameters of your method before calling the activity, not after (performance
+	gains)
+
+````
+using var activity = DiagnosticsConfig.Source
+	.StartActivityWithTags(DiagnosticNames.CalculateProductMarkupName,
+	new() {
+		new(DiagnosticsNames.ProductCategoryId, categoryId),
+		new(DiagnosticsNames.OriginalProductPrice, productPrice)
+	});
+
+````
+
+=== Activity vs Activity.Current
+
+If you haven't registered an activity in OTel, then when trying to create the
+Activity it will return null so better to write defensive code that will try
+to get the Activity, and then attach something:
+
+````
+using var activity = //...;
+activity?.SetTag(...)
+````
+
+If you use `Activity.Current` you will have spans from perhaps other trace, getting
+attached whatever attributes you are attaching
+
+=== Adding Additional Context
