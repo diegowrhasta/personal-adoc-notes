@@ -1,0 +1,13 @@
+= Notes
+
+Notes on how protobuffs can be used, and overall exploration on their capabilities.
+
+== Playground
+
+A playground is available at:
+
+
+https://github.com/diegowrhasta/protobufs-demo
+
+I will probably add more notes to this if I find something worth of note. _However
+for now, I think just seeing the repo will be more useful_
