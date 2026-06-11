@@ -343,3 +343,24 @@ You can see the active circuits on the server through the built-in telemetry.
 ====
 
 `Blazor.pause();` => Close circuit, evict => JS Interpos API.
+
+== ILogger<T> WhY?
+
+Instead of doing: `loggerFactory.CreateLogger("Orders");`
+
+By providing the `ILogger<T>` standard, then you get good advantages, but even
+amongst them, they are for **logger identity** concerns. Nothing more.
+
+- Source identification
+- Filtering
+- Configuration
+- Diagnostics
+
+The category, will become the full name of the type we put in the generic logger.
+
+But you are completely free to choose:
+
+`ILogger<OrderProcessing>` for an entire subsystem instead of individual classes.
+
+So don't think too hard on it, if it makes sense, it makes sense. If not, it's
+not the end of the world.
