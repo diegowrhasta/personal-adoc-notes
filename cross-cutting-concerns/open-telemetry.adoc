@@ -1,0 +1,156 @@
+= Notes
+
+== OpenTelemetry Deep Dive: Resilience & High Availability in the OTel Collector
+
+Notes taken from: https://www.youtube.com/watch?v=sSFxavH7S1E
+
+- High Availability in 3 steps
+	- Agent-Gateway Pattern
+	- Load Balancing
+	- Resilience
+- Hands-On Demos w/ Docker + Kubernetes
+- Q&A
+
+What to learn:
+
+- No data loss
+- Telemetry continuity
+- Horizontal scalability
+
+=== What happens when your telemetry pipeline breaks?
+
+Missed telemetry signals = Missed root cause
+
+- When you miss telemetry you might break compliance
+- How do we deploy telemetry in a way that's resilient? With some level of
+delivery?
+
+**The High Availability Challenge**
+
+- Backend outages, node restarts, rolling updates...
+
+You need:
+
+- Load balancing
+- Persistent storage during failures
+- Horizontal (auto?) scaling
+
+High Availability | Agents vs Gateways
+
+OpenTelemetry has to be agents or gateways (the collectors themselves).
+
+- Most people start out by simply sending directly from your app directly to your
+backend
+	- That's good to start
+	- It's tough to scale though
+
+- The next step is to add a collector to the host
+	- A way to offload the telemetry so that your app doesn't waste resources
+	and lets that be taken care of by someone else
+	- Yet, it doesn't solve the challenge of not having a central location to
+	do processing
+
+**Standard architecture?** Agent-Gateway Model
+
+- Agents should sit as close as they can to the app
+- Gateways scale out, they will be dedicated systems to processing telemetry
+as they go through the pipeline
+
+Agent:: For collection, normalization, pre-processing
+Gateway:: Scalability. Heavy processing that you need to do for routing, caching
+
+High Availability OTel Collector Pipeline
+
+- Use an Agent/Gateway architecture
+- Agent Collectors run on every host, container (sidecar), or node
+	- These want to be really close to the apps
+- Gateway Collectors are centralized, auto-scaling services receiving telemetry
+from Agent Collectors
+	- You can put load balancers in front of these
+	- Each layer can be scaled horizontally: Your agents, your gateways
+- Each layer can be scaled independently and horizontally
+
+**Think a lot:** _Gateway groups_. SO that horizontal scale is possible.
+
+- Rolling updates
+- Failover
+- Collectors by default will handle in-memory storage
+	- So if there's a brief loss, the collector will retry, maintain the buffer
+	- However when an individual collector fails, we need to have persistent storage
+	for anything that's critical infrastructure.
+
+- **You start scaling horizontally, and that's good, but also billing starts to take
+a toll for so much computing power**
+	- So, you start going into each individual collector to reduce the total CPU usage
+		- You try to optimize each CPU, and yeah, you start taking apart components
+		and analyze where can we add optimizations
+
+**You scale big enough that it becomes a challenge to deal with it**
+
+High Availability Scenarios
+
+The Collector **is** fast, and you aren't really going to be hitting issues with
+it unless you scale A LOT.
+
+However, when you do start running into bottlenecks, you need to understand that
+a lot of the process of balancing and also _dealing with the high traffic issues_,
+is offloaded to the **gateway**.
+
+**Problem:**
+
+- Agent Collector has high resource usage due to high telemetry volume or processing
+
+**Solution:**
+
+- Early batching
+- Move telemetry processing to the Gateway Collector
+
+Another scenario:
+
+**Problem:**
+
+- Destination is either incurring high costs, or is unable to ingest throughput
+reliably
+
+Sometimes the destinations of telemetry just can't keep up with the volume of
+telemetry that is being sent over to him. Yet we **still want to minimize the riks
+of losing data**
+
+**Solution:**
+
+- Persistent queue on the Gateway host to store signals without loss
+- Retries when destination is failing
+- Filtering at the Gateway to reduce, compress, or eliminate date
+
+Another scenario
+
+**Problem:**
+
+- A Gateway is overloaded
+
+Because of the majority of processors and solutions work just like apps, you can
+scale out the nodes for a Gateway horizontally as any other application
+
+**Solution:**
+
+- Use Gateway auto-scaling groups
+- Follow scale-out principles
+
+[NOTE]
+====
+All of this allows you to scale-out and implement a high-resilient PIPELINE
+====
+
+=== Demo 1: Load Balancing with Nginx vs loadbalancing exporter
+
+This is probably the first approximation, a quick entry into the Gold Standard that
+you can then scale out. **Without Kubernetes**
+
+The setup:
+
+- A telemetry generator => Nginx load balancer => 3 Other collectors => A dashboard
+
+`docker-compose.yaml`
+
+- bindplane => Cool agent
+
