@@ -1,0 +1,146 @@
+= Notes
+
+Notes based on https://www.youtube.com/watch?v=HdHlfiOAJyE&list=PLmSGbCS0swswHGaytV6QQkyA9tGR7i0tV[MIT's Finance Theory I]
+
+== Motivation
+
+Try to find individuals or a group of individuals that represent the subject or
+thing you want to study or get into
+
+**What is Finance**
+
+Mathematics + $$$ = Finance
+
+Systematic study of financial transactions and money.
+
+**Inaccurate and inappropriate to say I'm not that good in math**
+
+- Pedestrian and obvious maths vs arithmetics still is **MATHS**
+	- You should not have background in upper level maths, computations or whatever
+
+There's a lot of mathematics that can be applied to get money and find a job in
+finance
+
+James Simons:
+
+Math Professor => **Was**. A quite well known as a _math professor_. Diferential
+geometer.
+
+Hedge Fund => This is probably the most succesful hedge fund firm, with a track
+record that has beaten all other hedge funds. Quantitative investment strategies.
+
+They use SUPER advanced maths, and kept top secretly, and are successful.
+
+Warren Buffett:
+
+Richest man on Earth. (In 2008) - Omaha, Nebraska. Small office, and works doing
+"simple", or well, not "fancy" stuff. He does accounting. And clearly with some
+skills that have maths, but not the ones that James Simons uses.
+
+Jack Welch:
+
+His PhD is engineering. General Electric. Became CEO, and at that time the revenues
+of General Electric is 26$ billion a year.
+
+An engineer, yet that made good decisions about investments, good decisions about
+costs, he was able to understand the language of finance despite the fact that
+he used none of his PhD skills in his job.
+
+- **Engineer by training, not manager**
+
+[IMPORTANT]
+====
+All of these succesful individuals understand deeply, fundamentally, innately.
+The language **of finance**
+====
+
+== Dramatis Persona
+
+A Flow Model of the Economy
+
+Households => Capital Markets => Nonfinancial Corporations
+		FINANCIAL INTERMEDIARIES
+
+Not focusing:
+- Labor Market
+- Product Market
+
+[NOTE]
+====
+We are focusing only on these four main components
+====
+
+Financial Analysis => Applies to all the components.
+
+== Fundamental Challenges of Finance
+
+There are **two aspects**.
+
+- The valuation of assets
+	- This is gonna be more challenging
+- The Management of Assets
+	- Which of two possibilities is valuable
+		- You take the more valuable one (that's it)
+
+**Valuing and Management**
+
+Any kind of business decision is based around these two components.
+
+**Valuation** is a challenge because, you don't really know what is defined as
+"valuable". Water? Diamonds?
+
+Objectives + Valuations => Decisions
+
+Pick the decision that's more valuable for achieving the objectives we want.
+
+**Price Discovery mechanism**
+
+- Knowing nothing
+	- Without ANY information
+		- We established VALUE
+
+**However, there IS information**. There are lots of constraints, lots of preconceptions
+on how you can assign value.
+
+- Whether this was good or bad value. THAT'S DEBATABLE
+
+- Price Discovery Process
+	- Lack of transparency, devalued something
+
+How the Market comes up with **THE VALUE**? => That's hard, it's a challenge.
+
+_Empiric Knowledge:_ If you are trying to get rid of an asset, site-unseen, and
+you sell it, for a 66% discount, that's actually. Not that bad.
+
+== Framework of Financial Analysis
+
+Accounting is the lexicon of Finance. It's the beginning of measuring financial
+movements.
+
+- You need to learn accounting to get the concepts
+
+**Stock** => Stock of assets. The level of assets.
+**Flow** => Rate of change, of assets.
+
+**Think about things in a more intuitive manner, do not get lost in academic
+speech**
+
+- Think of a bucket with a hose getting filled with water.
+	- The **stock** is the level of the water
+	- THe **flow** is the rate at which the water is coming out
+
+**Okay, some people find buckets with water intuitive, and others find Derivatives
+intuitive**
+
+== Importance of Time and Risk
+
+== Six Principles of Finance
+
+== Course Overview
+
+== How to Get the Most Our of this Course
+
+== Books:
+
+Principles of Corporate Finance - Brealey, Richard, Myers
+
