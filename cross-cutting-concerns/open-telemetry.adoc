@@ -154,3 +154,112 @@ The setup:
 
 - bindplane => Cool agent
 
+[IMPORTANT]
+====
+Basically, also telemetry can get the normal architecture patterns for distributing
+telemetry. I think that's the best way to look at this whole talk.
+====
+
+It's data in the end. Data that you are transporting from one app/component to
+another.
+
+What if your gateway dies (your collector)? Or what if your whole load balancer
+dies?
+
+=== Load Balancing Explained
+
+- 3 Gateway collectors running in parallel for redundancy
+- Load balancer* distributes OTLP traffic (gRPC + HTTP) across collectors
+
+*Nginx or OTelCol w/ loadbalancing exporter
+
+- **Persistent storage** where signals are queued during backend outage
+- **Unique persistent volumes** for each collector => Ensures queue isolation
+- **Failover & rolling update** when a gateway goes down, traffic continues
+
+- You can setup nginx to use its built-in collector
+	- It's not recommended though
+		- Sampling on traces => They can get lost on Nginx
+		- Better to use a dedicated load balancer
+
+Every one of the collectors needs its own persistent volumes. That way failover
+works correctly.
+
+=== Demo 2: Collector-Level Resilience
+
+Batch - Retry - Persistent Queue -- Persistent Storage
+
+**Batching:** Frequently you should start at 8192 Batch Size, 200ms Timeout.
+Don't start with tuning, start with defaults and see how your solution fairs up.
+
+The steps are:
+
+- Collecting telemetry
+- Batching
+- Sending to gateway (the batch)
+
+**Retry:** On failure you can configure things such as Initial Interval, Exponential
+retry (Max interval), Max elapsed time
+
+The idea is that you have an in-memory queue, but that is constantly being persisted
+into disk for possible failures and reloads.
+
+**Gateway Groups:** Scale out CPU/Mem/IO or use collector metrics for more control
+
+Determine cache requirements and use persistent queue (memory or disk) if required
+
+Metrics to look out for:
+
+- `otelcol_exporter_queue_size`
+- `otelcol_exporter_queue_capacity`
+- `otelcol_exporter_enqueue_failed_spans`
+
+=== Resilience explained
+
+- We want for **Agent collectors** to be as close as they can to the apps
+- **Gateway collectors** should be beefy enough to buffer, take a lot of information.
+
+Basically, you need to apply load balancing best practices. You can probably follow
+your organization's own standards to guide yourself.
+
+=== Native Load Balancing w/ Kubernetes
+
+Knowledge of a Docker setup to any VM setup is transferrable, and even into
+Kubernetes.
+
+- You don't need a dedicated load balancer (NGINX)
+- Kubernetes can scale things automatically
+- Kubernetes can load balance the telemetry data
+
+**OTeL Collectors are running as (DaemonSet)**, a Load Balancer service distributes
+the load into the Horizontal Auto Scaling (Multiple Pods per Gateway) and then all
+of them can send info into the Dashboard/Other End
+
+In the end, you would have a manifest that runs a DaemonSet (all of this ready
+to be integrated with kubernetes)
+
+Kubernetes allows for easy scaling of the collectors, by changing one number in
+the manifest, and re-running the kubernetes CLI, then you would get more instances
+spun up automatically for you.
+
+=== Architecture Summary
+
+Patterns stay the same... platforms are the ones that change. (Docker/VMs, Kubernetes)
+
+If you set up correctly the **pattern**, high availability will be setup for
+a long time.
+
+- High Availability = Scaling + Failover + Persistence
+- Agent-Gateway pattern is the foundation
+- Use Bindplane to manage at scale
+
+=== Open Agent Management Protocol (OpAMP)
+
+A network protocol for remote management of large fleets of data collection agents
+
+- Remote configuration
+- Collector's "Own telemetry"
+- Connection credential management
+- Status reporting
+- Agent upgrades
+- Secure auto-update capabilities
