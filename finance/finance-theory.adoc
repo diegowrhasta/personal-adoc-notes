@@ -385,3 +385,143 @@ Can't cover the textbook. It's too big, some readings.
 
 Chapters 1 - 2 => Responsible for it are students
 
+=== Chapter 1 Notes
+
+**Introduction to Corporate Finance**
+
+_Question_:
+
+There is an entry for Investment Decisions vs Financing Decisions:
+
+Procter & Gamble (U.S.) | Spends over 7$ billion on advertising | Buys back $4.6 billion of stock and pays a $7.2 billion dividend
+
+Why?
+
+Financing decisions = Deciding where the money comes from and who gets excess
+money
+
+````
+All shareholders are stakeholders.
+Many shareholders are investors.
+Not all investors are shareholders.
+````
+
+**Investor:** Anyone who puts money into something expecting a return.
+E.g.,
+
+- Someone who buys P&G stock = investor + shareholder
+- A bank that lends money to P&G = investor/creditor, but not shareholder
+
+- Dividends and buybacks: Distribute excess cash to shareholders
+
+````
+The shareholders are _equity investors_, who contribute _equity financing_. The
+choice between debt and equity financing is called the **capital structure**
+decision. _Capital_ refers to the firm's sources of long-term financing.
+````
+
+**Equity:** What's left that truly belongs to the owners after all debts are paid.
+
+When finance people say:
+
+- "raise equity"
+they mean:
+- "sell ownership"
+
+When they say:
+
+- "equity financing"
+they mean:
+- "funding the business by selling ownership shares instead of borrowing"
+
+**Why stock is called equity**
+
+- A stock share represents:
+	- A slice of ownership
+	- A claim on future profits
+	- A claim on residual assets
+	- Voting/control rights
+		- So, stocks are called equities
+
+Example:
+If you own shares of Apple:
+	- You are an equity holder
+	- Because you own part of the residual value of the company
+
+Think of a **business pie**
+
+Some slices are already promised away:
+
+- Loans
+- Bonds
+- Unpaid obligations
+
+What remains belongs to the owners
+
+The remaining portion is:
+
+- Equity
+
+So equity is not:
+
+- Cash
+- Profit
+- Revenue
+
+It is:
+
+> Ownership value after obligations are accounted for
+
+[IMPORTANT]
+====
+The company. IS A SEPARATE ENTITY. The company, even though it's founded by someone,
+even the founders are just shareholders. They might have at the beginning a huge
+piece of the pie, that then gets redistributed amongst other "owners"
+====
+
+Also, **equity** is uncertain, it's risky. Because at its core, equity is **a
+residual ownership instrument**
+
+==== Financial Instruments
+
+They are split into 3 main families:
+
+- Equity Instruments
+- Debt Instruments
+- Derivatives (this is where CMOs get interesting)
+	- CMO / structured products = "I own a slice of the fuel payments, sliced in
+	different ways"
+	- CLO
+
+=== Chapter 2 Notes
+
+== Present Value Relations I
+
+When you don't know what you are bidding for, you are not gonna get it right
+most times.
+
+However, in practice. You might get amazing deals.
+
+"Securities => Are promises" => Relationships are built on these.
+
+You need money to do good on the promises. If you don't have a flow of cash,
+to do good. You screwed.
+
+**Trading Game** => Under pressure, make decisions. And value securities in real-time
+
+- Money needs to come from somewhere in any financial transaction
+	- In the grand scheme of things, for the USA, measuring 10 of millions of
+	dollars against tax payer money. It's not much
+
+[IMPORTANT]
+====
+We need a framework to discuss finance. To discuss many things with objective
+or at least widely accepted ideas and theories that help us navigate business
+decisions, problems and so on.
+====
+
+**Basically, you need counterparties, you need people that invest their cash,
+give you money for various reasons, by thinking what you have is valuable, or
+they need to hedge something, or whatever**
+
+=== Cashflows and Assets
