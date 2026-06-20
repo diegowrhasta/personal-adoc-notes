@@ -322,3 +322,99 @@ And you can see logs as easily as docker:
 If you setup the Quadlets as `PartOf=aspire.target` for example, then you will
 gain the behavior of EVERYTHING GOES UP, EVERYTHING GOES DOWN.
 
+== Quadlets, Pods, and working with the latest Podman, Podman 5
+
+Notes taken from: https://www.youtube.com/watch?v=LsZB_mI7TcQ
+
+**What is a Pod:**
+
+Normally when you make a container, you have this **one instance** that has a
+bridge into your host's network. But a Pod, becomes this _bag_, or _box_, in which
+**many containers can live**. They all see each other within the pod, and the
+pod itself has this bridge to the host's TCP stack. _However_, you can configure
+the pod to have specific ports opened up to the host, and have those ports also
+be bound to specific containers of the pod.
+
+Examples of things that don't need to be accesible:
+
+- A database
+- Redis
+These things can be in the pod, yet have no access from the outside. So you have
+services that serve the outside, and services that are just on the inside.
+
+_There's DNS resolution also inside of the pod, you can call containers by name
+within the pod, and other nice additions_
+
+**What is a difference between a container and a pod**
+
+- When you spin up a container, you get your own namespace. Your network, binds,
+etc. Unless you expose things to the host, it has no access.
+- When you spin up a pod, it's a container of containers, it establishes a shared
+namespace amongst these containers. Unless you set things up specifically, there's
+no access to the outside
+	- You can start-stop the whole thing as a stack
+	- **Drawback:** You can't tell it "which containers to start first". Database
+	first, and then other things. (Apparently with Podman 5.0 there's a solution
+	for that???)
+
+=== Creating and Managing Pods
+
+Let's start with a small problem:
+
+We have some database and services that we want to spin up. And we want to actually
+bundle them together, yet keep them non accesible from the outside.
+
+`podman pod`
+
+- `podman pod create --name mysql-test` => Hit Enter, this creates an empty pod
+
+When you are building the pod, you would also just add `-p xxx`, and you need
+to think about this detail when creating the pod.
+
+_If you have a pod with multiple containers, how much do you need to allocate_?
+
+Putting it in a pod, no overhead should be added. It will depend on what you are
+running inside. E.g., A huge database container => Plan resources accordingly
+
+Podman = Mostly namespaces. A pod is actually a **container**. You can do
+a `podman ps -a` and you should see some infra-image container present.
+
+**How do you put a container in a pod?**
+
+You would run a container like always and then add a pod parameter: `--pod=mysql-test`.
+
+- `podman run --pod=mysql-test -d registry.redhat.io/rhel9/mysql-80 --name mysql-server`
+
+If you attach a second container, say a mysql client to connect to a mysql database,
+you can actually refer `localhost` or `127.0.0.1` or the container name that
+you want to connect to. Due to the two containers being part of a pod, they will be
+able to resolve the respective host without issue. **Because the pod becomes like
+a master process that has its own ports, and the containers share that same namespace
+and ports**
+
+- `podman pod logs mysql-test` => This shows the logs of all containers attached
+to a pod.
+- `podman pod stop mysql-test`
+- `podman pod start mysql-test`
+- `podman pod ps mysql-test`
+
+If there's a pod, and some attached container is stopped, if you do a `podman pod
+ps` the pod entry will show up as **Degraded**. So this opens up the possibility
+of scripting a bit, checking for degraded pods and take action. Like automatic
+restarts, self healins, and/or alert sending. There be smarter ways than writing
+a `bash` script; but if it works, it works.
+
+- Quadlets => Systemd flavored config files, that allows to generate systemd
+services for containers.
+
+**Kubernetes:**
+
+Larger, more, clusterable container management platform. Open Shift is based on
+it. It uses yaml to define about everything, and one of those things are **pods**.
+
+[NOTE]
+----
+`podman generate kube mysql-test` => This will spit out on the screen a `yaml`.
+You have to accomodate other things. But this is really cool to go from single
+host containerization to clusters.
+----
