@@ -493,6 +493,61 @@ They are split into 3 main families:
 	different ways"
 	- CLO
 
+**Principal:** Means the original amount of money involved in a loan, investment,
+or debt - before interest.
+
+Example:
+
+- You borrow $10,000 from a bank
+- Interest is 5%
+
+Principal = $10,000
+Interest = Extra money charged on top
+
+_Principal is the "base amount" the financial relationship is built on_
+
+Interest is calculated _from_ the principal.
+
+==== Problem Sets
+
+1. **Investments and financing decisions** Read the following passage: "Companies
+usually buy (a) assets. These include both tangible assets such as (b) and intangible
+assets such as (c). To pay for these assets, they sell (d) assets such as (e).
+The decision about which asset to buy is usually termed the (f) or (g) decision.
+The decision about how to raise the money is usually termed the (h) decision."
+Now fit each of the following terms into the most approriate space: _financing,
+real, bonds, investment, executive airplanes, financial, capital budgeting, brand
+names_
+
+a) real
+b) executive airplanes
+c) brand names
+d) financial
+e) bonds
+f) investment
+g) capital budgeting
+h) financing
+
+_Extra notes:_ Investment/Capital Budgeting => What should the company buy/invest
+in?_ _Financing => How should the company pay for it?_
+
+2. **Investment and financing decisions** Which of the following are real assets,
+and which are financial?
+	- A share of stock = Financial Assets
+	- A personal IOU = Financial Assets
+	- A trademark = Real Assets
+	- A factory = Real Assets
+	- Undeveloped land = Real Assets
+	- The balance in the firm's checking account = Financial Assets
+	- An experienced and hardworking sales force = Real Assets
+	- A corporate bond = Financial Assets
+
+_Extra notes:_ Real assets are "things that directly produce economic value",
+Financial assets are "claims on the value produced by real assets"
+
+**A claim is a legal or economic right to receive value, cash flows, assets,
+or payments from another entity or asset**
+
 === Chapter 2 Notes
 
 == Present Value Relations I
