@@ -418,3 +418,216 @@ it. It uses yaml to define about everything, and one of those things are **pods*
 You have to accomodate other things. But this is really cool to go from single
 host containerization to clusters.
 ----
+
+[source, yml]
+.wordpress-pod.yml
+----
+apiVersion: v1
+kind: Pod <.>
+metadata:
+  labels:
+    app: wordpress <.>
+  name: wordpress
+spec:
+  containers:
+  - name: db
+    envFrom:
+	- configMapRef:
+		name: wordpress-env <.>
+		optional: false
+	image: docker.io/library/mariadb:lts-ubi
+	resources: {}
+	securityContext:
+	  allowPrivilegeEscalation: true
+	  capabilities: {}
+	  privileged: false
+	  readOnlyRootFilesystem: false
+	volumeMounts:
+	- mountPath: /var/lib/mysql:Z <.>
+	  name: db-vol
+	workingDir: /
+  - name: wordpress
+    envFrom:
+	- configMapRef:
+		name: wordpress-env
+		optional: false
+	image: docker.io/library/wordpress:latest
+	ports:
+	- containerPort: 80
+	  hostPort: 80
+	  protocol: TCP
+	resources: {}
+	securityContext:
+	  allowPrivilegeEscalation: true
+	  capabilities: {}
+	  privileged: false
+	  readOnlyRootFilesystem: false
+	volumeMounts:
+	- mountPath: /var/www/html/wp-content:Z
+	  name: wp-content-vol
+	workingDir: /var/www/html
+  volumes: <.>
+  - hostPath:
+	  path: /srv/container-data/wordpress/wp-content
+	  type: Directory
+	name: wp-content-vol
+  - hostPath:
+	  path: /srv/container-data/wordpress/db
+	  type: Directory
+	name: db-vol
+status: {}
+----
+<.> The `kind` helps a lot to typify the artifact. So really careful around it
+<.> By changing these values you can then give a name that you see when you do
+a `podman ps`
+<.> And this is a great way to abstracta away configuration values, further down
+is the contents of such as `configMapRef`
+<.> You can point to the containers paths that need to be persisted through a
+bind with the host
+<.> Lastly you have your volume definition
+
+[source, yml]
+.wordpress-configmap.yml
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+	name: wordpress-env
+data:
+	MARIADB_ROOT_PASSWORD: "MyRewtPassword"
+	MARIADB_DATABASE: wordpress
+	MARIADB_USER: wordpress
+	MARIADB_PASSWORD: "WordPressPassword"
+	WORDPRESS_DB_HOST: wordpress-db
+	WORDPRESS_DB_NAME: wordpress
+	WORDPRESS_DB_USER: wordpress
+	WORDPRESS_DB_PASSWORD: "WordPressPassword"
+----
+
+And now you can easily pipe all of these types of files to a `kube` file, by
+creating such a kube like so:
+
+[source, kube]
+----
+[Install]
+WantedBy=default.target
+
+[Unit]
+
+[Kube]
+Yaml=/etc/containers/systemd/wordpress-pod.yml <.>
+ConfigMap=/etc/containers/systemd/wordpress-configmap.yml <.>
+PublishPort=80:80 <.>
+----
+<.> You can literally set up your whole architecture and point to it
+<.> Then we need to manually point to the config file, otherwise this won't be
+recognized
+<.> And then we need to also establish what port we are going to publish
+
+**This will spit out a whole systemd unit file with the pod**. At once.
+
+If you stop the pod, if you restart it. It will actually destroy the pod, and bring
+back a new instance, which means that all references for images for example, will
+pull the latest version from the respective repos (so it's an auto-update or well
+sleek way to auto-update your pod). **If you don't want that, then you should
+tag your container so that you use a specific version not `latest`**
+
+- Need to change the configuration? Just change your configuration file, and
+restart the pod, that's it BROTHER.
+
+=== Quadlet
+
+_Extra:_ Most projects come with a `docker-compose` file, many DevOps will grab
+that, read it, translate it to pods, which sometimes come with their own challenge
+in mind, so guestimates are a thing.
+
+Once the pod is created, then the `kube` generation can be run.
+
+There's this new `[Pod]` unit, a new format that apparently is the native podman
+way of dealing with `docker-compose`.
+
+- Create a `.pod` file
+	- `hx sql.pod`
+
+````
+[Pod]
+PodName=forgejo
+PublishPort=3000:3000
+PublishPort=222:22
+````
+
+_Note:_ A nice thing about keeping config files, parameters, conventions in place,
+is that when new tools, or similar tools come into the mix, you reuse a lot of the
+same concepts and ideas, which makes it way more intuitive to understand what's
+going on or how to use tools and configure them.
+
+And now, based on the conventions used by Quadlets. It looks as though inside
+your `.container` file you should be able to attach it to a pod with:
+
+````
+[Container]
+...
+Pod=forgejo
+
+[Service]
+...
+
+[Install]
+....
+````
+Things are stitched together based on all the different files with conventions and
+the tool.
+
+[IMPORTANT]
+====
+Why when using podman you need to fully qualify the image name? Example:
+`Image=registry.redhat.io/rhel9/mysql-80`. Because podman makes no assumptions
+as to from where you want to pull an image, `docker` **DOES**. If you don't specifiy
+the registry, podman will ask "From which registry will you get this?"
+====
+
+.mysql.container
+````
+[Container]
+Image=registry.redhat.io/rhel9/mysql-80
+Environment=MYSQL_ROOT_PASSWORD=forgejo
+Environment=MYSQL_USER=forgejo
+Environment=MYSQL_PASSWORD=forgejo
+Environment=MYSQL_DATABASE=forgejo
+Pod=forgejo
+````
+
+How do you define volumes with Quadlets?
+
+_Question:_ How can we centralize all definitions? Maybe with a Pod?
+
+Host Path in the `.container` file Easily:
+
+`Volume=/mysql:/var/lib/mysql`
+
+So the way you would dump your files to the respective paths would be something
+like this:
+
+- With files that look like this:
+	- forgejo-data.volume
+	- forgejo.container
+	- forgejo.network
+	- forgejo.pod
+	- mysql.container
+- You would run: `sudo cp forgejo* /etc/containers/systemd`
+- And then you need to copy the specific container into: `sudo cp mysql.container /etc/containers/systemd/``
+- `sudo systemctl daemon-reload`
+
+Now of course, things cannot work at all, and the journal entry helps not at all.
+
+So you have a tool that helps running a dry run, and it outputs any errors it founds
+with what you tried to setup:
+
+`sudo /usr/libexec/podman/quadlet --dryrun`
+
+The video failed, it seems and the solution seems to be that when you are declaring
+`Pod=forgejo` you actually have to suffix it like this: `Pod=forgejo.pod`. On
+all containers you are attaching to a pod, you should reference it like that.
+
+And then it didn't work entirely, but 95% of the way there, because the service
+at least was created correctly.
