@@ -631,3 +631,310 @@ all containers you are attaching to a pod, you should reference it like that.
 
 And then it didn't work entirely, but 95% of the way there, because the service
 at least was created correctly.
+
+== Podman containers, quadlets, and automation | Into the Terminal 178
+
+Notes taken from: https://www.youtube.com/watch?v=go8LCGe_eBA
+
+Run podman containers in a more accesible way. Something that can be actually
+used in a company.
+
+OpenShift and Kubernetes are great for heavy scale enterprise solution. But there's
+a niche in the middle in which you don't that heavy of a solution. Yet you still
+need to do some containerization.
+
+**Basics**
+
+Let's run a container:
+
+`podman run -d --name httpd -p 8080:80 docker.io/httpd`
+
+_Commands in podman are pretty identical to docker. The idea is to be interchangable._
+
+We are going to start up an apache container. We are running _detached_, and we will
+publish a port on the host so that it pipes any traffic there to the container's
+port `80`. You can use **any registry you want**, even docker hub.
+
+[NOTE]
+====
+You can bind a container to a specific IP address, or to some domain. That way
+on the same IP Address you can setup your containers to run services.
+====
+
+Running a container feels the same as in docker.
+
+Podman:
+
+- Groups containers together
+- Adds them to a network
+- Adds them to a namespace
+
+It's good to put a lot of components that run together in a pod, that way it's
+orchestrated easily.
+
+Once you define pods, you can export with them to a yaml file, that looks just like a
+`yaml` file.
+
+That means, that if you migrate to OpenShift or Kubernetes, you are halfway there.
+
+[NOTE]
+====
+When you set volumes, be sure to create the host's paths. Podman won't create
+them for you, unless you have setup your containers and pods a certain way, which
+in the `.yaml` file translates to suffixing the paths with `:Z`. But don't take
+it for granted.
+====
+
+The way you can run the whole orchestrated "group" is by running:
+
+- `podman play kube ./wp-pod.yml`
+
+When you run a `kube` you will always have N + 1 containers, because there's an
+infrastructure container always created.
+
+If everything has been setup correctly, you should be able to see your services
+and websites working.
+
+The magic behind `yml` files and also volumes that are just physical paths to
+your host, is that migrating/moving to another host is quite straightforward.
+You would copy the `.yml` and you would copy the respective paths' contents to
+the other host, put the content in the same path, and use the **whatever** tool
+you want to bring the `.yml` into podman and instantiate all the architecture.
+And seamlessly you would get your app backup easily.
+
+=== A flaw of running podman containers manually
+
+- Docker => Runs things as a daemon.
+- Podman => Runs everything under the context of a user, it doesn't need to be
+`root`
+	- If someone breaks away from a container, you would then only have a specific
+	user's privileges.
+- **The flaw:** You leave the app running, but then you reboot, none of everything
+comes back up
+	- Podman has a `restart always` but it doesn't really work the same way as
+	docker
+- The pod would be defined, but it wouldn't be running (after a restart)
+	- Podman integrates always with systemd
+		- Quadlet = Systemd generator. You can define these files that Quadlet will
+		then parse and write systemd unit files for
+
+So in order to get around that, we will make usage of two files:
+
+````
+[Unit]
+Description=Httpd Container
+
+[Container]
+Image=docker.io/httpd.latest
+#Environment=SOMEVARD=value
+PublishPort=8080:80
+
+[Install]
+WantedBy=multi-user.target
+````
+
+This is a Quadlet. A lot of directives are under `[Container]` that you would
+normally use for running containers.
+
+**Note:** You **CAN** run Quadlets as a normal user, you can setup `systemd` so that
+it knows that it can look up in your user directory, and then try to startup services
+or whatever. But for this demo's purposes we will just use the root paths:
+
+- `cp httpd````-podman.container /etc/containers/systemd`
+
+And then you can test out if it will work by executing a dry run:
+
+- `sudo /usr/lib/podman/quadlet --dryrun`
+	- _Note:_ This is for arch. Maybe in Red Hat it's under `libexec64` so be
+	aware that the CLI tool may vary.
+
+If you run the dry run you will see how quadlet will take care of setting up a lot
+of expanded instructions and configurations. By design, when you start or stop
+a service, the container is completely taken out. A brand new container comes back
+up. "The container is completely undefined"
+
+It makes it a lot easier to update containers, because of this behavior.
+
+And now, let's run the quadlet for real:
+
+- `sudo systemctl daemon-reload`
+
+When systemd reloads the daemon, it will re-read the quadlet, quadlet will execute
+and run all the definitions that we configured.
+
+- `sudo systemctl start httpd-podman`
+- `systemctl status httpd-podman`
+
+After the daemon reload, you wouldn't have your container/pod running, you have
+to boot it up yourself, and yes, you can easily check the status by using the
+built-in systemctl commands to, because in the end, the container/pod becomes
+a service.
+
+**Quadlets** are designed to do everything you should be able to do with podman
+but in their own respective use case and architecture. (Build pods, containers,
+networks, volumes). You can define your entire architecture in quadlet files,
+and have them go up immediately.
+
+And then, to make a thin abstraction layer, we can leverage `.kube` so that we
+run our `yaml` that we might generate based on a pod definition:
+
+.wordpress-pod.kube
+````
+[Install]
+WantedBy=default.target
+
+[Unit]
+
+[Kube]
+Yaml=/etc/containers/systemd/wp-pod.yaml
+PublishPort=8081:80
+````
+
+`sudo cp wordpress-pod.kube /etc/containers/systemd/`
+
+The location of the yaml file is up to you, you can even leverage the relative
+path of `/etc/containers` so bear in mind all of this.
+
+Also, _if you run a quadlet as root, it would make no sense to put the volume
+paths in the home directory of a user_. So a good path to put it might be:
+
+- `/srv/containers/<name>` / `/srv/`
+
+`srv` => Is a place that's immutable.
+`var` => Another place you can put things, but in here they should be mutable
+
+If you run a `sudo systemctl daemon-reload` and you try to list the new container
+service, you should see it as generated/defined, but not running
+
+- `sudo systemctl status wordpress-pod`
+- `sudo systemctl start wordpress-pod`
+- `sudo podman ps`
+
+**Do these things persist in reboot?**
+
+- Let's see if systemd will bring back the kube on startup
+- **It does**
+
+And yes, you should be able to see the containers running:
+
+- `sudo podman ps`
+- `sudo podman pod ps`
+
+And that's it. Okay, no. It's not. Let's have a look at automations.
+
+- There's a RHEL role that can help with that. You can automate this whole process.
+
+=== Automation
+
+This makes usage of `Ansible`. Which apparently can be used as a deploy tool
+directly? Huh.
+
+So we can create a playbook that will take care of doing everything for us:
+
+- It uses the system role to figure out what you are trying to deploy, and it
+deploys it as a quadlet
+	- Makes sure all the supporting things are there
+	- Makes sure the firewall is configured
+	- Automate all the heavy lifting
+
+````
+- name: Deploy a single container using RHEL System Roles
+  hosts: podman-hosts
+  become: true
+  vars:
+    # Ensure the required firewall ports are open
+	podman_firewall:
+	  - port: 8080/tcp
+	    state: enabled
+	# Define the container specification
+	podman_quadlet_specs:
+	  - name: httpd-podman
+	    type: container
+		Container:
+		  Image: docker.io/httpd:latest
+		  PublishPort: "8080:80"
+		  # Optional: Add environment variables or volumes
+		  # Environment: "FOO=BAR"
+		  # Volume: "/host/path:/container/path:Z"
+		Service:
+		  Restart: always
+		Install:
+		  WantedBy: multi-user.target
+
+roles:
+  - rhel-system-riles.podman
+````
+
+And then you can just run a:
+
+`ansible-playbook -i ./inventory container/httpd-podman.yaml`
+
+**EXTRA:** An `inventory file` tells Ansible _which machines (hosts)_ it should
+manage.
+
+An inventory file is basically a list of hosts and groups:
+
+````
+[webservers]
+server1.example.com
+server2.example.com
+
+[db]
+db1.example.com
+````
+This says:
+- There is a group called `webservers`
+- It contains two hosts
+- Another group called `db`
+
+The playbook can then target those groups
+
+You can both put `.ini` files or `.yaml` files as the ansible playbook. And you
+can put direct IPs too. Some useful commands:
+
+_View inventory hosts_
+
+- ansible-inventory -i ./inventory --list
+
+_Ping all hosts_
+
+- ansible all -i ./inventory -m ping
+
+_Run against localhost only_
+
+- ansible-playbook -i localhost, playbook.yaml
+	- NOTE: If you put a `,`, comma after `localhost` this tells Ansible it's an
+	inline inventory list, not a filename
+
+Now, you can technically "undo" all the deployment that Ansible does, but it's not
+built into the tool and the manifest/playbook. You have to create a an undo playbook
+yourself, by going in reverse of everything your original playbook did.
+
+Big note: Ansible is **idempotent**
+
+Safer strategies:
+
+1. Use containers/VMs => That way a deployment only uses a container
+
+2. Use tags => You can separate deploy and cleanup:
+
+````
+- name: Deploy
+  tags: deploy
+- name: Cleanup
+  tags: cleanup
+````
+
+Which then allow you to: `ansible-playbook playbook.yaml --tags cleanup`
+
+3. Use infrastructure snapshots
+
+In production people often rely on:
+
+- VM snapshots
+- cloud images
+- Kubernetes rollbacks
+- immutable infrastructure
+- GitOps
+
+Rather than trying to reverse arbitrary server mutations
