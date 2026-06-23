@@ -1049,3 +1049,182 @@ quick
 - The previously configured instance will be skipped
 
 Ansible can make things pretty easily automatable
+
+== Make systemd better for Podman with Quadlet
+
+Notes taken from blog at: https://www.redhat.com/en/blog/quadlet-podman
+
+One of the best features of `Podman` is how well it works with systemd. Podman uses
+the standard fork/exec model, which is easily adaptable to the systemd system and
+service manager model.
+
+````
+"Running containerized workloads in systemd is a simple yet powerful means for
+reliable and rock-solid deployments. The systemd integration further lays the
+foundation for more advanced Podman features such as auto updates and rollbacks
+or running Kubernetes workloads in systemd. This integration allows systemd to
+manage service dependencies, monitor the lifecycle and service state, and possibly
+also restart services in case of failure."
+````
+
+Once administrators realized that Podman works well in systemd unit files, the
+Podman upstream started getting questions on best practices for running Podman
+as a systemd service. Red Hat studied the issues and worked with the upstream
+systemd team to template these best practices. Podman added `podman generate systemd`
+command to create a unit file directly from a running container.
+
+Alex Larsson created the Quadlet project after _figuring out a better way to use
+this templating_ using systemd generators to regenerate services on the fly using
+a generic systemd unit file definition. Quadlet hit the complexity of running
+containers under systemd from users, making writing unit files from scratch much
+easier to maintain. Think of it as `Compose` or Kubernetes file but for systemd.
+Once written, you can deploy it anywhere.
+
+_What do you get if you squash a Kubernetes kubelet? A quadlet_
+
+Quadlet is a tool for running Podman containers under systemd in an optimal way by
+allowing containers to run under systemd in a declarative way. it has been merged
+into Podman 4.4
+
+As the (now frozen) Quadlet repository says:
+
+_Paraphrasing:_
+
+- Containers are often used in Cloud contexts and with Kubernetes as an orchestrator.
+They are also commonly used during development and testing to manually manage
+containers on an ad-hoc basis. But there's a niche for automatic container management,
+but on a smaller, single-node scale. Also more tightly integrated with the rest
+of the system. The recommended way to do this is to use systemd to orchestrate the
+containers, this is **an already running process manager**. There are many documents
+that describe how to use podman with systemd directly, but the end results are generally
+large, hard to maintain systemd config files. And often the container setup isn't
+optimal.
+
+Basically, anywhere you want to run a containerized system service without requiring
+human intervention, it's wise to use systemd to manage your locally running Podman
+containers.
+
+=== Using Quadlet in Podman
+
+You can create `CTRNAME.conatiner` unit files taht can be placed in one of the
+following directories:
+
+````
+/usr/share/containers/systemd/
+/etc/containers/systemd
+````
+
+For rootless users:
+
+$HOME/.config/containers/systemd
+
+This is an example that creates a `mysleep.container` unit file that runs the
+`sleep 1000` command on a **ubi9-minimal** container image:
+
+````
+cat $HOME/.config/containers/systemd/mysleep.container
+[Unit]
+Description=The sleep container
+After=local-fs.target
+
+[Container]
+Image=registry.access.redhat.com/ubi9-minimal:latest
+Exec=sleep 1000
+
+[Install]
+# Start by default on boot
+WantedBy=multi-user.target default.target
+````
+
+Notice that in the `[Container]` section. You just need to specify the `Image` you
+want to run and the command `Exec` that you want to run, and then you can use all
+of the other fields normally specified in a systemd unit file.
+
+After that, you just need to inform systemd about the new unit file. Type:
+
+`systemctl --user daemon-reload`
+
+This will create a `mysleep.service` file based on the `mysleep.container` file
+
+`systemctl --user status mysleep.service`
+
+Now you can enable this service or start it up:
+
+`systemctl --user start mysleep.service`
+
+The `podman` command inside the generated service will download the **ubi9-unit**
+image and start the specified command, `sleep 1000`
+
+You can check the status of the service like this:
+
+`systemctl --user status mysleep.service`
+
+When `Podman` is installed, it registers a `systemd-generator` tool that looks for
+files in the above directories and runs the `/usr/libexec/podman/quadlet` executable.
+
+You can also do a dry run to see everything the quadlet executable will do:
+
+````
+$ /usr/libexec/podman/quadlet -dryrun -user
+quadlet-generator[265731]: Loading source unit file /home/dwalsh/.config/containers/systemd/mysleep.container
+---mysleep.service---
+[Unit]
+Description=The sleep container
+Before=local-fs.target
+SourcePath=/home/dwalsh/.config/containers/systemd/mysleep.container
+RequiresMountsFor=%t/containers
+
+[X-Container]
+Image=registry.access.redhat.com/ubi9-minimal:latest
+Exec=sleep 1000
+
+[Install]
+# Start by default on boot
+WantedBy=multi-user.target default.target
+
+[Service]
+Environment=PODMAN_SYSTEMD_UNIT=%n
+KillMode=mixed
+ExecStopPost=-/usr/bin/podman rm -f -i --cidfile=%t/%N.cid
+ExecStopPost=-rm -f %t/%N.cid
+Delegate=yes
+Type=notify
+NotifyAccess=all
+SyslogIdentifier=%N
+ExecStart=/usr/bin/podman run --name=systemd-%N --cidfile=%t/%N.cid --replace --rm --log-driver passthrough --runtime /usr/bin/crun --cgroups=split --sdnotify=conmon -d registry.access.redhat.com/ubi9-minimal:latest sleep 1000
+````
+
+The Quadlet-generated service file uses the same libraries as `podman generate systemd -new`
+but hides the complexity from the user.
+
+One benefit is if a newer version of Podman is released with fixes or enhancements
+to the generator, your service is updated with the enhanced version the next time
+`systemctl daemon-reload` executes, such as upon reboot.
+
+The container descriptions focus on the relevant container details, with no technical
+details about how the Podman integration works. This means they are straightforward
+to write and maintain, and integration can automatically improve as new Podman
+features become available. Now you can use the other cool features of Podman in
+systemd, like `auto-update and rollback`, for hands-free management of your
+containerized service's lifecycle.
+
+Quadlet supports other advanced unit files, in addition to **.container**
+
+- `.kube` allows you to specify a Kubernetes.yaml file, which tells Quadlet to
+create a service file to run pods and containers under systemd services based on
+Kubernetes
+- `.network` tells Quadlet to create a service file that defines a Podman container
+network device. These network devices can then be used within `.container` and
+`.kube` unit files
+- `.volume` tells Quadlet to create a service file that defines a Podman volume.
+These volumes can then be used within `.container` unit files
+
+**In summary**
+
+Quadlet allows running containers under systemd in a declarative way. Similar to
+Compose or Kubernetes files, you can declare what you want to run without having
+to deal with all the complexities of running the workload.
+
+Podman has a long history of integrating well into a modern Linux system, and
+Quadlet pushes the integration to the next level. Podman 4.4 has already been
+released to many Linux distributions, such as CentOS Stream and Fedora.

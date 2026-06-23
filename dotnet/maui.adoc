@@ -94,3 +94,15 @@ Android device
 This way, we can finally start-up the application (and after taking ages), it
 can actually boot up in our Android device, and be fully debuggable through our
 IDE, which is kinda insane tbh.
+
+== Developer Experience
+
+So on Windows (of course), you have the Windows launch profile by default. You
+also have an Android emulator (you need to be on a Mac for the iOS emulator).
+If you don't have an Android Emulator it will apparently help you set it up.
+
+In short, it has XAML hot reload, and .NET hot reload as well, so that the developer
+experience is super productive. Both XAML and Code Behind can be updated and
+hot-reloaded (goated?), hopefully wireless gets this same developer experience.
+
+
