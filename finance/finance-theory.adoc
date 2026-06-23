@@ -604,6 +604,8 @@ Ownership simply means a claim to the residual rights of the corporation, manage
 is the person in between the corporation's assets (which generate the money/value)
 and the ownership (investors)
 
+Corrections
+
 - That's not getting to the actual question, it's only defining actors.
 
 In large corporations, ownership and management are separated because shareholders
@@ -615,6 +617,139 @@ as boards, incentives, and monitoring to align managers with shareholders.
 _Simpler version:_ Shareholders own the corporation, but managers control daily
 operations. This separation can create conflicts of interest because managers
 may not always act in the owners' best interests.
+
+6. **Corporate goals** We can imagine the financial manager doing several things
+on behalf of the firm's stockholders. For example, the manager might:
+
+a. Make shareholders as wealthy as possible by investing in real assets
+b. Modify the firm's investment plan to help shareholders achieve a particular time
+pattern of consumption
+c. Choose high- or low-risk assets to match shareholders' risk preferences
+d. Help balance shareholders' checkbooks
+
+But in well-functioning capital markets, shareholders will vote for only one of
+these goals. Which one? Why?
+
+a. Trying to please anyone, is almost impossible. So a middle ground should be
+the focus of the financial manager. He should add value to the investment the
+shareholders have in general, and that can only be achieved by acquiring more
+assets (means of wealth generation). With this, the shareholders will be free
+to take whatever decisions they want when it comes to their investments.
+
+Corrections:
+
+- The goal **IS NOT ACQUIRING MORE ASSETS**, it is **MAXIMIZING SHAREHOLDER WEALTH/VALUE**
+
+Sometimes that means:
+
+acquiring assets,
+sometimes selling assets,
+sometimes paying dividends,
+sometimes buying back shares,
+sometimes rejecting investments.
+
+More assets != more value automatically
+
+A bad investment destroys shareholder wealth
+
+**Shareholders can manage their own consumption and risk preferences in capital
+markets, so the company should focus on increasing firm value**
+
+7. **Maximizing shareholder value** Ms. Espinoza is retired and depends on her
+investments for her income. Mr. Liu is a young executive who wants to save for the
+future. Both are stockholders in Scaled Composites LLC, which is building SpaceShipOne
+to take commercial passengers into space. This investment's payoff is many years
+away. Assume it has a positive NPV for Mr. Liu. Explain why this investment also
+makes sense for Ms. Espinoza
+
+NPV:: Net Present Value
+
+It makes sense for her too because this is low-risk, yet with a high chance of
+steady returns.
+
+Corrections:
+
+Net Present Value => The estimated value added today after adjusting future cash
+flows for time and risk
+
+Corporate finance says:
+
+- A firm should accept all positive-NPV projects
+
+Why?
+
+NPV => Is a number representing how much value an investment adds _today_
+
+After considering all costs and future cash flows, how much richer does this
+project make us in today's dollars?
+
+- Positive NPV => Creates value
+- Negative NPV => Destroys value
+- Zero NPV => Breaks even economically
+
+With this in mind, the answer was **wrong** because:
+
+The question is really asking:
+
+Why would a retired shareholder who wants income now still support a long-term
+positive-NPV project?
+
+Answer:
+
+Because in well-functioning capital markets:
+
+- Shareholders can adjust their own consumption timing themselves
+
+If the project increases firm value:
+
+- Ms. Espinoza's shares become more valuable today
+- And she can create income herself by:
+	- Selling some shares
+	- Borrowing
+	- Adjusting her portfolio
+
+**Separation principle**
+
+Individual shareholders handle:
+
+- Their own spending needs
+- Timing preferences
+- Risk preferences
+
+Suppose:
+
+- The company announces a project with strong positive NPV
+- Investors expect higher future profits
+
+Then:
+
+- The stock price rises NOW
+
+So even though cash flows happen later:
+
+- Ms. Espinoza becomes wealthier immediately because her shares are worth more
+
+If she needs current income:
+
+- She can sell a small portion of her appreciated shares
+
+Good to have in mind:
+
+FV = PV(1 + r)^n
+
+PV = Present value
+FV = Future value
+r = return/discount rate
+n = time
+
+Example:
+
+FV = 18400(1 + 0.015)^11 = 21674.26 dollars
+
+NPV works by reversing this logic:
+
+- Taking future money
+- And converting it into today's equivalent value
 
 === Chapter 2 Notes
 
