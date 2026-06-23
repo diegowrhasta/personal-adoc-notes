@@ -751,6 +751,95 @@ NPV works by reversing this logic:
 - Taking future money
 - And converting it into today's equivalent value
 
+8. **Opportunity cost of capital** F&H Corp continues to invest heavily in a declining
+industry. Here is an excerpt from a recent speech by F&H's CFO:
+
+We at F&H have of course noted the complaints of a few spineless investors and
+uninformed security analysts about the slow growth of profits and dividends. Unlike
+those confirmed doubters, we have confidence in the long-run demand for mechanical
+encabulators, despite competing digital products. We are therefore determined to
+invest to maintain our share of the overall encabulator market. F&H has a rigorous
+CAPEX approval process, and we are confident of returns around 8% of investment.
+That's a far better return than F&H earns on its cash holdings. The CFO went on
+to explain that F&H invested excess cash in short-term U.S. government securities,
+which are almost entirely risk-free but offered only a 4% rate of return.
+
+a. Is a forecasted 8% return in the encabulator business necessarily better than
+a 4% safe return on short-term U.S. government securities? Why or why not?
+
+b. Is F&H's opportunity cost of capital 4%? How in principle should the CFO determine
+the cost of capital?
+
+_Refresher:_ CAPEX, or capital expenditure, refers to the funds used by a company
+to acquire, maintain, or improve long-term assets. These expenditures are typically
+significant investments that benefit the company over multiple years.
+
+a. Yes, because that 8% return promise already makes the wealth bigger for any investor
+b. Yes it is, the CFO determines the cost of capital by looking at what are the
+returns in other investments in the market, taking that number and comparing against
+the promised returns, that number is what you are "giving up"
+
+Corrections:
+
+a. No. The 8% expected return is not necessarily better because the encabulator
+business is risky, while U.S. government securities are nearly risk-free. Investments
+should be evaluated relative to their risk. If investors require more than 8% for
+investments with similar risk, then the project would not create value.
+
+b. No. F&H's opportunity cost of capital is not 4%, because 4% is only the risk-free
+rate. The opportunity cost of capital should reflect the return investors require on
+investments with similar risk. The CFO should estimate this by examining market
+returns on comparable risky investments
+
+_Extras:_
+
+On the scenario put together, that 4% is actually the **risk-free rate**
+
+The _opportunity cost of capital_ should reflect: The risk of the actual project
+
+Using 4% (the risk-free rate) as opportunity cost of capital is wrong, because
+shareholders could invest elsewhere in:
+
+- Risky industrial companies
+- Growth firms
+- Declining manufacturing businesses
+- etc
+
+These alternatives likely require returns higher than 4%, so 4% would underestimate
+the true required return.
+
+9. **Ethical issues** The Beyond the Page feature, "Goldman Sachs causes a ruckus,"
+describes the controversial involvement of Goldman Sachs in a mortgage-backed securities
+deal in 2006. When this involvement was revealed, the market value of Goldman Sachs'
+common stock fell overnight by $10 billion. This was far more than any fine that
+might have been imposed. Explain
+
+Reputation is really important for a corporation, if the market/people do not
+trust in a corporation, or see they are making moves that are questionable and
+might pose a threat to their investments on their corporation, the value of
+shares drops immediately, it's seen as undesirable, so people start selling their
+shares and/or do not want to acquire shares from said corporation.
+
+Corrections.
+
+It's not "might pose a threat to their investments on their corporation", it's:
+"might reduce the future profitability and value of the corporation"
+
+Because stock prices react mainly to:
+
+- Expected future earnings/value, not simply emotional distrust alone
+
+Investors might expect:
+
+- Broader economic consequences such as:
+	- Reputational damage
+	- Legal risk
+	- Tighter regulation
+	- Reduced future profits
+
+Since stock prices reflect expectations about future cash flows, these concerns
+caused a large decline in the market value.
+
 === Chapter 2 Notes
 
 == Present Value Relations I
