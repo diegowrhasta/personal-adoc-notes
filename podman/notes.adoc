@@ -1228,3 +1228,7 @@ to deal with all the complexities of running the workload.
 Podman has a long history of integrating well into a modern Linux system, and
 Quadlet pushes the integration to the next level. Podman 4.4 has already been
 released to many Linux distributions, such as CentOS Stream and Fedora.
+
+Extras:
+
+https://docs.podman.io/en/latest/markdown/podman-quadlet-basic-usage.7.html[Docs on podman Quadlets]
