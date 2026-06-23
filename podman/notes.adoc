@@ -836,6 +836,8 @@ deploys it as a quadlet
 	- Makes sure all the supporting things are there
 	- Makes sure the firewall is configured
 	- Automate all the heavy lifting
+	- Everything is automatic, the whole instruction set, the whole logic comes
+	with ansible already aware of that. We don't have to do anything.
 
 ````
 - name: Deploy a single container using RHEL System Roles
@@ -864,6 +866,9 @@ deploys it as a quadlet
 roles:
   - rhel-system-riles.podman
 ````
+If we didn't set the `firewall` bit, maybe it wouldn't have installed the respective
+dependency that is `firewalld` so he makes super ultra duper sure that you have
+everything that you need to then start everything you have.
 
 And then you can just run a:
 
@@ -938,3 +943,109 @@ In production people often rely on:
 - GitOps
 
 Rather than trying to reverse arbitrary server mutations
+
+An `ansible` playbook takes a bit of time, but after everything is done, you should
+be able to run a `curl` on the machine that had everything deployed. And you
+should be receiving the a response according to the apache quadlet that was
+deployed.
+
+If you go into the deployed host, you should also be able to see the container
+present:
+
+`cat /etc/containers/systemd/httpd-podman.container`
+
+And yeah, the file might not looks exactly the same, but it's functional and
+you have everything you need so that it runs.
+
+Also, the whole process of
+
+- Have a system role, generate the kube
+- Have a Quadlet to use the kube as its manifest to get the whole architecture
+- Semi-manually do things
+
+Is good, and works, but you can be better.
+
+=== Fancier deploys
+
+- Might be able to use "Jinja" templates
+	- These are for services that look almost the same, and you want to run over
+	and over again
+	- But there are setups in which this isn't the case, and it doesn't work like
+	that, so we can still have the definition `yaml` and then use it to spin up
+	our architectures
+
+You can make things a bit more dynamic by putting some placeholders in the file:
+
+````
+- name: Deploy the wordpress pod
+  hosts: podman-hosts
+  become: true
+  vars:
+    app_name: "wordpress"
+	svc_name: "{{ app_name }}-pod"
+	quadlet_config: "/etc/containers/systemd"
+	pod_yaml_path: "{{ quadlet_config }}/{{ svc_name }}.yaml"
+	additional_folders:
+	  - /srv/containers/wp/db
+	  - /srv/containers/wp/wp-content
+	podman_firewall:
+	  - port: 8081/tcp
+	    state: enabled
+	podman_kube_specs:
+	  - state: started
+	    kube_file_src: files/wordpress-pod.yaml
+		  #kube_file_dest: "{{ pod_yaml_path }}"
+		quadlet_options:
+		  - ConfigMap:
+		      PublishPort: "8081:80"
+		  - Service:
+		      Restart: always
+  pre_tasks:
+    - name: Create required folders
+	  ansible.builtin.file:
+	    path: "{{ item }}"
+		state: directory
+		mode: "0755"
+		setype: container_file_t
+      loop: "{{ additional_folders }}"
+  roles:
+    - linux-system-roles.podman
+````
+When dealing with automation, you wouldn't want to leave to chance, whether the
+filesystem that your architecture needs exists on the server or not.
+
+So if you make a list of directories that your architecture depends on with `additional_folders`
+you will see how the respective filesystem gets created.
+
+`pre_tasks` => Run this before you run the normal tasks, before you run the roles.
+Pre Tasks will always run first. That way you setup the environment to run your
+roles.
+
+You can run it like this:
+
+- `ansible-playbook -i ../inventory wordpress-pod.yaml`
+
+**Note:** `podman pull` => This will be pulled into your local podman images.
+`podman image list` => Local cache. `podman tag` can help tagging with a registry
+of your local registry. And then you can use `podman push` so that you can
+push the image to that other registry.
+
+- So you downloaded from a public registry
+- And then you push that to your internal registry
+	- Now you are in charge of that image and updates
+	- There's lots of way to run registries
+		- There's a docker container
+		- There are lightweight git/registry combinations in a container
+		- Gitlab => You can run your own instance, your own CI/CD can be setup
+		to push to a local registry. That's as local as it can be
+
+`forgejo` => Also another registry option
+
+If you edit your inventory file, and add a second host, you can literally add it
+to the file and re-run the ansible command.
+
+- That way you easily reproduce the deployment across multiple hosts, easily and
+quick
+- The previously configured instance will be skipped
+
+Ansible can make things pretty easily automatable
