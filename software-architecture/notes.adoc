@@ -1,0 +1,60 @@
+= Notes
+
+== Goodbye Microservices, Hello Self-Contained Systems - Simon Martinelli
+
+Notes taken from https://www.youtube.com/watch?v=hW22FxcrtkA
+
+2010 => Netflix pushed for microservices
+
+They created a **big ball of mud**. Mainly because they didn't understand microservice
+architecture well.
+
+**Misconception**
+
+- Monolithic Applications = Big Ball of Mud
+
+It could be a Big Ball of Mud, or it could be glorious. You can build _Modular
+Monoliths_ in a modular way. Java does a bit of that, _but it might not be a
+good idea_.
+
+A good idea to keep in mind:
+
+[quote, David L. Parnas, On the criteria to be used in decomposing systems into modules]
+----
+The **effectiveness of a modularization** is dependent upon the **criteria used in
+dividing** the system into modules
+----
+
+If you have a lot of coupling within the modules, then things might be useless.
+
+It's all about Modularity.
+
+**Module**
+
+Modules can be in microservices, in packages, in components. They all share the
+same definitions:
+
+A self-contained **component** of a system, often **interchangeable**, which has
+a **well-defined interface** to the other components.
+
+But let's move now to **Microservices**
+
+- Naming is hard, however using **microservices** to talk about modules that can be
+an error.
+	- Micro is not micro, it just means "smaller"
+	- Domain Driven Design => Bounded Contexts was a good concept to borrow. It
+	is a framework to split a big domain into subdomains. You can separate a
+	business by some form. _The organization of the company is a good starting
+	point to see how you can define your bounded contexts_
+
+_One issue with MS:_
+
+Some customers have so many microservices, that they can't even update easily
+to the newest technologies and they realize late that they could've just put them
+all together for simplicity.
+
+**Interesting idea**
+
+- Even if your app is a Big Ball of Mud, you can use tools, and nowadays AI
+to re-engineer your application so it's more modular, separating concerns
+better and making it more maintainable and extendable.
