@@ -58,3 +58,439 @@ all together for simplicity.
 - Even if your app is a Big Ball of Mud, you can use tools, and nowadays AI
 to re-engineer your application so it's more modular, separating concerns
 better and making it more maintainable and extendable.
+
+== On Designing an Observability Platform
+
+There are tons of observability ecosystems, but one we can focus on because of
+its popularity and easiness to pick up is: **The Grafana ecosystem**
+
+- Grafana
+- Grafana Loki
+- Grafana Tempo
+- Grafana Mimir
+- OpenTelemetry Collector
+
+Often referred to as the LGTM stack.
+
+An observability platform can have different workload patterns competing for
+resources:
+
+. Metrics (high cardinality, steady writes, bursty reads)
+. Logs (very high ingest + storage heavy)
+. Traces (high fan-out, memory sensitive)
+. SQL Server querying / dashboards (interactive, latency-sensitive)
+
+And if you are going at full mega ultra scale, yeah, complexity grows to accomodate
+for the thousands of needs. However if you are small, you can still benefit, and
+actually is better if you shift left. That way you can grow way more easily.
+
+Say you have about 100 transactions a day. Scale is nowhere near a problem.
+
+This could be categorized as:
+
+- "Foundational observability maturity" stage
+
+At this stage you can build an **observability platform** correctly _before_
+scale forces compromises.
+
+The right goal for you is not:
+
+- Hyperscale architecture
+- Distributed telemetry clusters
+- Aggresive sharding
+- Massive retention engineering
+
+The right goal is:
+
+- Operational clarity
+- Low maintenance
+- Excelleng debugging visibility
+- Future scalability without re-platforming
+
+That leads to a very different recommendation.
+
+**At this scale:**
+
+- Traces are tiny
+- Metrics are tiny
+- Logs are manageable
+- Query load is almost nonexistent
+
+So the biggest risks are NOT:
+
+- CPU
+- Ingest throughput
+- Disk IO
+
+The biggest risks are:
+
+- Operational complexity
+- Poor telemetry design
+- Overengineering
+- Lack of standarization
+- Observability nobody actually uses
+
+_And this is extremely common in small/medium enterprise telemetry rollouts_
+
+**The most valuable asset right now is NOT hardware_
+
+It is:
+
+**Telemetry consistency**
+
+Meaning:
+
+- Standarized trace names
+- Good span attributes
+- Correlation IDs
+- Structured logs
+- Service naming conventions
+- Environment tagging
+- Transaction identifiers
+
+This is what makes observability powerful
+
+Not 64 CPUs.
+
+[IMPORTANT]
+====
+Build a "Small but Correct" Architecture
+====
+
+[cols="1,1"]
+|===
+|Component | Recommendation
+
+|Grafana
+|Yes
+
+|Loki
+|Yes
+
+|Tempo
+|Yes
+
+|Prometheus or Mimir
+|Prometheus initially
+
+|OpenTelemetry Collector
+|Absolutely yes
+
+|Podman
+|Good choice
+
+|RHEL
+|Good choice
+
+|Object storage
+|Optional initially
+|===
+
+=== Mimir and Prometheus
+
+Mimir => Is operationally heavier, designed for scale, more distributed in
+philosophy.
+
+**Plain Prometheus is simpler and better for small scale**
+
+Prometheus is:
+
+- Easier to reason about
+- Easier to back up
+- Easier to troubleshoot
+- Extremely capable at your size
+
+Migration can come later.
+
+A recommended stack would be:
+
+[cols="1,1"]
+|===
+|Service | Purpose
+
+|Grafana
+|Dashboards/UI
+
+|Loki
+|Logs
+
+|Tempo
+|Traces
+
+|Tempo
+|Traces
+
+|Prometheus
+|Metrics
+
+|OTelCollector
+|Telemetry gateway
+|===
+
+This architecture is **Strong**
+
+Because it gives you:
+
+1. Full Correlation
+
+You can move:
+
+- Metric -> trace
+- Trace -> logs
+- logs -> metrics
+
+This is where observability becomes truly useful operationally
+
+If you decide to make usage of OTeL, you are adhering to a standard, which:
+
+- Future-proofs the platform
+- Avoids vendor lock-in
+- Simplifies onboarding new services later
+
+The direction of all different platforms is heading towards that.
+
+A shot in the dark:
+
+**Very Reasonable Starting VM**
+
+Single VM
+
+
+[cols="1,1"]
+|===
+|Resource | Recommendation
+
+|vCPU
+|4-8
+
+|RAM
+|16-32 GB
+
+|Storage
+|250-500 GB SSD
+
+|OS
+|RHEL 9
+
+|Containers
+|Podman
+
+|Filesystem
+|XFS
+|===
+
+4 vCPU / 16 GB would probably work perfectly fine initially
+
+Telemetry volume is microscopic.
+
+Even if:
+
+- Each transaction emits 100 spans
+- 500 log lines
+- Dozens of metrics
+
+This would still be nowhere near stressing modern hardware
+
+Resource Usage will ACTUALLY Come From
+
+Mostly:
+
+- Grafana itself
+- Loki indexing
+- Java/.NET runtime overhead
+- containers
+- retention storage
+
+Not ingestion throughput.
+
+**Bigger Design Concern**
+
+_Retention and searchability_
+
+> "Can I debug a production issue from 2 weeks ago in 5 minutes?"
+
+This is where observability earns its cost.
+
+And so, Retention Strategy:
+
+[cols="1,1"]
+|===
+|Signal | Retention
+
+|Metrics
+|30-90 days
+
+|Logs
+|14-30 days
+
+|Traces
+|7-14 days
+|===
+
+=== Most Critical things to take into consideration
+
+**Invest in Trace Quality Early**
+
+That matters MUCH more than infrastructure.
+
+A good trace should answer:
+
+- What happened?
+- Where did latency occur?
+- What dependency failed?
+- Which SQL query failed?
+- Which customer transaction broke?
+
+Without opening multiple systems.
+
+**What Good OTel Instrumentation Looks Like**
+
+Include attributes like:
+
+- service.name
+- service.version
+- deployment.environment
+- transaction.id
+- customer.id (carefully)
+- sql.server.name
+- db.operation
+- http.route
+- exception.type
+
+But avoid
+
+- High cardinality junk
+- Raw query text as labels
+- Session IDs everywhere
+
+> We're small so observability can be informal
+
+No, the opposite is true.
+
+Smaller environments benefit massively from:
+
+- Rapid troubleshooting
+- Low MTTR
+- Operational confidence
+- Faster onboarding
+- Reduced dependency on tribal knowledge
+
+High cardinality junk:: Number of unique label/tag combinations. You shouldn't
+label user ids, customer ids, they can be inside something that indexes them and
+it has low cardinality
+Low MTTR:: Mean Time To Resolution (how long it takes to fix production problems)
+
+And let's introduce an OTel Collector Centralized Initially, that way, even if
+we have to scale eventually, it will have to be simply adding a new gateway:
+
+````
+Services
+   ↓
+OTel Collector
+   ↓
+Loki / Tempo / Prometheus
+````
+
+- Centralized processing
+- Easy config changes
+- Batching
+- Retries
+- Normalization
+
+And later you can split into:
+
+- Agent collectors
+- Gateway collectors
+
+Without redesigning instrumentation.
+
+**Recommended “Day 1 Production Shape**
+
+- VM
+	- 8 vCPU
+	- 16–32 GB RAM
+	- 500 GB SSD
+- Containers
+	- grafana
+	- loki
+	- tempo
+	- prometheus
+	- otel-collector
+
+- Networking
+
+Internal-only initially.
+
+Backups
+
+Back up:
+
+- Grafana dashboards
+- provisioning configs
+- Loki/Tempo storage
+
+**Good starters for focus**
+
+. Correlation IDs
+
+This is huge.
+
+Every request should have:
+
+- trace ID
+- transaction ID
+
+flowing everywhere
+
+. Structured Logging
+
+JSON logs
+
+Not free-text chaos
+
+. Golden Signals
+
+Monitor:
+
+- Latency
+- Errors
+- Throughput
+- Saturation
+
+Dashboard Simplicity
+
+Start with:
+
+- Service health
+- Failed transactions
+- Latency percentiles
+- SQL dependency health
+
+**Old Style** was "monitor servers". **Modern Style** is "understand transactions"
+
+That is why:
+
+- Traces
+- Exemplars
+- Correlation
+- OTel semantic conventions
+
+Matter so much now.
+
+Success should not be measured by telemetry volume, number of dashboards, infrastructure
+complexity.
+
+This should be what you think about all the time:
+
+**"How fast can we explain a production issue?"
+
+If observability lets you answer:
+
+- What broke
+- When
+- Why
+- Where
+- Who was impacted
+
+Within minutes, then the platform is succeeding.
+
