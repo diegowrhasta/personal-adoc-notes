@@ -840,6 +840,40 @@ Investors might expect:
 Since stock prices reflect expectations about future cash flows, these concerns
 caused a large decline in the market value.
 
+10. **Ethical Issues** Most managers have no difficulty avoiding blatantly dishonest
+actions. But sometimes there are gray areas, where it is debatable whether an action
+is unethical and unacceptable. Suggest an important ethical dilemma that companies
+may face. What principles should guide their decision.
+
+Sometimes companies face the fact that in order to stay afloat they need to sell
+or buy unuscrupulously and by affecting other companies' interests and shares.
+Principles that should guide them are honesty and trust
+
+Corrections
+
+"Gray area examples" include:
+
+- Aggressively marketing risky financial products
+- Using customer data in questionable ways
+- Laying off workers to maximize profits
+- Moving production to countries with weak labor standards
+- Exploiting legal tax loopholes
+- Hiding risks while technically obeying regulations
+- Earnings manipulation that is technically legal but misleading
+
+These are difficult because:
+
+- They may be legal, profitable, and beneficial short-term, but still ethically
+questionable
+
+An important ethical dilemma companies may face is whether to pursue profitable
+actions that are legal but potentially harmful or misleading to customers, employees,
+or investors. For example, a financial company might sell complex investment products
+while knowing that many customers do not fully understand the risks. Although this
+may increase profits, it raises ethical concerns about fairness and transparency.
+Companies should be guided by principles such as honesty, transparency, fairness,
+responsibility, and long-term trust rather than focusing only on short-term profit.
+
 === Chapter 2 Notes
 
 == Present Value Relations I
