@@ -494,3 +494,148 @@ If observability lets you answer:
 
 Within minutes, then the platform is succeeding.
 
+=== Grafana Alloy
+
+You don't have to build your own OpenTelemetry Collector, a "default answer" in
+the Grafana ecosystem is: **Grafana Alloy**
+
+It is a production-ready distribution of the OpenTelemetry Collector specifically
+designed to integrate with hte LGTM stack.
+
+- Runs beautifully in containers
+- It is designed exactly for "small now, scale later"
+- It avoids you having to hand-build a custom collector distribution
+
+Be aware of 3 different meanings:
+
+[cols="1,1"]
+|===
+|Meaning, Reality
+
+|Build from source
+|Not needed
+
+|Create a custom distribution
+|Not needed
+
+|Write config pipelines
+|Still needed minimally
+
+|===
+
+You WILL still configure:
+
+- Receivers
+- Processors
+- Exporters
+
+But you will NOT:
+
+- Compile anything
+- Maintain custom binaries
+- Manage component compatibility
+
+**The Industry Direction Right Now**
+
+Historically:
+
+- Grafana Agent
+- OpenTelemetry Collector
+- Prometheus agents
+
+were fragmented
+
+Grafana Labs clearly is consolidating around:
+
+**Alloy as the unified telemetry pipeline**
+
+Grafana introduced Alloy at GrafanaCON specifically as:
+
+- "the OpenTelemetry Collector distribution with built-in Prometheus pipelines"
+
+That matters because:
+
+- Docs are improving rapidly
+- Ecosystem support is growing
+- Examples are plentiful
+- Integrations are first-class
+
+**One Alloy Container is enough for small**
+
+````
+Applications
+   ↓ OTLP
+Grafana Alloy
+   ├── Loki
+   ├── Tempo
+   └── Prometheus
+         ↓
+      Grafana
+````
+
+_Note:_ Some advanced users say that Alloy might fall behind on some features
+and whatever, but that's irrelevant for more use cases unless you need bleeding-edge
+processors, hyperscale infra, uncommon exporters.
+
+This would be a great start:
+
+[cols="1,1"]
+|===
+|Container | Purpose
+
+|alloy
+|Collection pipeline
+
+|grafana
+|Dashboards
+
+|loki
+|Logs
+
+|tempo
+|Traces
+
+|prometheus
+|Metrics
+|===
+
+Alloy Features that matter operationally are:
+
+1. Unified Telemetry = One collector, logs;metrics;traces. Instead of multiple agents
+2. Built-in batching/retries = This matters during outages
+3. Memory limiting = Critical protection against collector crashes
+4. Native OTLP support = Applications can emit directly using OTLP/gRPC and OTLP/HTTP
+5. Prometheus compatibility => Prometheus ecosystem remains massive, exporters are everywhere, infra metrics become easy later
+
+**REALLY IMPORTANT RECOMMENDATION**
+
+> Standardize Semantic Conventions Early
+
+Use:
+
+- service.name
+- deployment.environment
+- service.version
+- db.system
+- db.operation.name
+- http.request.method
+
+This makes dashboards reusable later
+
+=== Why does observability exist?
+
+It's about **REDUCING MTTR**
+
+Not collecting pretty graphs.
+
+Good observability helps teams answer quickly:
+
+- What broke?
+- Where?
+- Why?
+- Which dependency?
+- Which deployment?
+- Which SQL query?
+- Which service?
+- Which customers?
+
