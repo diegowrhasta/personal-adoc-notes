@@ -874,6 +874,59 @@ may increase profits, it raises ethical concerns about fairness and transparency
 Companies should be guided by principles such as honesty, transparency, fairness,
 responsibility, and long-term trust rather than focusing only on short-term profit.
 
+11. **Ethical issues** The Finance in Practice box in Section 1-2 describes three
+corporate practices that have been criticized as unethical. Select one of these and
+discuss at what point (if any) does the practice slide into unethical behavior
+
+**Corporate Raiders**
+
+Employees are also part of the bigger whole, even though they also are assets
+themselves. If we were to follow the theory, then this could be a bad financial
+decision, because there is a segment of the stakeholders that is not getting
+wealthier, and by losing possible great assets, then the long-term wealth
+generation can end up compromised. Not to mention that the fact that people got
+caught in the middle, may move others towards cutting investment to the corporation.
+
+Corrections
+
+Corporate raiding becomes unethical when investors focus only on short-term profits
+without considering the long-term effects on the company and its stakeholders. While
+restructuring can sometimes improve efficiency and shareholder value, it becomes
+questionable if it damages the company's future, causes unnecessary harm to employees,
+or strips assets only for quick gains. Ethical decisions should consider long-term
+value creation and responsibility toward stakeholders.
+
+**Corporate finance theory** traditionally prioritizes: Shareholder value maximization,
+not making every stakeholder wealthier. The ethical dilemma exists precisely because:
+
+- Shareholdeeeeer gains and stakeholder harm can conflict
+
+"employees are assets themselves" => This wording is dangerous/unhelpful in ethics
+discussions.
+
+Employees are:
+
+- Stakeholders
+- Human participants in the firm, not merely "assets" in the accounting sense.
+
+Better wording: Employees are important stakeholders and contributors to long-term
+value creation.
+
+The ethical issue is NOT merely: "people lose jobs". Because, economically:
+
+- Restructuring can still create overall value
+
+The ethical line usually concerns:
+
+- Manipulation
+- Deception
+- Extreme short-termism
+- Disregard for stakeholders
+- Value extraction without sustainable improvement
+
+12. **Agency issues** Why might one expect managers to act in shareholders' interests?
+Give some reasons
+
 === Chapter 2 Notes
 
 == Present Value Relations I
