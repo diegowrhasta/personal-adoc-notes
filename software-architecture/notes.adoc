@@ -59,6 +59,110 @@ all together for simplicity.
 to re-engineer your application so it's more modular, separating concerns
 better and making it more maintainable and extendable.
 
+Now, if you have _a distributed big ball of mud_. Then that's much more complicated.
+There's people that are doing distributed tracing in production just to find out
+what microservice calls to what other microservices.
+
+[quote, Simon Brown]
+----
+If you can't build a modular monolith, what makes you think microservices are the
+answer?
+----
+
+In separating things into separate services, you could even make an application
+_slower_.
+
+[quote, Martin Fowler]
+----
+First Law of Distribution: Don't Distribute
+----
+
+By distributing things you might end up with:
+
+- Higher latency
+- Security concerns
+- Problems with resilience
+- Network might not be fast/reliable
+
+If you do communication between microservices:
+
+- Synchronous => REST services
+	- Netflix doesn't use REST anymore, they do GraphQL for Front, gRPC for backend
+- Asynchronous => Helps with resilience (don't wait for response)
+	- You send the request, and at some point you get the reply
+	- But what do you do if you wait for it and don't get an answer?
+		- Send request again
+			- If the consumer is not idempotent, things are done twice
+- Event based => Fire and forget
+	- Things get consumed at some point, and perhaps further events are created
+	based on the process of the previous ones
+	- But apps become more resilitient as a consequence
+	- **But there's a price**, you need some messaging system. You need something
+	like RabbitMQ, Apache Kafka. This has to be maintained, upgraded. So _NOT FOR
+	FREE_
+
+=== Anti-Patterns
+
+Integration Database = Multiple Microservices are accessing the same schema on
+the database, and you have issues of: Who does migrations? Who's the owner of
+the data? Who's writing the data? - So please, don't do it.
+
+However, the **Integration Database** can become an intermediate step from a monolith
+to a more modular system.
+
+Moving the backend to modularity and microservices might solve different issues,
+however the bottleneck can easily drift into the Frontend. The Frontend might
+become this huge monolith too.
+
+_Note:_ So companies are moving to micro-frontends, but apparently at the time
+of writing (2026-June) there really aren't mature frontends to really take on
+the whole micro-frontends pattern in stride.
+
+=== Self-Contained Systems Architecture
+
+Apparently, this pattern was introduced at the same time that Netflix did the
+microservices inception.
+
+SCS:
+
+- Cut the monolith along bounded contexts
+- Wrap each domain in its own web application
+- That application is a **Self-contained System (SCS)**
+
+We don't create just a backend service, we create the whole application and that's
+called Self Contained Systems (SCS)
+
+**German speaking side:** Seems to know well about this.
+
+_Characteristics:_
+
+- An SCS contains its own **user interface**, specific **business logic**, and **separate
+data storage**
+	- It may contain an _optional API_ (preferably async)
+	- This becomes even bigger than a microservice, and in turn, the communication
+	across "micro-services" ends up being less important
+
+So, you have the whole app in **one silo**.
+
+**Data Storage**
+
+- Every SCS brings its **own data storage**, which may cause **redundant data**
+- Redundancy is tolerable as long as **data sovereignty** is preserved
+	- So just one system should write, read
+
+**How to Integrate SCS?**
+
+- Self-contained Systems should be integrated via their **web interfaces** to
+minimize coupling to other systems.
+	- Basically, you are going to go back to good 'ol **hyperlinks**
+		- You click on one place, and that navigates away to another SCS
+
+You might be thinking: _Ah, that's so bad, my users want seamless interactions and
+great integration_. But if you put some telemetry in place, you might be surprised
+the amount of people that will stay within **one silo**
+
+
+
 == On Designing an Observability Platform
 
 There are tons of observability ecosystems, but one we can focus on because of
