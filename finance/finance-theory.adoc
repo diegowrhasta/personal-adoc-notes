@@ -406,6 +406,30 @@ Many shareholders are investors.
 Not all investors are shareholders.
 ````
 
+Corporations invest in real assets, **these generate income**. Some of the assets
+can be:
+
+Tangible: Plant, machinery
+
+Intangible: Brand names, patents
+
+Corporations finance their **investments** by _borrowing_, _retaining_, and
+_reinvesting cash flow_, **AND** selling additional shares of stock to the
+corporation's shareholders. So, financial managers are always faced with two
+questions:
+
+- What investments should the corporation make?
+- How sohuld it pay for those investments?
+
+Investment decision involves **spending money** and financing decision means
+**raising money**
+
+The biggest problem is "how do you raise value? (of the corporation)". Because
+shareholders can be hundreds of thousands. Their profiles can differ in wealth,
+risk tolerance, investment horizon. But the secret is to go for the clearest and
+most in the middle choice that satisfies all of them. Make them wealthier, so
+that then **they take decisions on their own on how to use that wealth**
+
 **Investor:** Anyone who puts money into something expecting a return.
 E.g.,
 
@@ -926,6 +950,59 @@ The ethical line usually concerns:
 
 12. **Agency issues** Why might one expect managers to act in shareholders' interests?
 Give some reasons
+
+- Because the more wealth is increased for the shareholders, the more likely they
+are to invest more, boosting resources to then further coportation assets
+- Bigger wealth for a corporation usually means more potential investors jumping in
+- The only way to further the corporation's growth, is to take financing decisions
+that are directly related to smart investment decisions, and everything comes
+tied to the people that are bringing in the financement, the shareholders.
+
+Corrections
+
+The question is asking:
+
+> Why would managers be motivated to act in shareholders' interests instead of
+their own?
+
+This is about:
+
+- Incentives
+- Monitoring
+- Governance
+- Market pressures
+
+Managers may act in shareholders' interests because corporations create incentives
+and monitoring systems that align management with shareholder value maximization.
+Managers are often compensated with stock and performance-based pay, so they
+benefit when shareholder wealth increases. In addition, boards of directors, shareholder
+oversight, the threat of dismissal, reputational concerns, and possible takeovers
+all pressure managers to act in the interests of shareholders.
+
+13. **Agency issues** Many firms have devised defenses that make it more difficult
+or costly for other firms to take them over. How might such defenses affect the
+firm's agency problems? Are managers of firms with formidable takeover defenses
+more or less likely to act in the shareholders' interests rather than their own?
+What would you expect to happen to the share price when management proposes to
+institute such defenses?
+
+Such defenses might result in the manager letting loose, knowing that there's one
+less risk for him losing his position due to another company's takover, indeed
+it would be less likely for managers to act in shareholders' interests with such
+a setting. The price would go down I'd think, because opportunities of being
+acquired by a wealther corporation and their stock going up would be reduced greatly.
+
+Corrections
+
+- Takeover can replace inefficient management
+- Improve operations
+- Create shareholder gains
+
+Meaning, investors often react negatively to these defenses because:
+
+- Potential takeover premiums become less likely
+- Management accountability weakens
+- Future efficiency improvements may be blocked
 
 === Chapter 2 Notes
 
