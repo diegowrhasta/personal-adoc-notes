@@ -430,6 +430,77 @@ risk tolerance, investment horizon. But the secret is to go for the clearest and
 most in the middle choice that satisfies all of them. Make them wealthier, so
 that then **they take decisions on their own on how to use that wealth**
 
+There may be a few activities in which one can read a textbook and then just "do it",
+but financial management is not one of them. That is why finance is worth studying.
+Who wants to work in a field where there is no room for judgement, experience,
+creativity and a pinch of luck?
+
+_A book can't guarantee any of those things, but it can try to cover the concepts
+that govern good financial decisions, and show you how to use the tools of the
+trade of modern finance_
+
+Financial managers, refer to the _opportunity cost_ of the capital contributed
+by shareholders. Whatever they could earn **outside the company** sets the standard
+for investments _inside_ the corporation.
+
+And managers, of course, are human beings with their own interests and circumstances;
+they are not always the perfect servants of shareholders. Therefore corporations
+must combine governance rules and procedures with appropriate incentives to make
+sure that all managers and employees-not just the financial managers-pull together
+to increase value.
+
+Shareholders do not want the maximum possible stock price. They want the maximum
+honest stock price. Good governance plus appropriate incentives should help block
+out temptations to increase stock price by illegal or unethical means.
+
+The five themes that occur again and again throughout the book are:
+
+1. Corporate finance is all about maximizing value
+2. The opportunity cost of capital sets the standard for investment decisions
+3. A safe dollar is worth more than a risky dollar
+4. Smart investment decisions create more value than smart financing decisions
+5. Good governance matters
+
+To carry on business, a corporation needs an almost endless variety of **real
+assets**. They have to **pay for them**. The corporation pays for its real assets
+by selling claims on them **and** on the cash flow that they will generate. These
+claims are called **financial assets or securities**
+
+- Bank loan => Financial Asset **ONLY**. It's a promise to pay the loan that the
+corporation gives to the bank. CAN'T BE TRADED IN FINANCIAL MARKETS
+- Corporate bond => This is sold to investors, _also a promise_ but to pay interest
+on the bond and pay off the bond at its maturity. **Financial asset PLUS security**
+
+Securities include:
+
+- Bonds
+- Shares of stock
+- And a dizzying variety of specialized instruments
+
+This suggests the following definitions:
+
+Investment decision = purchase of real assets
+Financing decision = sale of securities and other financial assets
+
+_Note:_ You aren't "selling financial assets" unless you are a Bank. When they
+take the promises of whoever (bundle of thousands of mortgages or auto loans),
+and they sell them to investors. That can be indeed referred to as "selling financial
+assets". _However, in everyday speech what you sell, mostly is securities,
+"issuing stock", "issuing bonds"_. You would normally say, _"taking out a loan"_
+
+However life is not so simple. Part of the investment decision is to also manage
+assets already in place and deciding when to shut down and dispose of assets when
+they are no longer profitable. The corporation also has to manage and control
+the risks of its investments. _(And don't forget about management and control of
+the risks your investments hold)_
+
+Financing, besides raising cash today, **also** means meeting the obligations to
+banks, bondholders, stockholders that have contributed financing in the past. For
+example, the corporation has to repay its debts when they become due. If it cannot
+do so, it ends up insolvent and bankrupt. Sooner or later the corporation will also
+want to pay out cash to its shareholders.
+
+
 **Investor:** Anyone who puts money into something expecting a return.
 E.g.,
 
