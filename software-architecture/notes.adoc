@@ -161,7 +161,95 @@ You might be thinking: _Ah, that's so bad, my users want seamless interactions a
 great integration_. But if you put some telemetry in place, you might be surprised
 the amount of people that will stay within **one silo**
 
+=== Asynchronous for the Win!
 
+- **Synchronous** remote calls inside business logic should be avoided
+- **Asynchronous** calls **reduce dependencies** and prevent error cascades
+- **Consistency** guarantees **may be relaxed**, depending on the required update
+rate
+
+- So eventual consistency will be introduced
+	
+The advantages of SCD => Are the sames as microservices
+
+- Resilient
+- Scalable
+- Open
+- Independent
+
+The most important part of modular architecture styles is the modularity.
+
+Modernization => Monoliths to turn into modules.
+
+- Scaling to Zero => An interesting strategy to save up on costs, is the fact that
+on weekends when people don't use the systems you can scale back everything and
+save up on some power
+	- Making things modular allows for you to choose whatever tech stack you want,
+	and also plug-and-play solutions if you choose so
+
+**AI Needs Context**
+
+- AI assistants are only as good as the context they see
+
+**With microservices**
+
+- One feature lives in many repos
+- The full code may not fit in the context window
+- AI suggestions break other services
+- Humans still stitch it together
+
+In this age of AI and Agentic coding, if a context is **too big** or **too chaotic**.
+The AI itself might have a hard time really understanding it, and in turn waste
+more time (even though they are amazing at reading and processing tons of information
+and fast).
+
+**SCS: Right-Sized for AI**
+
+- **The full picture fits**
+	- UI, business logic, and data access live together
+	- The whole context fits in the window
+
+**Changes stay inside the boundary**
+
+- One team per SCS maps to one AI agent per SCS
+
+So, you can program, maintain, understand, and iterate over an end-to-end
+architecture, which brings in advantages such as less fragmentation, more locality,
+less cognitive overload.
+
+=== Modernizing a Wholesale ERP System
+
+This is a DEMO of how a customer project by using SCS works and how it's been
+developed.
+
+An old homehrown ERP System. People don't want to use applications that must
+be installed, UI is outdated, so a need for modernization was needed.
+
+The domains that were done:
+
+- Procurement
+- Sales
+- Logistics
+- Finance
+
+All the parts are there, logically. The first step:
+
+- Split the monolithic application into the **high level subdomain struct**
+
+Apparently they have about 30 SCS running to serve this modernized iteration.
+
+And they leverage "DDD" because they are using "Bounded Context" to describe
+how each SCS makes usage of their data to do their assigned work.
+
+Everything is **events**, that get published to a topic/queue, and that then
+get passed around amongst domains. They then take the data inside the events,
+and update their databases accordingly, on top of reacting however they need
+to react. Another big thing is that separated to these business logic events,
+there's solely **database events**, replication. That happens amongst the
+multiple databases, Even if you have read-only or write-only databases, you need
+to replicate some level of data to keep consistency, and in case you need (data
+RIGHT NOW), you would need to go through the topic/queue intermediary, and perhaps
+have a bigger delay than what a sync endpoint call would do.
 
 == On Designing an Observability Platform
 
