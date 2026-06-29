@@ -500,6 +500,24 @@ example, the corporation has to repay its debts when they become due. If it cann
 do so, it ends up insolvent and bankrupt. Sooner or later the corporation will also
 want to pay out cash to its shareholders.
 
+**Investment decisions** are often referred to as **capital budgeting** or **
+capital expenditure** (**CAPEX**) decisions because most large corporations prepare
+an annual **capital budget** listing the major projects approved for investment.
+
+_Some_ investments involve the purchase of tangible assets-assets that you can touch
+and kick. However, corporations also need to invest in intangible assets, such as
+research and development (R&D), advertising, and computer software. For example,
+GlaxoSmithKline and other major pharmaceutical companies invest billions every
+year on R&D for new drugs. Similarly, consumer good companies such as Procter &
+Gamble invest huge sums in advertising and marketing their products. These outlays
+are investments because they build know-how, brand recognition, and reputation
+for the long run.
+
+Today's capital investments generate future cash returns. Sometimes the cash inflows
+last for decades. For example, many U.S. nuclear power plants, which were initially
+licensed by the Nuclear Regulatory Comission to operate for 40 years, are now being
+re-licensed for 20 more years and may be able to operate efficiently for 80 years
+overall.
 
 **Investor:** Anyone who puts money into something expecting a return.
 E.g.,
