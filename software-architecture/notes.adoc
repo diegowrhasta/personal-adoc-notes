@@ -251,6 +251,68 @@ to replicate some level of data to keep consistency, and in case you need (data
 RIGHT NOW), you would need to go through the topic/queue intermediary, and perhaps
 have a bigger delay than what a sync endpoint call would do.
 
+**Macro Architecture**
+
+- **Data integration**
+	- **Replication** of read-only data based on database views
+	- Async through **events**
+- **User Interface**
+	- Common **Design Systems** with Components and Styles
+	- **Link database** for navigation
+
+SCS are **completely independent systems**. One can be written on JS, other on
+Go, other on C#, other in JAVA. However, the decisions that was taken was as
+follows:
+
+````
+- Because we want to exchange developers from different teams, all the application's
+stack will be with the same framework/language.
+````
+
+In this specific use case, the different SCS were actually being used by different
+users, and different departments, so they wouldn't really start navigating across
+SCSs, **however**, the team still decided to run with a **Design System** so
+all of them share a visual line.
+
+**Data Redundancy**
+
+There are two ways:
+
+- You do **Replication**
+	- **Pull-based** replication
+	- **Target system refreshes data**
+	- Good for **data** that **does not change** very **often**
+	- Adds **delay** depending on refresh interval
+	- **Simple** to implement
+- You do **Events**
+	- **Push-based** replication
+	- **Source system publishes changes**
+	- Good for **frequently changing data**
+	- **Near-real-time** updates
+	- **Higher** operational **complexity**
+		- Someone has to manage the messaging system, the Kafla Cluster, etc
+
+So, an interesting strategy for migration is as follows:
+
+````
+In moving the old system to the new SCS architecture. We want to keep running the
+old systems as long as possible (yet, knowing that they will be gone eventually),
+so that if something goes wrong with the new system. Users can fallback to the old
+system.
+````
+
+The idea is to connect an old database with the new system (at least for the time
+being), since the team sometimes doesn't know how many SCS will be there, it really
+depends as you go, how you analyze, what you encounter, the issues and challenges
+that start showing up the more you dig further. But the idea, always, is that the
+old database will be gone as well eventually.
+
+_Migration of a system sometimes takes longer than you envision_. Most of the time
+is because you need the experts, the domain experts to chime in and help out.
+
+_Management might think something will take 3 years_. But internally the team
+might already have a rodemap for 5 years.
+
 == On Designing an Observability Platform
 
 There are tons of observability ecosystems, but one we can focus on because of
