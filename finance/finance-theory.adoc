@@ -519,6 +519,37 @@ licensed by the Nuclear Regulatory Comission to operate for 40 years, are now be
 re-licensed for 20 more years and may be able to operate efficiently for 80 years
 overall.
 
+_Not all investments have distant payoffs, sometimes investments come within months_
+
+_Cash returns are not guaranteed_. An investment could be a smashing success or a
+dismal failure.
+
+_**Side note**_ And sometimes a bad investment decision could end up in bankrupcy.
+But even then, private investors can buy the company, and turn it completely around
+by taking a stab at it with different investment decisions.
+
+**Do not think that the financial manager makes large investments on a daily basis**.
+Most investment decisions are smaller and simpler, such as the purchase of a truck,
+machine tool, or computer system. The cumulative amount of small investments can be
+just as large as that of the occasional big investments.
+
+_Managers do not make major investment decisions in solitary confinement_. They
+may work as part of a team of engineers and managers from manufacturing, marketing,
+and other business functions.
+
+=== Financing Decisions
+
+A corporation can raise money from lenders or from shareholders.
+
+If it **borrows**, the lenders contribute the cash, and the corporation promises
+to pay back the debt plus a fixed rate of interest.
+If the shareholders put up the cash, they do not get a fixed return, but they hold
+shares of stock and therefore get a fraction of future profits and cash flow.
+
+The shareholders are _equity investors_, who contribute _equity financing_. The choice
+between debt and equity financing is called the **capital structure** decision.
+_Capital_ refers to the firm's sources of long-term financing.
+
 **Investor:** Anyone who puts money into something expecting a return.
 E.g.,
 
