@@ -1,0 +1,58 @@
+= Notes
+
+== Everything a .NET dev needs to know about configuration and secret management
+
+Notes taken from https://www.youtube.com/watch?v=Vvl8w6OfDCM
+
+The way the .NET framework is very flexible and very powerful. Many organizations
+use it in different ways. However we are going to have a formal look as to the
+DOs and DONTs.
+
+**Incorrect secret management**
+
+You can get access, Global access to an organization's dev environment. It's
+so easy to make mistakes.
+
+More problems:
+
+- Storing secrets in plain text in repos
+- Github token in plain code
+- R1 AI assistant had horrible security. With API-Keys that allowed to brick all
+devices in the world
+
+**Secret Sprawls**
+
+- Have you ever leaked a secret?
+
+=== Configuration
+
+Settings panel of your app. Feature flags, normal flags, change environment variables
+and then switching things on/off without re-deploy.
+
+.NET has a configuration system:
+
+- appsettings.json
+- Environment variables
+- Command-line arguments
+- *Other sources
+
+Everything gets aggregated and abstracted into `IConfiguration`. You don't know
+what provider gives you that data.
+
+A thing that .NET has for it, is the **Configuration Structure**. `.json` is
+the most logical one and the default.
+
+There are objects with nested values, and you can use them with different sections:
+
+````
+Configuration.GetSection("Features");
+Configuration.GetRequiredSection("Features"); // This throws an exception
+````
+Configuration system might not change at runtime, so getting an empty object
+back should be invalid, so use `GetRequiredSection`.
+
+You can also get some nested value:
+
+````
+Configuration.GetValue<bool>("Features:EnableNewUI");
+````
