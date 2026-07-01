@@ -313,6 +313,45 @@ is because you need the experts, the domain experts to chime in and help out.
 _Management might think something will take 3 years_. But internally the team
 might already have a rodemap for 5 years.
 
+**Strangler Fig Pattern**
+
+This is a very good illustration of how the migration that is taking place on this
+talk's example. The new system, is running in parallel, slowly but surely workings
+its away until it takes over.
+
+This reduces risk also, because there's less "big applications" that the team
+has to take care of.
+
+The code is not "translated" => The requirements are reverse engineered, then
+those are presented to stakeholders and we ask: "Are these requirements still
+valid?". Then code starts getting migrated.
+
+- Beginning: Management said "NO NEW FEATURES"
+	- Once you are done, add new features
+		- However during the process, the dev team already started implementing
+		new features. This is positive on the user's side because they finally
+		get features they were waiting for already for many years
+
+**Conclusion**
+
+- _Optimal Modularity_ based on business boundaries
+	- If you do modules, always check how the users use the application, how the
+	domains can be split out, that way you reduce communication between bounded
+	contexts. It's better to have as least of communication as possible.
+- _Team autonomy_ from UI to DB
+	- Always problems with database migrations, or UI, so better to have the power
+	to work on that yourself
+- _Reduced_ runtime _dependencies_ to a minimum
+	- Hotfix, wait until the evening
+		- With self-contained systems, a system has services that have the availability
+		that is required for a good experience (some systems are not used that much,
+		the customer doesn't lose money if some specific system is not operational for
+		a bit)
+- _Simpler_ Deployment and Operations
+- Supports _continuous modernization_
+	- In a few years, SCS by SCS can be modernized, which can then be way more
+	sustainable
+
 == On Designing an Observability Platform
 
 There are tons of observability ecosystems, but one we can focus on because of
