@@ -56,3 +56,118 @@ You can also get some nested value:
 ````
 Configuration.GetValue<bool>("Features:EnableNewUI");
 ````
+
+_You shouldn't use this in classes though_
+
+The way it works is a series of steps such as this:
+
+````
+var builder = new ConfigurationBuilder();
+
+builder.AddEnvironmentVariables();
+builder.AddJsonFile("appsettings.json");
+
+var configuration = builder.Build();
+````
+
+This begs the question of: _If we have multiple providers, how does it know what
+provider to use?_ If all of them contain values? Then order of registration
+**matters**.
+
+.NET create a lot of default setups for us, you don't have to do this manually.
+
+The defaults will work like this:
+
+Priority:
+
+- appsettings.json
+- appsettings.{ENVIRONMENT}.json = DOTNET_ENVIRONMENT or ASPNETCORE_ENVIRONMENT
+	- By default, Development will be setup
+	- For test environments you can set that to TEST, STAGING and PRODUCTION
+- User Secrets = Only enabled during development. API Keys, Passwords
+	- **Not actually secret!**
+- Environment variables = Not used during development, but with containers, env
+variables are highly used
+- Command-line arguments => This will **always win**
+
+=== The Options Pattern
+
+You shouldn't be using `IConfiguration`, nor `IConfiguration.Section` in your
+code.
+
+Wouldn't it be cool to create a class, that captures a section of configuration?
+We can test things, we can add controls, this is compilable and with way more
+metadata and QoL with static type checking.
+
+````
+var settings1 = _configuration
+	.GetSection("ExternalApiSettings")
+	.Get<ExternalApiSettings>();
+
+var settings2 = new ExternalApiSettings();
+_configuration.GetSection("ExternalApiSettings").Bind(settings2);
+````
+
+This is _bad_. Magic strings in codebase, class needs knowledge of configuration
+structure. At runtime the class might break, perhaps because the things are tightly
+coupled.
+
+We can treat configuration as code, but we are tightly coupling it. Instead let's
+opt into the Options pattern.
+
+services.Configure<ExternalApiSettings>(configuration);
+
+````
+public class ExternalApiClient
+{
+	private readonly ExternalApiSettings _externalApiSettings;
+
+	public ExternalApiClient(IOptions<ExternalApiSettings> options)
+	{
+		_externalApiSettings = options.Value;
+	}
+
+	public void CallExternalApi()
+	{
+		// Do something with these settings here...
+	}
+}
+````
+So this is a singleton, it's lazy, and everything will just flow, and we are
+fully treating the configuration retrieval as code.
+
+Validation:
+
+````
+public class ExternalApiSettings
+{
+	[Required]
+	public string ApiUrl { get; set; }
+
+	[Required]
+	public string ApiKey { get; set; }
+
+	[Range(1, 1_000_00)]
+	public int TimeoutInMilliseconds { get; set ;}
+}
+````
+Your application should not startup if it has been configured incorrectly, what
+if the connection string for prod gets put in?
+
+````
+.AddOptions<ExternalApiSettings>()
+.BindConfiguration(nameof(ExternalApiSettings))
+.ValidateDataAnnotations()
+.ValidateOnStart(); // Highly recommended => That way it will initialize all options and crash if things don't pass.
+````
+
+Of course you won't validate a connection string through annotations, but you can
+pass validation lambdas for that.
+
+**Keeping it fresh**
+
+Change things on hot, and configurations get auto-applied, no downtime.
+
+- **IOptions<T>**
+- **IOptionsSnapshot<T>**
+- **IOptionsMonitor<T>**
