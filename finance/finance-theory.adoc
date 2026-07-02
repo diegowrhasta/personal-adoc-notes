@@ -748,6 +748,33 @@ or "Inc.,". The U.K. identifies public corporations by "plc" (Public Limited Cor
 French corporations have the suffix "SA". The corresponding labels in Germany are
 "GmbH" or "AG"
 
+A corporation is owned by its shareholders but is legally distinct from them.
+Shareholders can lose their entire investment in a corporation, but no more.
+**Limited liability**.
+
+When a corporation is first established the shares are _closely held_. So, shares
+are privately held by a small group of investors, such as company managers and a
+few backers. Eventually, when the firm grows and new shares are issued to raise
+additional capital, its shares are traded in public markets such as the New York
+Stock Exchange. These are _public companies_. In the U.S. most public companies
+are public, whilst in other countries they tend to stay within private hands.
+
+A large public corporation may have hundreds of thousands of shareholders, who own
+the business but cannot possibly manage or control it directly. This _separation
+of ownership_ and _control_ gives corporations permanence. Even if managers quit
+or are dismissed, the corporation survives. Today's stockholders can sell all
+their shares to new investors without disrupting the operations of the business.
+Corporations can, in principle, live forever, and in practice, they may survive
+many human lifetimes.
+
+==== Other Forms of Business Organization
+
+Corporations do not have to be prominent, multinational businesses. If you want
+the trouble you can organize a local plumbing contractor or barber shop as a
+corporation though. However, most corporations are larger businesses or businesses
+that aspire to grow. Small "mom-and-pop" businesses are usually organized as
+sole-proprietorships.
+
 ==== Financial Instruments
 
 They are split into 3 main families:
