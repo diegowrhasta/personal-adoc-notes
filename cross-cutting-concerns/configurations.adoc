@@ -324,3 +324,56 @@ out things for your testing or dev purposes.
 - Azure Authentication
 	- This is an Azure Service
 	- It also has an Azure Authentication Library
+
+Visual Studio => If you are logged in with your Microsoft Account, (or Azure CLI),
+it will try to connect to your key vault. That way you don't have to store any
+secrets to connect to the vault itself. Unless you give explicit permissions to
+connect to Key Vault, no one can access.
+
+- Do not default Azure Credentials in PROD
+
+Azure Managed Identities
+
+- Safely communicate with Azure services without secrets
+	- This works for services hosted in Azure
+- _No need to manage secrets when there's no secrets to manage!_
+- Supported by most Azure services
+
+Connecting Azure Services without secrets
+
+- You should never show your connection strings to anyone
+
+````
+Authentication=Active Directory Default;
+````
+You can't leak secrets when there are no secrets to leak.
+
+=== DEMO
+
+````
+var keyVaultUriRaw = builder.Configuration.GetValue<string>("KeyVaultUri") ??
+	throw new Exception("Missing KeyVaultUri");
+var keyVaultUri = new Uri(keyVaultUriRaw);
+builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+````
+
+So, yeah this makes the usage of a vault so much easier, and you can even use
+it at a DEV level. If you want your onboarding experience to be less painful.
+
+If you want to deal with the secrets `json` file you can just right click a
+project and say: `Manage User Secrets`.
+- Connection strings should probably be treated as any top secret-secret. So the
+whole connection string should probably also be stored in the key vault. Even if
+your connection string doesn't actually have any secrets in there. Just being
+cautious.
+- .NET's configuration system is powerful and flexible. At its core, you can use
+**IConfiguration** with a set of providers to access your configuration.
+- Use the **Options pattern** to decouple your code from your configuration. This
+also allows you to use advanced features like validation and more.
+- During local development, **User Secrets** should be used to prevent leaking
+secrets into your codebase
+- Store your secrets in the **Azure Key Vault** and retrieve them at runtime by
+using the related IConfiguration provider. Consider using this for local development,
+together with **Azure App Configuration**!
+- Finally, make use of **Azure Managed Identities** to connect Azure services together
+without needing any secrets!
