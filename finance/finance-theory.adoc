@@ -775,6 +775,40 @@ corporation though. However, most corporations are larger businesses or business
 that aspire to grow. Small "mom-and-pop" businesses are usually organized as
 sole-proprietorships.
 
+But there's also the middleground, businesses that grow too large for a sole-propietorship
+but don't want to be recognized as corporations. Example, pool money and expertise with some
+frineds or business associates. The solution is to form a _parternership_ and enter
+into a partnership agreement. Those very same people set out how decisions are to
+be made and how profits are to be split up. Parterns, just like sole-props face
+**unlimited liability**. Meaning, that if the business runs into difficulties, each
+partner can be held responsible for **all** of the debt of the business.
+
+The advantage here is that partnerships do not pay income taxes. The partners
+simply pay personal income taxes on their shares of the profits.
+
+There's also a _hybrid_ model. In a _limited partnership_ partners are classified
+as general or limited. General partners manage the business and have unlimited personal
+liability for its debts. Limited partners are liable only for the money they invest
+and do not participate in management.
+
+Many states allow:
+
+- LLPs => Liability partnerships
+- LLCs => Limited liability companies
+
+These are partnerships in which all partners have limited liability.
+
+Another variation on this theme is the _professional corporation (PC)_ or
+_professional limited liability company (PLCC), commonly used by doctors, lawyers,
+and accountants. In this case, the business has limited liability, but the professionals
+can still be sued personally-for example, for malpractice.
+
+Most large investment banks such as Morgan Stanley and Goldman Sachs started life
+as partnerships. But eventually these companies and their financing requirements
+grew too large for partnerships, so they reorganized as corporations. **The partnership
+model doesn't work too well when ownership is all too widespread and there needs
+to be a clear separation between ownership and management**
+
 ==== Financial Instruments
 
 They are split into 3 main families:
