@@ -849,6 +849,61 @@ to make good investment decisions. On the other hand the financial manager deals
 investors-not just shareholders but also with financial institutions such as banks
 and with financial markets such as the New York Stock Exchange.
 
+==== The Financial Goal of the Corporation
+
+**Shareholders Want Managers to Maximize Market Value**
+
+Major corporations have hundreds of thousands of shareholders. No way, that all of
+these shareholders can be involved in management. Meetings would be endless,
+nothing would get done. That's the reason financial managers are hired and put
+in place. **Professionals**. But these managers are faced with problems also:
+
+- No shareholder is the same, people have different risk appetite, different short
+and long term goals. However there's one thing that everyone can be happy with:
+You get more wealth, you are happy. That new found wealth can be put to whatever
+purposes the shareholders want. So the manager isn't trying to please everyone.
+It's trying to please this common demoninator.
+
+_TIP:_ Many investors deal mostly with financial institutions. So banks, insurance
+companies, or mutual funds. These financial institutions in turn engage in financial
+markets, including the stock and bond markets. The institutions act as financial
+intermediaries on behalf of individual investors.
+
+The idea is that maximizing shareholder wealth is a sensible goal when the shareholders
+have access to well-functioning financial markets. These markets allow them to adjust
+risk and transport savings across time. Financial markets give them the flexibility
+to manage their own savings and investment plants, leaving the corporation's financial
+managers with only one task: to increase market value.
+
+**Mutual Funds Side Quest**
+
+Mutual funds are open to ordinary people, they were created in order to make investing
+accesible to people who don't have millions of dollars or the time to pick investments
+themselves.
+
+A professional investment manager gets access to a pool of money, and invests
+it according to a specific strategy.
+
+The pool takes money from many people, each investor on the pool takes/owns a tiny
+percentage of that pool.
+
+A mutual fund is an investment vehicle that owns many securities.
+
+When you buy **shares on the fund**, that represents a proportional claim on all of
+the underlying securities the fund owns (that he used to buy with the pool of money)
+
+The job of the professional fund manager is:
+
+- Research companies
+- Decide what to buy
+- Decide what to sell
+- Keep the fund aligned with its stated objective
+
+Investors pay for this service through management fees
+
+However, legally speaking the **fund** owns all **securities** it gets on behalf
+of all investors.
+
 ==== Financial Instruments
 
 They are split into 3 main families:
