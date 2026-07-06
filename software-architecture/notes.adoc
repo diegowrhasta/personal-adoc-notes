@@ -1028,7 +1028,6 @@ Here are other strategies:
 		- State that's being created by the user might be faster (due to locality),
 		caching, memory, and so on.
 - Least Connections (Alternative)
-
 How can you "code" something like this?
 
 - Put nginx as the load balancer
@@ -1065,3 +1064,84 @@ Microservices could be divided like:
 - Realtime
 
 (These can be referred as different domains)
+
+**Question:** Authentication, can it really just be a new service? Do we have
+to go through the Load Balancer (unauthenticated)?
+
+Not really, here comes the **Gateway**
+
+- He can coordinate the distribution of requests and responses
+	- He can even become an aggregator, say a user asks for one thing, but this
+	actually has to go to many services or take different pieces of info, the
+	Gateway can abstract away that complexity and take all responses and do one
+	response to the user.
+
+For security purposes also, the Gateway can be this **one and only point of contact**
+for the outside world. All your infrastructure can then be put in a VPC (Virtual
+Private C)
+
+_However the Gateway can become a single point of failure_. Unless we scale it,
+we can both scale the Gateway horizontally and vertically. (Which would move the
+Load Balancer before the Gateway)
+
+=== Object Storage
+
+Once multiple services start communicating amongst themselves, then things get
+even more complicated.
+
+Databases => Are not meant to store files.
+
+You should not directly upload to your server.
+
+You can get `timeout`s, security might end up compromised.
+
+So, separate the upload into smaller steps:
+
+- Make an upload request
+- Go to the Gateway
+- Gateway calls a Files service
+	- This creates metadata in database
+	- And then we request from an Object Storage, a link. Upload link.
+		- We return 200 with the metadata, and then we redirect the user to the
+		upload link (the link can be Authenticated also)
+		- And this Object Storage component takes away work from the "Files service",
+		the architecture is untouched, a "backdoor" is established amongst the
+		client and the Object Storage
+
+Now, the upload to an Object Storage can take time, and after it's done we indeed
+might want to react, **this shouldn't be through a synchronous call**. It can
+easily turn into a mess:
+
+- What if the service is not available?
+	- What if the service is down?
+- What if we want to fan-out to other services as well?
+
+That's when async (pub/sub) communication can come in, and help out. Decouple the
+Object Storage from services, and just put a bus/queue in the middle. So that
+services listen, and then react on their own. (You introduce a Broker). The
+Object Storage can then publish to the broker.
+
+- Broker has to be highly available
+- Durable messages
+- Redelivery functionality
+- Separation of concerns
+
+If a message is not consumed, then a graveyard of messages can be created (DLQ)
+
+=== Caching and CDN
+
+(And rate-limiting)
+
+What if the product still keeps scaling?
+
+Optimizations need to come in place => You shouldn't try to do this at the beginning,
+it's over-engineering. (Hence tutorials, youtube videos give a false preconception
+to people of what they actually need, and what they should do)
+
+There are multiple ways to optimize things.
+
+- Caching => This can be a layer (Redis) between the database and a service
+	- Cache lives in RAM, and to get info from RAM is way faster than disk
+		- Nowadays RAM is super expensive, so BEAR that in mind
+		- Also, an example use case is Netflix, that a new movie that is
+		going to be popular comes out, they just put it straight into RAM
