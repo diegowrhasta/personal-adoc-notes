@@ -932,3 +932,136 @@ Good observability helps teams answer quickly:
 - Which service?
 - Which customers?
 
+== Fundamentals of Backend Architecture - How to Design Scalable Software
+
+Notes from: https://www.youtube.com/watch?v=Qa-7iWxDz1A&list=WL&index=8
+
+When it comes to Software Design, Martin Fowler is a great initial starting point.
+
+Objective: Create a Google Drive clone.
+
+Rate Limiting, Caching, Horizontal Scaling.
+
+There are multiple ways of designing software, the idea is to think in systems.
+
+[IMPORTANT]
+====
+A good architecture is important, otherwise it becomes slower and more expensive
+to add new capabilities in the future.
+====
+
+=== How to design software
+
+Gradual evolution => Avoid over engineering and intentional progress
+
+**This is a heavy topic**.
+
+**First Step:** You have a server. You have users.
+
+The users make requests to your server => So all Data inside the server.
+
+- What happens if the server dies?
+- What happens when you want to scale?
+
+If the data is inside the server: If the server dies, the data is lost.
+
+Second step? Add a database.
+
+You have a server, and a database. When we make requests to the server, we get
+the data from the database. (Data persistence)
+
+What happens if the server dies? => We have a persistent layer that fights that.
+
+When it comes to scaling, say you want to server more users, because you already
+separated/decoupled a database, then you can clone many instances of the server,
+and no issues will arise, because the server takes care of business logics solely.
+All the **new instances** will be looking at _one database_, this is the separation
+of concerns, the `database` doesn't actually know that there's a server, it just
+cares about storing the data, then the server indeed knows about the database,
+but because you have decoupled server from database, then if one component dies:
+
+**The other component still lives on**
+
+Concept: Data coupled to the machine = no scale, no resilience
+
+=== Step 2
+
+An application grows, more users start joining. Then complains start to rise up,
+the response has become slow, so we now have to scale the server to more than
+one instance.
+
+**Load Balancer** => Piece in the middle will be inserted to redirect user requests
+to healthy machines / round-robin algorithm. Another extra component that helps scaling,
+**AND** still adheres to the principle of _separation of concerns_
+
+Round/robin is good to start with, but if you start going deeper and try to fine-tune
+things, you will come to this realization:
+
+- An upload <> A simple GET query
+
+There are operations, that different users might start, and that are way heavier
+than others. So one server serving the really CPU intensive tasks (GETS) or
+disk/database intensive tasks (FILE UPLOADS) will indeed have different "health
+status", depending on what he is currently serving.
+
+Through `healthchecks` you can enable your `load balancer` to look at the two
+servers, and determine which one is the healthiest, so that he redirects the
+traffic there, in hopes the user gets a better experience than if the request were
+to be sent to the other less healthy server.
+
+**There are different techniques, different load balancer solutions**
+
+In the case of the heavy file upload, you could even decouple a "server" to
+become a fully specialized master at uploads. And the load balancer can then
+be configured to do `routing` based on special pathnames and rules so that if
+he detects that a file upload is going to take place, he will **always redirect
+the request to the specialized upload master**.
+
+`POST /upload` => Always FILES server.
+
+Here are other strategies:
+
+- Weighted Round Robin
+- Sticky Sessions (Session Affinity)
+	- If a user comes on his first request to one specific server, you might want
+	to keep redirecting him there in consequent requests
+		- State that's being created by the user might be faster (due to locality),
+		caching, memory, and so on.
+- Least Connections (Alternative)
+
+How can you "code" something like this?
+
+- Put nginx as the load balancer
+	- An `nginx.conf` is more than enough
+- Create some servers in `go`
+
+With a `docker-compose.yml` you can easily lab this idea, and how to configure, how
+to program, and other playground purposes.
+
+- Horizontal scaling = You add more machines
+- Vertical scaling = One machine you scale it up (make it beefier)
+
+Load balancers, can again help out, giving them the capability of **auto-scaling**.
+
+`min=2`, `max=10`.
+
+Auto-scaling can even do everything for you. You don't have to really do anything.
+
+=== Microservices
+
+If you _keep scaling_, _more users_, _more needs_. Things get again slower.
+
+You might want to look at **microservices**
+
+The idea is to use this architecture in **really big things**. That way one team
+only focuses on a specific feature, another one on another, and so on. Highly
+specialized teams, tech stacks and business knowledge.
+
+Microservices could be divided like:
+
+- NOTIFICATIONS
+- FILES
+- Auth
+- Realtime
+
+(These can be referred as different domains)
