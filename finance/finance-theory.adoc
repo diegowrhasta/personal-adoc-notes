@@ -904,6 +904,38 @@ Investors pay for this service through management fees
 However, legally speaking the **fund** owns all **securities** it gets on behalf
 of all investors.
 
+In a roster of shareholders usually you might have both risk-averse and risk-tolerant
+investors. Risk averse can say things such as:
+
+- "Sure, maximize value, but don't touch too many high-risk projects"
+- "Risky projects are OK, _provided_ that expected profits are more than enough to
+offset the risksi. If the firm ends up too risky for my taste, I'll adjust my
+investment portfolio to make it safer"
+
+So basically, if an investor sees that a corporation is taking too much risk on
+its projects, they can shift their investment to safer assets (e.g., U.S. government
+bonds). They can just straight up say "good-bye". So selling everything, and
+buying shares in a safer corporation.
+
+==== A Fundamental Result
+
+The goal of maximizing shareholder value is widely accepted in both theory and
+practice. It's important to understand why. So here's the argument broken down
+into a series of steps:
+
+. Each stockholder wants three things:
+	- To be as rich as possible, that is, to maximize his or her current wealth
+	. To transform that wealth into the most desirable time pattern of consumption
+	either by borrowing to spend now or investing to spend later
+	. To manage the risk characteristics of that consumption plan
+. But stockholders do not need the financial manager's help to achieve the best time
+pattern consumption. They can do that on their own, provided they have free access
+to competitive financial markets. They can also choose the risk characteristics
+of their consumption plan by investing in more or less-risky securities
+. How can then the financial manager help the firm's stockholders? There is only
+one way: by increasing their wealth. That means increasing the market value of the
+firm and the current price of its shares.
+
 ==== Financial Instruments
 
 They are split into 3 main families:
