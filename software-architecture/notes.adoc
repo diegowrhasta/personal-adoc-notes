@@ -1145,3 +1145,57 @@ There are multiple ways to optimize things.
 		- Nowadays RAM is super expensive, so BEAR that in mind
 		- Also, an example use case is Netflix, that a new movie that is
 		going to be popular comes out, they just put it straight into RAM
+
+- One first layer of caching => File metadata
+	- Because it's tiny, and rarely changes
+- Caching file bytes in Redis is usually wrong = Expensive
+	- But there's an alternative for it called **CDN**
+		- This is a cache that can be used for **big things**
+
+You can have a key for a file, that's still warm (in the cache). And then retrieve
+it from there. And with the `cache-aside` pattern you can then put the database
+retrieved in the cache for later usage.
+
+**CDN**
+
+It's a bit the same as the cache. Imagine that CDN has small points of presence
+around the world. A CDN provider has more presence around the world. So, instead
+of getting to your specific server or your location's storage, you can have
+"copies" of your server around the world.
+
+[IMPORTANT]
+====
+Video doesn't really explain what CDN's really cache. A CDN's purpose is to bring
+your website's content closer to the user instead of making every request travel
+back to your origin server.
+====
+
+_So a CDN mainly will cache these things:_
+
+- Images
+- CSS
+- JavaScript
+- Fonts
+- Videos
+- PDFs
+- And sometimes HTML pages/API responses (this is called edge computing, but it's
+nieche)
+
+The main mechanism a CDN works under is this:
+
+- A request is made, the edge server (the CDN's closest server to the user) tries
+to find some cached info based on the request. If he can't find it, he goes to
+**your server** gets as much as he cans, and caches it for next time.
+
+**Rate Limiting**
+
+- Malicious users can exhaust the resources of your system
+	- It can affect your business heavily
+- Rate limiting can work with the **CACHE**
+	- Before your **Gateway** you can put a component that acts like a bouncer
+		- He can look at the user that's making the request, and he can then save
+		a footprint on the IP/NAME of that user in the cache
+			- The more requests that the same user makes, with the cache you start
+			analyzing if you will allow him to go through or not, if the user has
+			made too many requests, then the _"bouncer"_ can just deny him from
+			going to the server
