@@ -1020,3 +1020,101 @@ and you can set it up too.
 - More Libraries
 	- First Class Instrumentation Support
 - More Documentation
+
+== Using Structured Logging for Production Insight | DevOps Lab
+
+Notes taken from https://www.youtube.com/watch?v=sG18k05uwvY&list=WL&index=10
+
+_A lot of the time DevOps stops when production hits, and go lives_ But that's
+**not where it stops**
+
+- For many years => Just getting to production was **THE** challenge. But then
+that evolved:
+
+- Unit Testing
+- Continous Integration
+- Automating builds
+
+We are quite good now to push things to production. In the past you would hear
+about these projects that consume millions and millions of dollars and that never
+actually shipped a single line of code to production.
+
+**We are good at getting the code out the door now**. We are now growing in other
+areas, maturing the industry and methodology:
+
+- Production monitoring
+- Diagnostics
+
+The failures you hear the most about now are **downtimes**
+
+=== What if something goes wrong?
+
+You make mistakes. Before => Someone got on the phone.
+
+But the tools for monitoring apps now exploded.
+
+- Structured logging => Takes `printf()` and scale that up to something that's
+real engineering
+	- Meaning, to a level at which you can plan **how you were going to monitor**
+	systems in prod, how to react to different kinds of errors, and eventually
+	trace back errors to the **causes**
+		- This is really hard, specially in big systems
+
+**Structured Logging:**
+
+````
+Log.Logger = new LoggerConfiguration()
+	.WriteTo.Console()
+	.CreateLogger()
+
+Log.Logger.LogInformation();
+````
+The typical logging story was "linear" it told a story yes, however it was quite
+naive in its approach. Once you scale up, or work on more complex systems, you
+realize that all events, all logs interleave and are jungled up together. It's
+chaos, that you can't really make sense off, because the logs themselves are so
+simple. Getting some meaningful insight is **really difficult**.
+
+ASP.NET Core has popularized `Serilog`. It takes the `printf()` debugging, but
+replaces it with the notion of **templated messages**. We still get the debug
+experience of reading text. However, the values of pieces of data that make up
+the log will then be saved individually (in memory at first) and that can then
+be streamed to a structured analysis system/tool.
+
+`Log Logger = new LoggerConfiguration().WriteTo.Console(new CompactJsonFormatter())`.
+With this, you now have a structure, properties that you can then filter by, or
+refer to. You don't have to take narrative messages that are pure text, that you
+have skim through, use Regex to make sense of. Structured logging is now a stream
+of events that have properties, and the properties will be used for you to pick
+up on a failure, and from then trace back all the other related events that lead
+to the issue.
+
+=== Microservices
+
+In logging here, there must be a `correlation ID`. Log data is highly dimensional.
+But correlation is something that is important, and helps to trace events downstream.
+
+When you are analying that "one bug", and perhaps you want to dig further, you
+need to start thinking of other axis, other possible explanations for it so you
+slash at all the logs, and find trends or patterns.
+
+E.g., I see an error always popping up when the basket of items is always > 5,
+why? And you dig further, and further.
+
+=== ASP.NET Core
+
+Thanks to the team's work done there, a lot of logging information is already surfaced
+by the framework himself. Something that was completely missing from all the other
+versions.
+
+You can correlate application logic with the mechanics of the framework, so you
+can mix-in together both information that is out-of-the-box and the framework's logging
+module.
+
+You get providers also, Console Provider, Debug Trace Provider. All of the providers
+have many ways of formatting data.
+
+Serilog => It's a whole pipeline, and lots of extensions and extra goodies.
+
+The framework will cook up things suchas `RequestId`, and then you can search by
+that `RequestId` and you can easily put together the story that led to some error.
