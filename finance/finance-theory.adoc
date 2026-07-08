@@ -936,6 +936,26 @@ of their consumption plan by investing in more or less-risky securities
 one way: by increasing their wealth. That means increasing the market value of the
 firm and the current price of its shares.
 
+Economists have proved this value-maximization principle with great rigor and
+generality. _So there's science backing this up, not just empirism_
+
+You always hear managers saying "let's maximize profit". Sounds reasonable, but taken
+literally, profit maximization is not a well-defined financial objective for at least
+two reasons:
+
+. Maximize profits? Which year's profits? A corporation may be able to increase
+current profits by cutting back on outlays for maintenance or staff training, but
+that may result in lower profits in the future. Shareholders will not welcome higher
+short-term profits if long-term profits are damaged.
+. A company may be able to increase future profits by cutting this year's dividend
+and investing the freed-up cash in the firm. That is not in the shareholder's best
+interest if the company earns only a modest return on the money.
+
+The firm can either keep and reinvest cash or return it to investors. If cash is
+reinvested, the opportunity cost is the expected rate of return that shareholders
+could have obtained by investing in financial assets (by themselves, in a financial
+market)
+
 ==== Financial Instruments
 
 They are split into 3 main families:
