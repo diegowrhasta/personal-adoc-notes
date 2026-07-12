@@ -978,6 +978,31 @@ A concept to keep in mind is _hurdle rate_ or _cost of capital_. Which is really
 available to investors in financial markets. Corporations increase value by accepting
 all investment projects that earn more than the opportunity cost of capital.
 
+The opportunity cost of capital depends on the risk of the proposed investment
+project. That's not just because shareholders are risk-averse. It's because they
+**have to trade off risk against return** when investing on their own.
+
+- Safest investments: U.S. government debt, (but lower rate of return)
+- Stock market is higher expected rates (riskier, and possible painful losses)
+	- Other examples of higher rates of return but more volatile are high-tech growth
+	stocks
+
+[IMPORTANT]
+====
+Opportunity cost of capital is generally **not** the interest rate that the company
+pays on a loan from a bank. If the company is making a risky investment, the opportunity
+cost is the expected return that investors can achieve in financial markets _at
+the same level of risk_
+====
+
+Expected return on risky securities is well above the interest rate on a bank loan.
+
+Managers look to the financial markets to measure the opportunity cost of capital
+for the firm's investment projects. They can observe the opportunity cost of capital
+for safe investments by looking up current interest rates on safe debt securities.
+
+_For risky investments, the opportunity cost of capital has to be estimated_
+
 ==== Financial Instruments
 
 They are split into 3 main families:
