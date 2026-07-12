@@ -1,0 +1,150 @@
+= Notes
+
+Notes taken from https://www.youtube.com/watch?v=eExkCpyUrrs&list=WL&index=9
+
+If you look at installing .NET in different platforms. It's very heterogenous.
+
+Windows:
+
+- Visual Studio
+- Visual Studio Code
+- WinGet
+- get.dot.net
+- dotnet-install.ps1
+- dnvm
+
+macOS:
+
+- Homebrew*
+- get.dot.net
+- Visual Studio Code
+- dotnet-install.sh
+- dnvm/mise/asdf*
+
+Linux:
+
+- Hold on just a sec...
+
+You basically have IDE-based distribution, extension based. This is a very centralized
+way of getting .NET. But some environments might not have that possibility (so
+you have to go more manual)
+
+Many mechanisms for version control/management. Are actually community driven
+efforts. _Very mixed bag of ways to getting to dotnet with pros and cons_
+
+Linux
+
+- This is the wild west.
+
+Package Managers, dotnet-install, dnvm/mise/asdf/...
+
+The .NET SDK drops quarterly.
+
+The different decision trees have different pros-cons
+
+Package Managers
+
+- Only .1xx SDKs (until .NET 10!)
+- Only one version of each major
+- Doesn't work well with per-repo needs
+
+dotnet-install
+
+- No central managemenet
+- No update mechanism
+- Clashes with `global` installations (which are easy to start with)
+
+dnvm/mise/asdf/...
+
+- Update mechanisms!
+- May not do correct things all the time (e.g., mise and DOTNET_ROOT)
+
+It's so hard, and it falls on the users to solve everything, to spend time troubleshooting
+and testing.
+
+== The Solution
+
+- Create a standalone, Native AOT tool to manage .NET Toolchains
+- Focus on user-global, non-admin installations
+- Lean on existing global.json infrastructure to enable user control
+- Improve infrastructure and auditability for .NET Releases and binaries
+- Reuse code and libraries across our existing installer mechanisms
+
+`global.json` => Can evolve into something more ergonomic.
+
+Central Management and Auditability that goes into the happy path (Visual Studio)
+should be replicated in all the other methods.
+
+- You should know that the binaries you are using, are the ones the .NET team intends
+to deliver to you
+- Audability => The idea for this tool is to interconnect with the ecosystem of
+tools that already exists
+
+**Internal Preview Level**
+
+You can actually download the tool already:
+
+curl -sSL https://aka.ms/dotnetup/get-dotnetup.sh | sh
+
+Once you get the script it prints out a lot of information that is useful to you
+even how to add the executable to your path (it is not done by default). And
+after you have added it or you want to run it manually you can run things
+like:
+
+- dotnetup --info
+- dotnetup init
+
+And you can select if you want the latest SDK or if you want or perhaps another
+version, but the tool is so smart it will get the recommended one for your
+specific system (OS, Architecture taken into consideration)
+
+And right after that, the CLI has a very nice UI/UX experience that you can then
+follow easily.
+
+Once that's done you should have the latest working dotnet version for you.
+
+=== Going into project specific settings
+
+So the `global.json` is a file that can really handy when it comes to extremely
+portable setups. In there you can declare what .NET version the project in question
+requires/works with.
+
+With `dotnetup` you can go inside a project, and if there's a `global.json` you
+can run `dotnetup sdk install` and it will try to see if the current session
+has
+
+[IMPORTANT]
+====
+`dotnetup` tries to keep things as local as possible. So your home is where dotnet
+lives (SDKs, Runtimes). It won't be global anymore, so technically any other user,
+any other project can switch easily, and not care.
+====
+
+[source, json]
+----
+{
+	"sdk": {
+		"version": "10.0.100",
+		"rollForward": "latestPatch", <.>
+		"allowPrerelease": false
+	},
+	"runtimes": {
+		"runtime": ["10.0"],
+		"aspnet": ["10.0"]
+	}
+}
+----
+Depending on what is configured here `dotnetup` will behave differently. Options
+are: `latestFeature`, `latestMajor`, `latestMinor`, `latestPatch`, `disable`.
+
+With `dotnetup sdk install` it will log everything, for example it will say
+`installing .NET 10.0.1xx`. And it says the reason (in this example it is because
+of `global.json`)
+
+**This is the Core Value Proposition**
+
+Yeah there have been workloads that do use `global.json`, and it's mostly abstracted
+in Github Actions, or overall CI/CD pipelines.
+
+But nothing was done locally, and now it's great to get a tool that automates that,
+and makes management of .NET packages seamless.
