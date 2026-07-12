@@ -1,4 +1,4 @@
-= Notes
+o Notes
 
 Notes based on https://www.youtube.com/watch?v=HdHlfiOAJyE&list=PLmSGbCS0swswHGaytV6QQkyA9tGR7i0tV[MIT's Finance Theory I]
 
@@ -955,6 +955,28 @@ The firm can either keep and reinvest cash or return it to investors. If cash is
 reinvested, the opportunity cost is the expected rate of return that shareholders
 could have obtained by investing in financial assets (by themselves, in a financial
 market)
+
+==== The Investment Trade-Off
+
+Basically, the financial manager will always be at odds with the opportunity
+cost of the market for the shareholders. The manager might have great ideas
+for asset investments, but they always need to be squared up against what the
+shareholders can get if they invest in the market on their own.
+
+E.g., Say a project has a 20% ROI, and the market can only give 10% at tops to
+the sharedholders. They would vote to go with the project, if that is inversed
+or the ROI is not that high (or perhaps high but with too much risk) then they
+might vote against going forward with the project and just want to get their money
+back.
+
+And this in short, makes it so that if a project looks profitable, shareholders
+applaud, and the stock grows in price, cuz it seems you are going to get higher
+profits now.
+
+A concept to keep in mind is _hurdle rate_ or _cost of capital_. Which is really
+**the opportunity cost of capital**. Which is only depending in the _opportunities_
+available to investors in financial markets. Corporations increase value by accepting
+all investment projects that earn more than the opportunity cost of capital.
 
 ==== Financial Instruments
 
