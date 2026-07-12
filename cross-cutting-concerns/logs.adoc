@@ -1118,3 +1118,48 @@ Serilog => It's a whole pipeline, and lots of extensions and extra goodies.
 
 The framework will cook up things suchas `RequestId`, and then you can search by
 that `RequestId` and you can easily put together the story that led to some error.
+
+Something to keep in mind:
+
+When you are thinking about logs, traces, **you are engineering the diagnosibility and
+transparency of the application as you go**.
+
+Example:
+
+_The controller that was failing here, has this trace/message that you can then
+pinpoint in code_
+
+And you can then test a theory:
+
+- You can maybe filter all logs that are hitting that exact same log path. And
+then look at other examples, and correlate, or find issues/errors.
+
+There's two ways to handle log data:
+
+- Collect Text
+	- Wash it
+- Collect JSON
+	- Try to figure out reading without your eyes bleeding
+
+You can really choose the format **based on the target**
+
+- You need to collect logs during development, so that they are useful in production.
+	- Testing didn't really become an engineering principle until Unit Testing
+	starting to drive the development (TDD)
+	- You have to make sure the logs are actually **useful**. So a good practice
+	to keep in mind is to look at your logs as a way to debug, try to actively
+	improve them, if you find a blindspot or something that could've helped you
+	figure out an issue or something as you develop, then improve, take the time
+		- **That is the only way that once you hit production you won't have a
+		wall of unusable text**
+
+[IMPORTANT]
+====
+The developer should take ownership of diagnosing things in production. Use feedback
+to test the quality of the code and that also falls on the developers. Developers
+should also take a part in the testing story. **Thinking about improving the
+observability, test, be methodical**
+====
+
+Being able to diagnose stuff in production is crucial, and structured logging is
+this amazing tool that can help you get there.
