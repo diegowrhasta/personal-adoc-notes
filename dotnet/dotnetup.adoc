@@ -148,3 +148,62 @@ in Github Actions, or overall CI/CD pipelines.
 
 But nothing was done locally, and now it's great to get a tool that automates that,
 and makes management of .NET packages seamless.
+
+If you run `dotnetup list`, it will track all the decisions you made, it will list
+all the dotnet versions, what you need, what you have, and align all those requirements.
+And again, `dotnetup` will help you easily get latest versions.
+
+**Typical issue:**
+
+You clone a repo, and your current .NET SDK doesn't support or align with that
+repo's expected one. `dotnetup` should completely get rid of that friction.
+
+**Multi-targeting**
+
+This is a concept that can be used by library authors, so that the latest features
+or cool stuff for people that are at the latest, they can leverage it.
+
+`<TargetFramework>net8.0;net9.0;net10.0</TargetFramework>`
+
+So a cool idea is to literally have UTs that target different .NET versions, and
+then see that everything works across them.
+
+Even on the `global.json` you can declare the .NET runtimes that you want for
+the specific project.
+
+And as an initial hurdle, if you only have .NET SDK 10 installed, and then you have
+execution paths that are for other versions, then the tests for those other versions
+would fail, beause there is no runtime of that specific .NET version.
+
+So `dotnetup` makes things easy, (or it would, no current reality)
+
+````
+"runtimes": {
+	[]
+}
+````
+If we can declare in `global.json` the runtimes that are needed.
+
+However, you can still run:
+
+dotnetup runtime install 8.0 9.0 10.0
+
+And you will easily get the runtimes. So now you get convenience from CI/CD setups
+into local setups.
+
+You can be really specific too:
+
+`dotnetup install aspnetcore@8.0`
+
+`dotnet --list-runtimes`
+
+== Getting tools is half the battle
+
+Getting upgrades, updates, maintenance is something responsible development teams
+also have to take care of.
+
+`dotnetup update` => This helps updating versions. `global.json` should be used
+to describe requirements for development. But there's a manifest that dotnetup uses
+internally (and shouldn't be version controlled)
+
+`init` => Supported for bash, POSIX compliant setups atm only.
