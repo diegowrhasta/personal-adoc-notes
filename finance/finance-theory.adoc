@@ -1003,6 +1003,46 @@ for safe investments by looking up current interest rates on safe debt securitie
 
 _For risky investments, the opportunity cost of capital has to be estimated_
 
+==== Should Managers Look After the Interests of Their Shareholders
+
+_We have been saying this whole time **financial managers act on behalf of the
+shareholders by trying to maximize their wealth**_. But then a question arises:
+
+_Is it desirable for managers to act in the selfish interests of their shareholders?_
+
+This book is focused around financial policies that increase value. **None of these**
+requires trampling over the weak and helpless. In most instances, little conflict
+arises between doing well (maximizing value) and doing good. Profitable firms are
+those with satisfied customers and loyal employees; dissatisfied customers and a
+disgruntled workforce will probably end up with declining profits and a low stock
+price.
+
+Most established corporations can add value by building a long-term relationship with
+their customers and establishing a reputation for fair dealing and financial integrity.
+When something happens to undermine that reputaation, the costs can be enormous.
+
+When the objective of the firm is to maximize shareholder wealth, that doesn't mean
+"anything goes". The law deters managers from making blatantly dishonest decisions,
+must most managers should not be concerned only with the letter of the law or
+with contracts. In business and finance, as in other day-to-day affairs, there are
+unwritten rules of behavior. These rules make financial transactions feasible because
+each party to the transaction has to trust the other to keep to his or her side of
+the bargain
+
+_NOTE:_ An individual's lack of trust is a significant impediment to participation
+in the stock market. "Lack of trust" means a subjective fear of being cheated.
+
+When something happens to damage the trust, the costs can be enormous. Volkswagen
+is a case in point. They added some extra hidden features into cars, and even
+though it was _just for testing_ it became this whole scandal, that made stock
+price drop, and also added fines to them.
+
+**_Ethical Disputes in Finance_**
+
+_Short Selling_
+
+
+
 ==== Financial Instruments
 
 They are split into 3 main families:
