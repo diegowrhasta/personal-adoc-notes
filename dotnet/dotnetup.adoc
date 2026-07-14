@@ -207,3 +207,83 @@ to describe requirements for development. But there's a manifest that dotnetup u
 internally (and shouldn't be version controlled)
 
 `init` => Supported for bash, POSIX compliant setups atm only.
+
+== Uninstall
+
+Another missing part of the dotnet installation story was **uninstalls**. Sometimes, 
+once you upgrade everything, old SDK tools might not be used by the requirements
+you have declared. You can manually uninstall SDKs and Runtimes.
+
+`dotnetup` has global uninstalls. And also component uninstall (just SDK, just
+Runtime)
+
+`dotnetup` => Can become a toolchain for .NET components.
+
+`rustup` => Inspiration. A world, in the future, can be when this tool helps you
+stay on top of all the updates for components
+
+== Future of dotnetup
+
+**Humans**
+
+- Expectations from other ecosystems
+- Want consistency across platforms
+
+**Agents** (CI/CD included, not just LLMs)
+
+- Want ways to do simple things
+- Need guardrails
+- Works best without admin rights
+
+The idea is an agent should be able to use the tool successfully and quickly. And
+do management the right way. (Because an Agent can do bad things)
+
+- Agents **should have guardrails**
+	- Hence using the user directory
+	- I want the latest stable version
+		- I want the series of 10x series of tools
+
+**Simple AND consistent management**
+
+- The idea is that a lot of people can use this (developers). Things should be
+simpler, easier, straightforward
+	- DEVELOPER TIME USE CASE
+- Package version managers => Self-contained deployments, these are all better
+for production.
+
+**What's coming?**
+
+- Internal Preview
+	- Manage stable SDKs
+	- Manage daily SDKs
+		- `global.json` => You should be able to get the hot builds, and try things
+		out easier
+	- One-shot execution
+		- You should be able to validate different .NET builds amongst .NET SDKs
+		and runtimes (A/B Test - without global installations)
+	- Feedback from you!
+
+- Public Preview
+	- Self update
+	- Update checks and notifications
+	- Signature verification
+	- Agent Skills
+
+- GA
+	- UX polish
+	- More Docs!
+	- .NET Website integration
+	- Runtime declaration
+
+- Roadmap
+	- Componentize the SDK
+		- Enabling shipping parts out of band
+	- CI/CD Integration
+		- GitHub Actions
+		- Azure DevOps
+
+Faster updates for all the tooling => That's the goal. With LLMs there's a push to
+release more, and evolve more. The idea is for faster rollout. So if push, if
+there's issue, push fix ASAP.
+
+
