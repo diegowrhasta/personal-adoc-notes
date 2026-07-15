@@ -1041,7 +1041,26 @@ price drop, and also added fines to them.
 
 _Short Selling_
 
+Investors who take short positions are betting that securities will fall in price.
+They usually borrow a security, sell it for cash, and then wait in hope that they
+can buy the security for cheaply.
 
+Some people say that short selling profits of the misery of a crash. A commentator
+compared short-selling to the ghoulishness of "creatures who, at all great earthquakes
+and fires, spring up to rob broken homes and injured and dead humans".
+
+Not only do short-sellers sell all the shares they may have previously owned, they
+borrow more shares and sell them too, hoping to buy them back for less when the stock
+price falls. **Poorly performant companies are natural targets for short-sellers.
+And yes, managers complain about this.
+
+But there are defendants of short-selling, to sell securities one believes are
+overpriced is no less legitimate than buying those that appear underpriced. The
+object of a well-functioning market is to set the correct stock prices, not always
+higher prices. Why impede short-selling if it conveys truly bad news, puts pressure
+on poor performers, and helps corporate governance work?
+
+_Corporate Raiders_
 
 ==== Financial Instruments
 
