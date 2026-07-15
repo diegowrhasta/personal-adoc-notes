@@ -1199,3 +1199,122 @@ to find some cached info based on the request. If he can't find it, he goes to
 			analyzing if you will allow him to go through or not, if the user has
 			made too many requests, then the _"bouncer"_ can just deny him from
 			going to the server
+
+== Someone was laid off by Attlasian
+
+Notes taken from: https://www.youtube.com/watch?v=55pTFVoclvE&list=WL&index=8
+
+Envoyproxy => Replace licensing cost proxies with this. (More modern nginx)
+
+AWS CloudFormation Templates => IaC
+
+Some statis: 2000 proxies - 13 regions
+
+AMI => Standard image for the proxies. (Machine image)
+
+Hashicorp Packer => SaltStack Configuration => AWS EC2 provisioner
+
+SaltStack => Configuration Manager => I want to run packages, configurations,
+stuff in a particular way, particular order. So declarative configuration for
+servers. (Automated)
+
+Install & Configure:
+
+- Envoy
+- Observability agent
+- Security / Hardening
+- Network tuning
+- Containers
+
+Esentially a cool idea for a provisioning system was:
+
+- A provisioning API (FastAPI, Python) that talks to provisioning APIs and then
+saves some data
+- A second system that helps manage all this provisioning (connects to the database
+that the provisioning API handles)
+- And then this all interfaces with AWS products and things, following standard
+patterns, standard language that is easily understandable and portable enough so
+that everything "just werks", and of course tons of _industry standard_ features,
+that cover a range of requirements are covered, and automated through the home-grown
+systems. (This took 2 years)
+
+- This system was the building blocks of a team.
+	- It was centralized load balancing management
+	- All of the features that were provided to the customers were defined in
+	the templates
+	- So basically, proxies that reacted dynamically to services that were being
+	deployed over time
+
+=== Larger Products should use the platform components
+
+The idea was to migrate all microservices at Attlasian to this platform. Even the
+larger products and systems.
+
+This was easier, because the platform was built in such a way that standarization
+was enforced by the platform usage itself.
+
+The idea was that every basic service was getting its load balancing wiring automatically,
+but it also made it so that the service is completely shut off from the basic
+load balancing that was in place. (It had to go through the centralized load balancing
+system).
+
+It was a **hard rule**, if you did all of this for your service, that meant that
+**you wanted your service to be publicly available**. Previously, it could've been
+accidental that it was public, with the platform, **that was not a thing anymore**.
+
+[IMPORTANT]
+====
+The biggest value added by the centralized proxy management system. Was to take
+away, abstract things from developers, so that they have more time to focus on features,
+and things that add value. The system is all about **dynamic configuration** because
+developers only know **Templates**, and those abstract all the configuration that
+has to be done on the Cloud Providers and Provisioning tools as well.
+====
+
+There are cross-cutting concerns, that for developers, adds more time, and features
+get delayed, people are unhappy, clients even may have issues:
+
+- DDOS Protection
+- Access logs
+- Authentication
+- Authorization
+- Rate Limiting
+
+`Envoy` proxy has SO much configuration and features, that it allowed to take
+on some of these concerns **away from the developers**.
+
+DDOS Protection => CloudFront
+
+[NOTE]
+====
+Validation was like **mega-hardened** on the provisioning API so that no wrong
+provision or infrastructure was spun up. Based on the developer `parameters` then
+**more templates were created dynamically**
+====
+
+- Devs => Set a bit of json
+	- The system generates all the Envoy proxy configuration
+
+For
+
+- Authentication
+- Authorization
+- Rate Limiting
+
+All of these had to run as side cars. They were their own services running locally
+on the proxy server. (Containers essentially). Some of the side cars were made
+by other teams, others were created by the Centralized Proxy Management System team.
+
+- Authentication => Written in Rust
+
+All of these services that lived in the proxy locally, were also configured and
+provisioned. By the dynamic provisioning configuration that then fed onto the
+AMI => Machine Image.
+
+Cool result:
+
+**Programmable proxy with sidecars that have their own separate logic from the
+proxy and they can _too receive configuration over the wire_ - locally**
+
+All the concerns were solved before backends being hit. The solution also was
+done super quick, so that was even better.
