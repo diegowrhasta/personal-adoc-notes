@@ -1318,3 +1318,68 @@ proxy and they can _too receive configuration over the wire_ - locally**
 
 All the concerns were solved before backends being hit. The solution also was
 done super quick, so that was even better.
+
+**Non-technical requirements**
+
+- Compliance
+
+_Boring check-listing work, no new build_
+
+- Diplomacy, conflict resolution, persuade, teach, educate, mentor => Skills
+- Ability to maintain software and systems
+	- See where the cracks show up and build things that don't show those cracks,
+	or that show up way later
+
+_At the very start, you have the requirement, onboard, document_. Where do things
+break? Where things can automate?
+
+Example:
+
+- What if SQS stops working?
+- What if Amazon goes down and we don't have db?
+- What if wrong configuration is generated?
+
+At the start there's a lot of these questions.
+
+- People come and go
+	- You have to do onboarding again
+		- You should have more people
+		- More opinions come in, things changing, things "become better"
+
+**Churn:** It becomes predictable. Once you notice it. It's a smell, it's an indication
+that that part of the service/project is going to keep increasing. And you have
+to **take a decision**.
+
+Maintenance burden => Doesn't appear at the beginning.
+
+**Building something is easy, changing it, and make sure it's easy to change it
+over time is hard**. Things end up coupled, and you have to assume those risks.
+
+[NOTE]
+====
+Can AIs help untangle balls of mud?
+====
+
+Everyone has different styles and personalities (ways of working). Even though
+conflicts arise, you still respect someone.
+
+Sometimes your personality doesn't mix with their personality. Have self-awareness
+and understanding of the other person (psychology and professionalism). You should
+handle conflicts, anticipate conflict, make something to make the relationship
+work.
+
+_At times these conflicts affect performance_
+
+Next time those situations come around, you should be able to handle conflicts better.
+
+**Mentoring**
+
+Easy is to help, point out areas to deliver understanding. Help with mental models.
+
+- _Mentoring is a bit different_
+	- Personally difficult is striking the balance between how much time do you
+	give to the mentee
+		- Don't give answers to problems
+		- But also don't give them entire blockers all to the mentees
+
+Training => That's different and probably easier.
