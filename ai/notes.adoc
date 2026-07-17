@@ -1,0 +1,165 @@
+= Notes
+
+Notes on AI both technical and non-technical thoughts.
+
+== Keynote: After the AI Hype - What's Real, and What's Next
+
+Notes taken from: https://www.youtube.com/watch?v=uWnUnMphmPM&list=WL&index=4
+
+Scientists => Find terminology to finance research. And then things go into hibernation.
+
+- Eliza
+A joke. A mock. In the 1960's. For a "Rogerian psychotherapist".
+
+There was an issue, people thought of this joke as something real. **We are
+susceptible to these "fake Intelligences"**
+
+- We've been misusing a name (AI)
+- Right now we are in the 4th - 5th wave of this "idea"
+
+The ideas of Neural Networks, and AI concepts as a whole, was already conceived
+decades before. But white papers always seated at "we don't have enough compute,
+the tech is just not there". Until **2010** a group of students dusted off the
+theory. For an image competition:
+
+**Can we have computers identify the content of images?**
+
+ImageNet Competition => 14 Million labeled images stolen from social media.
+
+- We have a description of the image, can a software get that description?
+
+In two years, this was a solved problem. After using the old theory into modern
+GPUs.
+
+The new generation of Tech emerged also:
+
+- Voice (Stanford University). Voice recognition took a long time, and it was
+ineffective.
+	- Siri was the result of this effort (Apple bought the idea)
+- University of Toronto
+	- Image recognition company is built, Google buys it
+		- Google Brain = The best minds in this space were gathering here
+
+Sam Altman, Elon Musk => Were "worried" that the Google Brain division was getting
+too powerful. So they made it "open" called it OpenAI. They poached people from
+Google Brain.
+
+OpenAI was then "independent", kicked Elon Musk. Because it got good.
+
+- Universal translator
+	- Training set against the internet
+		- Image recognition was used in Health Care.
+		- "Radiology is Dead" => Computer's can do it all! - WRONG. The AIs just
+		now made the demand for Radiology even more. Because radiologists are now
+		fast, but more people want them.
+			- More productivity => More demand
+
+_Going back to OpenAI_
+
+GPT-2 => They make different sizes because they dont' have enough money to use the
+beefy models. So they test things with small parameter versions, and only use the
+big ones **when they really need to**
+
+- They said that they are worried what people might do with the tech. So it's
+closed-source.
+
+Microsoft => Bought LinkedIn, and a guy in LinkedIn who knew OpenAI made Microsoft
+invest in OpenAI. All that money was going to go into Azure then (Azure Workloads)
+
+- Neural Scaling Laws
+	- It went against the common knowledge in the field: Restraining your set - Don't over-train.
+	- This paper says "Train on everything, it will do everything, it will be perfect
+	eventually"
+		- And this became an excuse that birthed the generative models that we
+		are seeing today
+
+Based on this, the new "hyper-scalers" started developing.
+
+OpenAI GPT-3 = They now had money, and backing. It was ten times more powerful,
+ten times more expensive, and yet, kinda bad.
+
+But people at GitHub thought:
+
+- Hey, what if we restrict the dataset to programming languages?
+	- That had better results => First Product - Copilot (Good name btw)
+		- It means you are the pilot, it's still your fault
+
+GitHub Copilot was actually the first product of generative AI that actually was
+kinda good.
+
+OpenAI folks, still needed to improve, make things better. So they had this
+clever idea of:
+
+- Second Order training
+	- That's, you make a query to the model, the model spits back a couple of answers,
+	and you rank them as to which one was the best one
+	- They had the humans being from poor countries be the testers
+
+OpenAI => Ran out of money again. So they said "let's make it open to the public"
+
+That's how ChatGPT exploded. Let's make it "free", but people are our testers
+actually.
+
+100 Million Users => In two months. Azure folk had to scramble to get resources
+for so many people in such a short time. It was insane.
+
+Why so many? They dropped around Christmas time. _Of course people would love to
+talk to software instead of their loved ones_
+
+**Speakers Point:**
+
+Do not refer to a Software as a person. Because **it's NOT a person**. Help others
+think clearly. Clever software, and software nevertheless. Between Science Fiction
+and bad naming, some people are forgetting this truth.
+
+100M Users
+
+- There are many many copilots now being built
+	- This is a technological trigger
+
+Let's talk about a technology event that brings investors to the yard, stupid money,
+stupid decisions.
+
+You have to make bigger and bigger promises to investors, you need to keep riding
+the wave, you get to a **peak of inflated expectations** and that's insane. And
+when the expectations can't be met, the investment flies back.
+
+Bunch of companies fail, they get bought, and then the "hype" climbs back up to
+a more realistic set of expectations.
+
+The .NET Boom - Crash is another of these "technology trigger". The internet didn't
+die, the web survived.
+
+.COM Boom => Mobile => There are many technological booms. The cloud could be.
+But some didn't go through a **hype cycle**. You _need_ investors that don't really
+understand what you are selling, to buy it, to throw money at you. For you to
+tell them insane things such as "Jobs are over in the next two years", without
+them laughing at you => They give you money.
+
+- **This is just another cycle**
+
+- Bing => Microsoft's stab at it. They were already doing it, but this tech came in
+and they just integrated it.
+
+- GPT-4 = A trillion parameters => Indexed all of the internet. We kinda _peaked_
+
+- Microsoft => Copilot. They are not sure what to make here. And just create products,
+many are bad
+
+SRE Copilot (Agent) => Actually good. It's an AI-powered reliability assistant for
+diagnosing and resolving production issues. Investigates root causes, proposes
+mitigations, automates runbook-driven responses within guardrails and approval
+workflows defined by the user.
+
+- GPT-4o = Audio and Image recognition
+- deepseek => Chinese model. Built against the models that were in the west, already
+took what was done yes, BUT...
+	- You don't have to be so big, and still get pretty good results
+		- Nobody liked that so they tied to ignore it as much as possible
+
+Software => A lot of noise, hype. But no products were really being made that
+had good ideas, good business models.
+
+Until **2025**
+
+== Agents (2025 Turning Point)
