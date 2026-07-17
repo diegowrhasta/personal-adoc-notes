@@ -1091,6 +1091,42 @@ from a culture in the firm that encourages high-pressure selling or unscrupulous
 dealing. In this case the root of the problem lies with top management that
 promotes such values.
 
+==== Agency Problems and Corporate Governance
+
+We have emphasized the _separation of ownership and control_ in public corporations.
+The owners (shareholders) cannot control what the managers do, except indirectly through
+the board of directors. The separatin is necessary but also dangerous.
+
+- Managers may be tempted to buy sumptuous corporate jets or to schedule business
+meetings at tony resorts.
+- Managers may shy away from attractive but risky projects because they are worried
+more about the safety of their jobs than about maximizing shareholder value
+- Managers may work just to maximize their own bonuses, and therefore redouble
+their efforts to make and resell flawed subprime mortgages.
+
+Conflicts between shareholders' and managers' objectives create _agency problems_.
+These problems arise when _agents_ work for _principals_. The shareholders are the
+principals; the managers are their agents. **Agency costs** are incurred when:
+
+. Managers do not attempt to maximize firm value and
+. Shareholders incur costs to monitor the managers and constrain their actions
+
+When CEOs charge the company for their own personal interests, there's a conflict
+of interest, and agency problems.
+
+Hence people have devised **systems of governance** so that shareholders' pockets
+are close to the managers' hearts. Things that these systems take into account
+are:
+
+- Well-designed incentives for managers
+- Standards for accounting and disclosure to investors
+- Requirements for boards of directors
+- Legal sanctions for self-dealing by management
+
+When scandals happen, we say that corporate governance has broken down. When
+corporations compete effectively and ethically to deliver value to shareholders,
+we are comforted that governance is working properly.
+
 ==== Financial Instruments
 
 They are split into 3 main families:
