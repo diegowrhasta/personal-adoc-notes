@@ -1166,6 +1166,55 @@ of risk and return in financial markets.
 invested or reinvested by stockholders. But financing can get complicated when you
 get down to specifics.
 
+**Finance in Practice**
+
+Fintech and the Changing World of Finance
+
+The financial world is continually changing. A number of markets that barely
+existed a few decades ago are now trillion-dollar businesses. Sometimes this
+is due to someone finding an untapped demand, maybe new economic ideas. But
+there's also: **Technological advances**. Application of technology to financial
+markets is commonly known as _fintech_
+
+**Payment Systems:** Cash if disappearing fast in some countries. Countries like
+Sweden use card or a mobile app to transfer money.
+
+**Peer-to-peer (P2P) lending** These platforms directly link individuals willing
+to lend money with people seeking to borrow. The idea is that people sign up,
+a credit score is assigned to a customer, and on the basis of that score, potential
+investors can choose whether to participate in the loan. Banks are cut out of the
+lending equation entirely. It verifies the identity of borrowers and lenders, uses
+the credit score to set the interest rate for the laon, and services the loan.
+
+**Robo Advice** Providing investment advice to individuals and tailoring portfolios
+to their particular needs can be a costly business. Robo advisers seek to reduce
+costs by automating the process. You fill an online questionnaire describing your
+personal situation and your risk tolerance. Then the robo adviser recommends a
+portfolio, usually a basket of low-cust funds. Once you deposit the money in the
+account, the robo adviser will buy the investments and rebalance your portfolio
+to maintain your ideal mix of assets.
+
+**Blockchains** This network of computers that simultaneously update a ledger of
+transactions or other data. The ledger is distributed across many participants
+in the network. This could be a major advance in the speed and security of
+financial record-keeping. Stock exchanges around the world have begun to experiment
+with blockchains as a method for companies to list and trade their shares, and to
+ballot their shareholders. The effect would be lower costs of trading, faster
+transfers of ownership, and more accurate records.
+
+_More questions_
+
+- _Debt or equity? Does it matter?_ Not in a world of perfect financial markets.
+But in the real world, the choice between debt and equity does matter for many
+possible reasons, including taxes, the risks of bankruptcy, information differences,
+and incentives.
+
+There are certain things emerging. Corporate finance is "all about valuation".
+Because value maximization is the natural financial goal of the corporation. Another
+theme is the importance of the opportunity cost of capital, which is established
+in financial markets. The financial manager is an intermediary, who has to understand
+financial markets as well as the operations and investments of the corporation.
+
 ==== Financial Instruments
 
 They are split into 3 main families:
