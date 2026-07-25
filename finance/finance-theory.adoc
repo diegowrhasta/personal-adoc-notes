@@ -1215,6 +1215,44 @@ theme is the importance of the opportunity cost of capital, which is established
 in financial markets. The financial manager is an intermediary, who has to understand
 financial markets as well as the operations and investments of the corporation.
 
+Corporations face two financial decisions:
+
+- First, what type of investments should they make to raise value (Investment Decision)
+- Second, how should they raise money for investments (Financial Decision)
+
+Stockholders who own the corporation want its managers to maximize its overall
+value and the current price of its shares. The value of maximization is sound as
+long as the shareholders have access and freedom to their own savings and investment
+plans. Shareholders will gravitate towards honest share price.
+
+To increase the value of the firm, you mostly have to do **good investment decisions**.
+Financial decisions can of course screw you up, but a good investment is what separates
+value winners from the rest of the pack.
+
+Investment decisions involve a trade off, the managers can choose to reinvest the
+money in further projects or pay the money to the share holders in stuff like
+_extra dividends_. If the reinvestment of cash is chosen, then the shareholders
+forgo a potential ROI they can get in the market (at the same level of risk).
+The idea is that shareholders will measure this opportunity cost of capital,
+if the promise is fulfilled then the company's value grows, if not, then it falls.
+
+Managers are not endowed with a special-maximizing gene. They will be tempted to
+consider their own personal interests, which may create a conflict of interest with
+outside shareholders. This conflict is called a principal-agent problem. Any loss
+of value that results is called an agency cost.
+
+Investors will not entrust the firm with their savings unless they are confident
+that management will act ethically on their behalf. Successful firms have governance
+systems that help align the interests of both managers and shareholders' interests.
+
+These five themes ring true across the book and corporate finance in general:
+
+. Corporate finance is all about maximizing value
+. The opportunity cost of capital sets the standard for investment decisions
+. A safe dollar is worth more than a risky dollar
+. Smart investment decisions create more value than smart financing decisions
+. Good governance matters
+
 ==== Financial Instruments
 
 They are split into 3 main families:
