@@ -1751,6 +1751,65 @@ Meaning, investors often react negatively to these defenses because:
 - Management accountability weakens
 - Future efficiency improvements may be blocked
 
+==== Appendix
+
+===== Questions
+
+. **Maximizing shareholder value** Look back to the numerical example graphed in
+Figure 1A.1. Suppose the interest rate is 20%. What would the ant (A) and grasshopper
+(G) do if they both start with $100,000? Would they invest in their friend's business?
+Would they borrow or lend? How much and when would each consume?
+
+Answer => G would probably just invest it in the market. The difference for the
+upshot is 1,000$ dollars (way less than a 10K gap). A I'd say would still choose
+the friend's business, since he seems to be on the low end of risk appetite.
+Would they borrow or lend? R. Don't understand the question.
+How much and when would each consume? R. A = 120,000$ - Future, G = 100,000$ - Now
+
+Corrections:
+
+The key is that wording explaining **surefire investment**. That's how the friend's
+business is portrayed. That means, **_there is no risk_**. The only thing you need
+to care about is **the return compared with the market interest rate**
+
+Maths:
+
+Even if the market's interest is 20%, investing with the friend is still the better
+choice, it is **1%** more profitable.
+
+The way to calculate the consumption has to separate them into:
+
+- Consumption Now (C0)
+- Consumption Future (C1)
+
+A:
+
+They will consume in the future, they are not looking to do it now. So.
+
+C0 = 0$
+C1 = 100,000 * 1.21 => 121,000 $
+
+B:
+
+They will consume now, so they need to find what is the amount they can borrow
+now **from the market** so that when they have to pay in the future, the investment
+in the future pays it off. (Borrow against the friend's business investment)
+
+Future => 121,000 $
+
+C0 = 121,000 / 1.20 = 100,833.33 $
+C1 = 0$
+
+[start=2]
+. **Maximizing shareholder value** Answer this question by drawing graphs like
+Figure 1A.1. Casper Milktoasts has $200,000 on hand to support consumption in periods
+0 (now) and 1 (next year). He wants to consume _exactly_ the same amount in each
+period. The interest rate is 8%. There is no risk.
+a. How much should he invest, and how much can he consume in each period?
+b. Suppose Casper is given an opportunity to invest up to $200,000 at 10% risk-free.
+The interest rate stays at 8%. What should he do, and how much can he consume in
+each period?
+
 === Chapter 2 Notes
 
 == Present Value Relations I
