@@ -1789,11 +1789,11 @@ They will consume in the future, they are not looking to do it now. So.
 C0 = 0$
 C1 = 100,000 * 1.21 => 121,000 $
 
-B:
+G:
 
 They will consume now, so they need to find what is the amount they can borrow
 now **from the market** so that when they have to pay in the future, the investment
-in the future pays it off. (Borrow against the friend's business investment)
+in the future pays it off. (Borrow against the friend's business investment) 
 
 Future => 121,000 $
 
@@ -1809,6 +1809,38 @@ a. How much should he invest, and how much can he consume in each period?
 b. Suppose Casper is given an opportunity to invest up to $200,000 at 10% risk-free.
 The interest rate stays at 8%. What should he do, and how much can he consume in
 each period?
+
+a) We need to find an amount X that will be the same Now (C0) and also Tomorrow (C1).
+We are going to borrow, today an amount that will also be consumed today, but that
+will grow at an 8% market interest, and in the future will be able to be paid off
+after we get our investment's return (all of this just within the market)
+
+x => Investment Amount
+
+C0 = 200,000 - x
+C1 = 1.08x
+
+C1 = C0
+
+200,000 - x = 1.08x
+200,000 = 2.08x
+x = 96153.84 $
+
+C1 = 200,000 - 96153.84 = 103,846.15$
+C0 = 1.08 * 96153.85 = 103,846.15$
+
+R: He has 200,000 NOW. He will invest one side and spend another side. So we need
+to find the _right amount_ to consume, so that the investment can generate in the
+"just that extra bit of extra money" in the future so he consumes it there. (We
+are focusing on the actions NOW). So he can invest 96,153.84$ now, and consume/spend
+103,846.15$. In the future, he will receive 103.846.15$ to consume/spend there.
+Making the consumption **EQUAL**
+
+b) We need to find an amount X that will be the same Now (C0) and also Tomorrow (C1)
+against what Casper will get by investing on his friend's business. **to which**
+after using to pay that debt amount of X (at 8% interest), he will consume the remainder,
+(which is X)
+
 
 === Chapter 2 Notes
 
