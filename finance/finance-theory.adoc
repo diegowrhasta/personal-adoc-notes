@@ -1830,8 +1830,8 @@ C1 = 200,000 - 96153.84 = 103,846.15$
 C0 = 1.08 * 96153.85 = 103,846.15$
 
 R: He has 200,000 NOW. He will invest one side and spend another side. So we need
-to find the _right amount_ to consume, so that the investment can generate in the
-"just that extra bit of extra money" in the future so he consumes it there. (We
+to find the _right amount_ to consume, so that the investment can generate the
+"extra bit of compounded money" in the future so he consumes it there. (We
 are focusing on the actions NOW). So he can invest 96,153.84$ now, and consume/spend
 103,846.15$. In the future, he will receive 103.846.15$ to consume/spend there.
 Making the consumption **EQUAL**
@@ -1839,8 +1839,51 @@ Making the consumption **EQUAL**
 b) We need to find an amount X that will be the same Now (C0) and also Tomorrow (C1)
 against what Casper will get by investing on his friend's business. **to which**
 after using to pay that debt amount of X (at 8% interest), he will consume the remainder,
-(which is X)
+(which is X). So we are taking the "moment the cash is used" from the past (difference
+with a) to the present. He should directly put the 200,000 into his friend's business
 
+[IMPORTANT]
+====
+All the money is sitting on next year. (All the money should be invested TODAY)
+====
+
+[IMPORTANT]
+====
+In order to "equal" everything. We have to put all numbers in **TODAY'S** money.
+Or equivalent.
+====
+
+[IMPORTANT]
+====
+A DOLLAR TODAY IS WORTH MORE THAN A DOLLAR IN THE FUTURE
+====
+
+You can put "tomorrow's" money in today's terms by dividing the quantity over the
+interest of the market/context.
+
+E.g.,
+
+1$ today > 1$ tomorrow. At 8% => 1 / 1.08 => 0.9259$ today.
+
+So, if we want to conjure up a formula in today's terms:
+
+We have C (Consumption today)
+We could have C/1.08 (Consumption in the future)
+And we could also have 220,000 / 1.08 (The amount in the future, but in today's worth)
+
+C + C / 1.08 = 220,000 / 1.08 // So both consumptions should add to how much cash
+							  // Casper will have in the future
+
+1.08C + C = 220,000
+C = 220,000 / 2.08 => 105,769.23$
+
+Debt = 220,000 - 105,769.23 = 114,230.77 $
+C0 = 114,230.77 * 1.08 = 105,769.23 $
+
+R: The optimal amount to spend is **105,769.23$**. That's what Casper would need to
+borrow today, so that he spends today. And in the future, the compounded **114,230.77$**
+will be paid off, leaving the rest (which will be the same - 105,769.23$), up to be
+consumed.
 
 === Chapter 2 Notes
 
