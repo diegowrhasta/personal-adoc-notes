@@ -1670,7 +1670,7 @@ value creation and responsibility toward stakeholders.
 **Corporate finance theory** traditionally prioritizes: Shareholder value maximization,
 not making every stakeholder wealthier. The ethical dilemma exists precisely because:
 
-- Shareholdeeeeer gains and stakeholder harm can conflict
+- Shareholder gains and stakeholder harm can conflict
 
 "employees are assets themselves" => This wording is dangerous/unhelpful in ethics
 discussions.
