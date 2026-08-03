@@ -1887,6 +1887,95 @@ consumed.
 
 === Chapter 2 Notes
 
+=== Problem Sets
+
+1. **Opportunity cost of capital** Which of the following statements are true?
+The opportunity cost of capital:
+
+- Equals the interest rate at which the company can borrow
+- Depends on the risk of the cash flows to be valued
+- Depends on the rates of return that shareholders can expect to earn by investing
+on their own
+- Equals zero if the firm has excess cash in its bank account and the bank account
+pays no interest
+
+Answer:
+
+- False
+- True
+- True
+- False
+
+Corrections
+
+Correct, but let's expand:
+
+- Borrowing rate is the cost of debt. Opportunity cost of capital is broader: it
+reflects the return required by investors for a project of a given risk.
+- Riskier cash flows require a higher discount rate
+- The opportunity cost is based on the return available in alternative investments,
+it is what the shareholders can expect to earn on their own in comparable-risk
+opportunities.
+- You always have to look at other "same-risk" opportunities, the fact you have
+a certain cash flow or status, does not affect at all the market opportunities.
+
+2. **Opportunity cost of capital** Explain why we refer to the _opportunity_ cost
+of capital, instead of just "cost of capital" or "discount rate". While you're at
+it, also explain the following statement: "The opportunity cost of capital depends
+on the proposed use of cash, not the source of financing"
+
+Answer:
+
+Because we are always measuring against what alternatives in the market may yield
+as profits for the stakeholders, other "opportunities of wealth maximizing". And
+it should always depend on the proposed use of cash because that's what will grow
+the shareholders' wealth, we measure against that proposal, the market's options.
+
+Correction:
+
+The opportunity cost of capital is based on the **best alternative investment of
+similar risk**, and therefore depends on **what the money is invested in, not where
+the money came from**
+
+Investing mnoney in a project means giving up the opportunity to invest that money
+in another investment with similar risk. The "cost" is the return that investors
+could have earned elsewhere.
+
+3. **Compound interest** Old Time Savings Bank pays 4% interest on its savings
+account. If you deposit $1,000 in the bank and leave it there:
+
+- How much interest will you earn in the first year?
+- How much interest will you earn in the second year?
+- How much interest will your earn in the tenth year?
+
+Initial Idea: Use the annuity-t value.
+
+Correction
+
+WRONG. An annuity formula is used when you make repeated deposits or payments (for
+example, depositing $1,000 every year). The question is saying you deposit $1,000
+and leave it untouched. That's the definition of **compound interest problem**
+
+FV = PV(1 + r)^n
+
+PV = (Initial Deposit)
+r = Interest
+n = number of years
+
+- 1000 * (1 + 0.04) ^ 1 => 1,040.00$ => First year the interest is 4% of 1,000$
+	- 1000 x 0.04 = 40$
+- Interest will be 4% of the compounded value
+	- 1040 x 0.04 = 41.60$
+- Interest in year t = PV(1 + r)^t-1 x r
+
+t = 10
+
+1000(1.04)^9(0.04) = 56.94$
+
+This is "confusing" Because the interest earned in the 10th year is 4% of
+**the balance at the start of year 10, which is after 9 years of growth**
+
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
