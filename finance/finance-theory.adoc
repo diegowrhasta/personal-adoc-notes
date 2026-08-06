@@ -2128,6 +2128,102 @@ Discount factor = 1/(1 + r)^n
 
 0.8993 = 1 / (1 + r)^5 => 2.15%
 
+10. **Present values** If the cost of capital is 9%, what is the PV of $374 paid
+in year 9?
+
+374 = PV (1 + 0.09)^9
+PV = 374 / (1 + 0.09)^9
+PV = $172.20
+
+CORRECT!
+
+_Insight: A value around $172 makes sense because money almost doubles over roughly
+8 years at about 9% interest, so $172 today growing for 9 years ends up around
+$374
+
+11. **Present values** A project produces a cash flow of $432 in year 1, $137 in
+year 2, and $797 in year 3. If the cost of capital is 15%, what is the project's PV?
+If the project requires an investment of $1,200, what is its NPV?
+
+I don't know
+
+Correction
+
+This is a **Multi cash-flow present value problem**. The key idea is that each future
+cash flow must be discounted separately, because each one occurs at a different
+time.
+
+PV = Ct / (1 + r) + Ct2 / (1 + r)^2 + Ct3 / (1 + r)^3
+PV = 432 / 1.15 + 137 / 1.15^2 + 797 / 1.15^3
+PV = 375.65 + 103.59 + 524.04
+PV = 1003.28
+
+NPV = PV - Investment
+NPV = 1003.28 - 1200 = -196.72
+
+The project generates cash flows that are worth $1,003.31 today, but it costs $1,200
+today to undertake. The project would reduce shareholder wealth by about $197, so
+under the NPV rule the firm should reject the project.
+
+12. **Present values** What is the PV of $100 received in:
+a. Year 10 (at a discount rate of 1%)?
+b. Year 10 (at a discount rate of 13%)?
+c. Year 15 (at a discount rate of 25%)?
+d. Each of years 1 through 3 (at a discount rate of 12%)?
+
+a.
+PV = FV (1 + r)^t
+PV = 100 (1 + 0.01)^10
+PV = 110.46
+
+b.
+PV = FV (1 + r)^t
+PV = 100 (1 + 0.13)^10
+PV = 339.46
+
+c.
+PV = FV (1 + r)^t
+PV = 100 (1 + 0.25)^15
+PV = 2842.17
+
+d.
+PV = FV (1 + r)^t
+PV = 100 (1 + 0.12)^1
+PV = 112
+PV = FV (1 + r)^t
+PV = 100 (1 + 0.12)^2
+PV = 125.44
+PV = FV (1 + r)^t
+PV = 100 (1 + 0.12)^3
+PV = 140.49
+
+Corrections
+
+You need to use the future value formula instead of the present value formula
+
+FV = PV (1 + r)^t
+
+PV = FV / (1 + r)^t
+
+a = $90.53
+b = $29.46
+c = $3.52
+
+**INSIGHT:** A very high discount rate (25%) over a long time (15 years) makes
+a future $100 worth only about $3.52 today.
+
+d) This means you receive 100$ in each of years 1 through 3 at 12$
+
+So this actually is a **multi-cash flow problem**
+
+PV = 100 / 1.12 + 100 / 1.12^2 + 100 / 1.12^3
+PV = 89.29 + 79.72 + 71.18
+PV = $240.19
+
+**Useful memory trick:** Future value grows, present value shrinks.
+Future value = multiply by (1 + r)^t
+Present value = divide by (1 + r)^t
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
