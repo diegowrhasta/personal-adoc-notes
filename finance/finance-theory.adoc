@@ -2224,6 +2224,161 @@ PV = $240.19
 Future value = multiply by (1 + r)^t
 Present value = divide by (1 + r)^t
 
+13. **Present values** Lofting Snodbury is considering investing in a new boring
+machine. It costs $380,000 and is expected to produce the following cash flows:
+
+Year:
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+Cash flow ($000s)
+50
+57
+75
+80
+85
+92
+92
+80
+68
+50
+
+If the cost capital is 12%, what is the machine's NPV
+
+R:
+
+NPV = PV - Investment
+PV = 50 / (1 + 0.12) + 57 / (1 + 0.12)^2 + 75 / 1 (1 + 0.12)^3 + 80 / (1 + 0.12)^4
++ 85 / (1 + 0.12)^5 + 92 / (1 + 0.12)^6 + 92 / (1 + 0.12)^7 + 80 / (1 + 0.12)^8
++ 68 / (1 + 0.12)^9 + 50 / (1 + 0.12)^10
+PV = 403.70 ($000s)
+NPV = 403,700 - 380,000
+NPV = 23,700
+
+R: The machine's NPV is $23,700
+
+The boring machine is expected to increase shareholder wealth, so under the NPV
+rule Lofting Snodbury should accept the project.
+
+14. **Present values** A factory costs $800,000. You reckon that it will produce
+an inflow after operating costs of $170,000 a year for 10 years. If the opportunity
+cost of capital is 14%, what is the net present value of the factory? What will the
+factory be worth at the end of five years?
+
+R = We can use the same cash flow formula. But maybe there's a more clever way with
+another formula for the first part? Against the opportunity cost we would have to
+discount at 14% the NPV? And then apply the future value at year 5?
+
+Corrections
+
+**Because the factory produces the _same cash flow_ every year ($170,000 for 10
+years), the present value of an annuity can be used as a shortcut**
+
+PV = C ((1 - (1 + r)^-n))/r)
+C = 170,000
+r = 0.14
+n = 10
+
+PV = 170000 * ((1 - (1 + 0.14)^-10) / 0.14)
+PV = 886,739.66
+
+NPV = PV - Investment
+NPV = 886,739.66 - 800,000
+NPV = $86739.66
+
+At the end of year 5, the factory has already produced the first five cash flows.
+Its value at that moment is not the original NPV grown forward, is is the present
+value at year 5 of the remaining cash flows (years 6 - 10)
+
+PV = C ((1 - (1 + r)^-n)/r)
+PV = 170000 * ((1 - (1 + 0.14)^-5) / 0.14)
+PV = 583623.76
+
+Value of the factory at the end of year 5 = $583,623.76
+
+[IMPORTANT]
+====
+The factory as a machine can be sold at the end of year 5. When a buyer wants to
+get it he would not really be paying "for the machine itself" he'd be looking at
+the future cash flows that will come (years 6 - 10). Therefore, its value at year
+5 is the discounted value of those remaining five payments. So he's paying for
+the value that the asset will bring, that's the _price_ he puts to it.
+====
+
+15. **Present values** Recalculate the NPV of the office building venture in Example
+2.1 at interest rates of 5, 10, and 15%. Plot the points on a graph with NPV on the
+vertical axis and the discount rates on the horizontal axis. At what discount rate
+(approximately) would the project have zero NPV? Check your answer.
+
+````
+How do you decide whether an investment opportunity is worth undertaking? Suppose you 
+own a small company that is contemplating construction of a suburban office block. The cost 
+of buying the land and constructing the building is $700,000. Your company has cash in the 
+bank to finance construction. Your real estate adviser forecasts a shortage of office space and 
+predicts that you will be able to sell next year for $800,000. For simplicity, we will assume 
+initially that this $800,000 is a sure thing.
+
+Your real estate adviser has come back with some revised forecasts. He suggests that you rent 
+out the building for two years at $30,000 a year, and predicts that at the end of that time you 
+will be able to sell the building for $840,000. Thus there are now two future cash flows
+- a cash flow of C1 = $30,000 at the end of one year and a further cash flow of C2 = (30,000 + 
+840,000) = $870,000 at the end of the second year.
+
+The present value of your property development is equal to the present value of C1 plus the 
+present value of C2.
+
+Figure 2.5 shows that the value of the first year’s cash flow is C1/(1 + r) = 30,000/1.12 = $26,786
+and the value of the second year’s flow is C2/(1 + r)2 = 870,000/1.122 = $693,559.
+Therefore our rule for adding present values tells us that the total present value 
+of your investment is:
+````
+​PV​ =​ ​ ​C​ 1​ 
+_____ 
+1 + r
+ ​​ +​ ​ 
+​C​ 2​ 
+______ 
+​(1 + r)​ 2​
+ ​​ =​ ​ 30,000 
+______ 
+1.12
+ ​​ +​ ​ 870,000 
+_______ 
+1.​12​ 2​
+ ​​ =​ 26,786 + 69,559 = $720,344​
+
+PV = 30000 / (1 + 0.05) + 870000 / (1 + 0.05)^2
+PV = 817687.08
+NPV = $817,687.08 - $700,000
+NPV = $117,687.08
+
+PV = 30000 / (1 + 0.10) + 870000 / (1 + 0.10)^2
+PV = 746280.99
+NPV = $746,280.99 - $700,000
+NPV = $46,280.99
+
+PV = 30000 / (1 + 0.15) + 870000 / (1 + 0.15)^2
+PV = 683931.95
+NPV = $683,931.95 - $700,000
+NPV = -$15,068.05
+
+Around 14% or perhaps a bit less.
+
+[IMPORTANT]
+====
+Future cash flows become less valuable when investors require a higher return
+====
+
+**IRR** = Internal Rate of Return = Is the discount rate that makes the project's
+NPV equal to zero.
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
