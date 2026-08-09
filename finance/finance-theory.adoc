@@ -2379,6 +2379,107 @@ Future cash flows become less valuable when investors require a higher return
 **IRR** = Internal Rate of Return = Is the discount rate that makes the project's
 NPV equal to zero.
 
+16. **Present values and opportunity cost of capital** Halcyon Lines is considering
+the purchase of a new bulk carrier for $8 million. The forecasted revenues are
+$5 million a year and operating costs are $4 million. A major refit costing $2
+million will be required after both the fifth and tenth years. After 15 years,
+the ship is expected to be sold for scrap at $1.5 million.
+a. What is the NPV if the oppportunity cost of capital is 8%?
+b. Halcyon could finance the ship by borrowing the entire investment at an interest
+rate of 4.5%. How does this borrowing opportunity affect your calculation of NPV?
+
+R: We need to calculate the PV for 15 years worth of cash flow I think. Perhaps
+make the actual value 1 million since that is the difference in every year.
+And then adding two extra flows of 2 million, then a 1.5$ million cash flow. And
+all of that applied at 0.8 rate. The NPV will be all of that - 8 million. For b)
+I guess all cash flows should have each year 4.5% added to the 4 million costs?
+
+Correction
+
+Step 1: We can use the annuity formula again, for 15 years, indeed the cash flow
+would be just 1 million
+
+PV = C ((1 - (1 + r)^-n)/r)
+PV = 1 x ((1 - (1.08)^-15)/0.08)
+PV = 8.559
+
+Step 2: PV of refits
+
+PV5 = 2 / 1.08^5 = 1.361
+PV10 = 2 / 1.08^10 = 0.926
+
+Step 3: PV os the scrap value
+PVscrap = 1.5 / 1.08^15 = 0.473
+
+PVtotal = 8.559 - (1.361 + 0.927) + 0.473 = 6.744
+NPV = 6.744 - 8.000 = -1.26
+
+a) DON'T TAKE THIS IT DESTROYS VALUE
+b) The cash flows should have 4.5% added to the operating costs. They **should not**.
+The financing decision (borrowing at 4.5%) is separate from the investment decision
+(buying the ship). The NPV is calculated using the opportunity cost of capital for the
+ship project, which is given as 8%. The fact that Halcyon can borrow at 4.5% does
+not change the risk of the ship's cash flows.
+
+17. **Perpetuities** An investment costs $1,548 and pays $138 in perpetuity. If the
+interest rate is 9%, what is the NPV?
+
+PV = C / r
+PV = 138 / 0.9 = 1533.33
+
+NPV = 1533.33 - 1548 = -14.67
+
+18. **Perpetuities** You have just read an advertisement stating. "Pay us $100 a year
+for 10 years and we wil pay you $100 a year thereafter in perpetuity." If this is a
+fair deal, what is the rate of interest?
+
+PV = C / r
+r = C / PV
+
+PV = FV^t / r
+r = FV^t / PV
+
+100 / PV = 100 ^ 10 / PV
+
+Corrections:
+
+We have to value both sides at time 0 and set them equal because the advertisement
+says it is a fair deal.
+
+PVpay = 100 ((1 - (1 + r)^-10) / r)
+PVreceive = 100 / r * 1 / (1 + r)^10 => So that we calculate a perpetuities value in
+terms of _after paying the annuitys_, a perpetuity starts in year 11 is worth 100 / r
+at year 10. So we have to discount it back 10 years.
+
+100 x ((1 - (1 + r)^-10) / r) = 100 / (r(1 + r)^10)
+1 - (1 + r)^-10 = (1 + r)^-10
+1 = 2 (1 + r)^-10
+(1 + r)^10 = 2
+1 + r = 2^1/10
+r = 2^1/10 - 1 = 0.0718
+
+The deal is fair when the value of paying $100 for the first 10 years exactly equals
+the value of receiving $100 forever afterward. That happens at an interest rate of
+about 7.2%
+
+[IMPORTANT]
+====
+What is this stream worth at year 10? From the perspective of year 10, the first
+payment arrives one year later (year 11), so from year 10 onward it looks exactly
+like an ordinary perpetuity.
+
+So at year 10 = V10 = 100 / r
+
+Now this to be moved back to **today**. A dollar received in year 10 is worth less
+today, so discount it back 10 years:
+
+PV0 = V10 / (1 + r)^10
+
+If we substitute V10 = 100 / r
+
+PV0 = 100 / r / (1 + r)^10 or 100 / r * 1 / (1 + r)^10
+====
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
