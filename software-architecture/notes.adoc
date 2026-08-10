@@ -1514,4 +1514,12 @@ to re-write that as a single service that's in EKS.
 
 _From microservices to monoliths_
 
+However it was one service that changed its process module.
+
+**Fracture Plane:** Team Availability
+
+The idea is that people think that making new systems, and breaking things down
+into multiple components, will just add tons of extra maintenance costs. Even
+onboarding of new members might become more of a hassle, because there are so
+many moving pieces.
 
