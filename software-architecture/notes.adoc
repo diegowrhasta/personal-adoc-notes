@@ -1383,3 +1383,135 @@ Easy is to help, point out areas to deliver understanding. Help with mental mode
 		- But also don't give them entire blockers all to the mentees
 
 Training => That's different and probably easier.
+
+== Microservices, Where Did It All Go Wrong - Ian Cooper - NDC London 2025
+
+Notes taken from https://www.youtube.com/watch?v=d8NDgwOllaI
+
+There's a paper, and it had impact on the industry. For a while it was really
+popular, but later a backlash came in.
+
+_Microservices:_ Love letter to microservices, and how people should go about it.
+And how to fix your journey towards using them.
+
+Fundamental theory of software engineering:
+
+_How do we get to do faster software development?_
+
+[IMPORTANT]
+====
+Due to complexity: It is always easier (and cheaper) to create two small pieces
+rather than one big piece if the two small pieces do the same job as the single
+piece. **The cost of a computer system will be minimized when the parts of the
+problem are:**
+
+- Solvable separately
+- Manageably small
+
+_Of course, everyone has a different definition of "manageably small"
+====
+
+**Module:** A script, bounded by boundary elements, with a name. We can break the
+software into pieces, give it a name, and contain some amount of code in that space.
+
+
+_Software components are things that are independently replaceable and upgradeable_
+
+- Components come in two forms: Libraries and services
+- Components relate to modules, but are replaceable
+	- If you have a module with a nice interface, you can swap out things
+
+**Service:** A component that exists in its own process, clients talk to it
+over some inter-process communication mechanism.
+
+The upgrade/replacement of one service should not require coordination with another
+
+**Microservices:** A set of practices for successfully building a _software component_
+architectural style (at scale):
+
+- You are going to use components (independent components)
+	- Independent replaceability
+	- Independent deployability
+
+Messaging => Makes things easier because of that.
+
+- Organized around Business Capabilities
+- Smart endpoints and dumb pipes
+- Design for failure
+- Infrastucture Automation
+- Decentralized Data Management
+- Decentralized Governance
+- Products not Projects
+	- A product manager cares about a service, and moving that forward, nothing
+	less
+
+**Isolation to the process model**
+
+
+_Benefits_
+
+- Strong Module Boundaries
+- Independent Deployment
+- Technology Diversity
+- Fault Tolerance
+- Cognitive Load (Code that fits in my head)
+	- The micro refers to
+
+_Costs_
+
+- Distribution
+- Verification
+- Operational Complexity
+	- Cost of operating the services goes way up
+- Skill Issues
+	- Need to do upskilling
+- Data: BI & ML
+
+=== Microservice Premium
+
+Don't even consider microservices unless you have a system that's too complex
+to manage as a monolith
+
+- Code doesn't fit in your head
+- A Five-Pizza Team
+- Sub-domains have different forces nor change
+	- Everyone is working at the same point, and they are getting in the way
+- A wide range of interactions
+
+[IMPORTANT]
+====
+You are solving **large** problems
+====
+
+=== The Problem
+
+Relates to the name. Microservices => Badly chosen term.
+
+_Micro:_ 100 lines of code services, if it's more for one programmer to maintain
+it's not a microservice.
+
+_Nanoservices_ Death-star diagrams => All the connections between your services.
+The more things you have, the more interactions, the more integration points,
+you massively increase the cognitive overload. **Latency increases**
+
+- High Operational Overhead
+	- Deploy scripts, telemetry
+		- Every piece of metadata needs to increase by the number of items you add
+- Synchronous Orientation
+	- Things become heavily coupled
+- Low Cohesion, High Coupling
+- Long Release Cycles
+- Obstacle to Reasoning
+
+_What things do I need to deploy to make this work?_
+
+The whole thing becomes a house of cards
+
+_Services:_ Process is **container**, FaaS
+
+Prime Video: They had an architecture with Lambda Functions, and they decided
+to re-write that as a single service that's in EKS.
+
+_From microservices to monoliths_
+
+
