@@ -2480,6 +2480,169 @@ If we substitute V10 = 100 / r
 PV0 = 100 / r / (1 + r)^10 or 100 / r * 1 / (1 + r)^10
 ====
 
+19. **Growing perpetuities** A common stock will pay a cash dividend of $4 next
+year. After that, the dividends are expected to increase indefinitely at 4% per year.
+If the discount rate is 14% what is the PV of the stream of dividend payments?
+
+I don't know
+
+Corrections
+
+PV = C1 / r - g
+C1 = The cash flow received one period from now (next year's payment)
+r = The discount rate (required return)
+g = The constant growth rate of the cash flows
+
+PV = 4 / 0.14 - 0.04
+PV = $40
+
+_Key:_ For growing perpetuities we should always start on a payment that's next
+year of today. **And** this will only make sense if r > g. Otherwise this doesn't
+break even at all
+
+20. **Perpetuities and annuities** The interest rate is 10%
+a. What is the PV of an asset that pays $1 a year in perpetuity?
+b. The value of an asset that appreciates at 10% per annum approximately doubles
+in seven years. What is the approximate PV of an asset that pays $1 a year in
+perpetuity beginning in year 8?
+c. What is the approximate PV of an asset that pays $1 a year for each of the next
+seven years?
+d. A piece of land produces an income that grows by 5% per annum. If the first year's
+income is $10,000 what is the value of the land?
+
+a.
+PV = C1 / r
+PV = 1 / 0.10
+PV = 10
+
+b.
+PV = C1 / r
+PV = 1 / 0.10 = 10
+
+Now we need to bring the 10$ 7 years back.
+
+PV = 10 / (1 + 0.10)^7
+PV = 5.13
+
+With approximations:
+
+(1.10)^7 == 2
+PV == 10 / 2 == $5
+
+**Key:** The idea is always to think about the future, and today. If things are further
+into the future, they would cost way less **today**. So we combine formulas for
+perpetuity and present value to "convert" from the future value to today. **We
+discount** by x years.
+
+c.
+
+We are going to **subtract the part of the perpetuity that occurs after year 7**
+
+**The entire perpetuity is worth $10 today**
+
+PV (all payments) = 10
+
+We can split that into two pieces
+
+Today - 1 - 2 - 3 ... - 7 - 8 - 9 - ..
+
+Mathematically:
+
+Entire Perpetuity = first 7 years + year 8 onward
+Therefore: First 7 years = entire perpetuity - year 8 onward
+
+For the second chunk that we do not know yet, we have to calculate their PV and
+then discount back to the present (since it's at the start of year 8, we have
+to discount 7 years back)
+
+1 / 0.10 = 10
+10 / (1.10)^7 = 5
+
+PV(first 7 years) = 10 - 5 = 5
+
+If someone comes and tells you:
+
+"I'll give you $10 worth of payments forever". Actually, the payments after year 7
+belong to someone else.
+
+The value of those future payments is about $5 today.
+
+$10 - $5 = $5 => This is what belongs to you.
+
+d.
+PV = 10,000 / 0.10 - 0.05
+PV = 200,000
+
+**Income isn't staying at $10,000. Every year's payment gets bigger**. The growth
+makes the asset worth more.
+
+21. **Discount factors and annuity factors**
+a. If the one-year discount factor is .905, what is the one-year interest rate?
+b. IF the two-year interest rate is 10.5%, what is the two year discount factor?
+c. Given these one- and two-year discount factors, calculate the two-year annuity
+factor
+d. If the PV of $10 a year for three years is $24.65, what is the three-year
+annuity factor?
+e. From your answers to parts (c) and (d) calculate the three-year discount factor
+
+a.
+DF = 1 / 1 + r
+0.905 = 1 / 1 + r
+1 + r = 1 / 0.905 = 1.10497
+r = 10.5%
+
+b.
+DF2 = 1 / (1 + r)^t
+DF2 = 1 / (1 + 0.105)^2
+DF2 = 0.820
+
+c.
+
+An annuity of $1 for two years looks like:
+
+$1 in year 1 + $1 in year 2
+
+So its present value is simply the two individual discount factors added together:
+
+AF2 = DF1 + DF2
+DF1 = 0.905
+DF2 = 0.820
+AF2 = 0.905 + 0.820
+AF2 = 1.725
+
+This is an important relationship:
+
+Annuity Factor = Sum of the relevant discount factors.
+
+d.
+
+PV = C x AF
+24.65 = 10 x AF3
+AF3 = 25.65 / 10
+AF3 = 2.465
+
+[IMPORTANT]
+====
+A discount factor **cannot increase** from year 2 to year 3.
+====
+
+e.
+
+AF3 = DF1 + DF2 + DF3
+2.465 = 0.905 + 0.820 + DF3
+DF3 = 2.465 - 0.905 - 0.820
+DF3 = 0.740
+
+Discount factors should decline as time increases:
+
+DF1 = .905 > DF2 = .820 > DF3 = .740
+
+AFn = DF1 + DF2 + ... + DFn
+
+Once you know an annuity factor, you can "peel off" the earlier discount factors
+to find the next one.
+
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
