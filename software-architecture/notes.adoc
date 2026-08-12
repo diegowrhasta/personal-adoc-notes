@@ -1523,3 +1523,128 @@ into multiple components, will just add tons of extra maintenance costs. Even
 onboarding of new members might become more of a hassle, because there are so
 many moving pieces.
 
+_Cost of ownership:_ It's an order magnitude higher than cost of authorship.
+
+_We don't need to get at authoring software_ => I need to reduce the cost of
+owning my software.
+
+The 4 + 1 View Model.
+
+We have lots of mental models on how designing software. The problem is that we
+have too many ideas sometimes tucked-together.
+
+**Note:** Domain Storytelling => Modern Use Cases
+
+Attribute Driven Design => Capture quality
+
+**Logical Model:** What is the problem we are modeling? How does the business
+look like?
+
+_How do we find subdomains within a system?_
+
+Find pieces, keep talking to the business as to how it looks like and abstract that
+reality in the form of a system.
+
+**Subdomains**
+
+- Actor produces result on their own
+- One-way information
+- Different triggers
+- Activities supporting something not in the picture
+- Differences in language
+
+[IMPORTANT]
+====
+Business models change. We add new ideas, new things develop. So changes to your
+domain model will happen.
+
+Model processes, do not model activities and tasks
+====
+
+We take the domains, the things we break down into. And we ask, "How are we going
+to build that?"
+
+A bounded context => The people, the process, the things you use to implement
+a part of the business.
+
+_Typically you try to align with domains, but because business changes, they
+start to drift_
+
+=== Tips
+
+If you are uncertain about a domain or bounded context: **Use a monolith**
+
+- A monolith might use modules in it (you will learn from it)
+	- The system has a single CI boundary
+	- No more than 35 devs/5 teams working on the monolith (10 pizza rule?)
+	- Will need a monorepo
+
+If you have clear domains, and complexity that can fit within your head
+
+- A microservice for each of these domains
+	- Change, replacement is cohesive
+	- ACID requirements are no issues
+
+More complex models:
+
+- Is the code for the sub-domain larger than your head?
+	- Can you find seam(s) within the sub-domain and split into multiple bounded
+	contexts?
+	- Beware of the complexity of intermodule dependencies
+- If it's independently solvable each split within the sub-domain becomes a microservice
+
+**Macroservice:** Modularity is used here to break the microservice into multiple
+pieces.
+
+- A service; may use components within
+	- The system likely has more than one module (library or service)
+	- Has no more than 20 devs/3 teams working on any microservice (5 pizza rule?)
+	- May or may not have/need monorepo
+	- Dependency management becomes a lot easier (though still not trivial) the
+	fewer the services/repos - better observability, debugging
+
+If there are multiple subdomains, and they are trivial (if you break them apart
+you would run into _nano-services_). If you break them down then it's not worth
+the costs.
+
+- You can then combine into macroservices
+	- Your teams, which actually are bounded contexts, will own it
+	- Chatty components, and exchanging same data => Typically you can combine
+	these components
+		- Just because you chose microservices, it doesn't mean that you can't
+		combine and make macroservices
+		- **A smell is that you have to do SAGAs or something like that**, if you
+		find that, you might want to combine things
+
+When your components are services with remote communications, then refactoring
+is much harder with in-process libraries.
+
+12-Factor App
+
+You look at scaling requirements for different tasks/processes. What are the
+different process types and how can you scale? Based on that line of thinking
+you will separate processes, it will give you a good guideline.
+
+**Microservice is an application**
+
+**Macroservice may consist of multiple apps**
+
+**App or Macrokernel is a constitution of many processes**
+
+[IMPORTANT]
+====
+When you code, you effectively don't want the story that the code tells to be
+telling you about the infrastructure, that should be abstracted, it should tell
+you the story of the business and its processes.
+====
+
+=== Physical
+
+A big problem when thinking about microservices, is that we don't know how to
+allocate and separate the concerns.
+
+== Modular Monoliths and Other Facepalms - Kevlin Henney - NDC London 2026
+
+Notes taken from: https://www.youtube.com/watch?v=4qfsmE11Ejo
+
+
