@@ -2642,6 +2642,75 @@ AFn = DF1 + DF2 + ... + DFn
 Once you know an annuity factor, you can "peel off" the earlier discount factors
 to find the next one.
 
+22. **Annuities** Kangaroo Autos is offering free credit on a new $10,000 car.
+You pay $1,000 down and then $300 a month for the next 30 months. Turtle Motors
+next door does not offer free credit but will give you $1,000 off the list price.
+If the rate of interest is .83% a month, which company is offering the better deal?
+
+R: So for the first case I need to calculate an annuity range of 30 months, 300$
+a month, 0.83 rate vs what the heck is free credit? And what does $1,000 off the
+list price mean?
+
+Corrections
+
+"Free credit" means Kangaroo Autos is not charging interest. They are letting you
+pay over time at the sticker price.
+
+The opportunity cost of money is 0.83% per month. That means money paid in the future
+is worth less than money paid today, so we have to discount those 30 monthly payments.
+
+PVk = 1000 + PV (30-month annuity of 300)
+PVk = 1000 + 300 x ((1 - (1 + 0.083)^-30)/0.083)
+PVk = $8938.02
+
+Turtle Motors = $9000 (The $10,000 is the listing price, $1,000 off the list price would
+mean we subtract $1,000 off $10,000)
+
+R: In short, Kangaroo Autos offers a better deal, about $61.98 cheaper by comparing
+both amounts in today's money.
+
+23. **Annuities** David and Helen Zhang are saving to buy a boat at the end of
+five years. If the boat costs $20,000 and they can earn 10% a year on their savings,
+how much do they need to put aside at the end of years 1 through 5?
+
+20000 = x * ((1 - (1 + 0.10)^-5)/0.10)
+
+WRONG
+
+Corrections
+
+The problem is actually asking about the **FUTURE VALUE** of an ordinary annuity.
+So we are actually doing the inverse now.
+
+FV = PMT * (1+r)^n - 1 / r
+20,000 = x * (1 + 0.10)^5 - 1 / 0.10
+x = (0.10)*20,000 / (1 + 0.10)^5 - 1
+x = $3277.59
+
+R: So every year, David and Helen should put away around $3,277.59
+
+24. **Annuities** Siegfried Basset is 65 years of age and has a life expectancy
+of 12 more years. He wishes to invest $20,000 in an annuity that will make a level
+payment at the end of each year until his death. If the interest rate is %8, what
+income can Mr. Basset expect to receive each year?
+
+NPV = PV - Investment
+
+NO
+
+Correction
+
+PV = PMT * (1 - (1+r)^-n) / r
+PMT = 20,000 * 0.08 / (1 - (1 + 0.08)^-12) / 0.08
+PMT = $2653.90
+
+R: So Sigfried should be expecting around $2,653.90 by each year.
+
+[IMPORTANT]
+====
+Saving up to a target amount -> Use the future value annuity formula
+Converting a lump sum into equal withdrawals -> Use the present value annuity formula
+====
 
 == Present Value Relations I
 
