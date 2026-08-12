@@ -1647,4 +1647,88 @@ allocate and separate the concerns.
 
 Notes taken from: https://www.youtube.com/watch?v=4qfsmE11Ejo
 
+**We're going all in on microservices?**
 
+**Oh, really, why?**
+
+**Monoliths are a mess?**
+
+It's _modular_ => It's a **new** approach.
+
+**DO WE UNDERSTAND MODULAR**?
+
+Distribution of Software Developers:
+
+People doing it for a short amount of time are **way more** than the people doing
+it for a long amount of time.
+
+There's a lot of experience out there on software. We are very poor at communicating
+concepts sometimes, bad at history. And in software things can be overwhelming,
+so much info, so much to learn.
+
+[IMPORTANT]
+====
+I try not to make fun of people for admitting they don't know things.
+
+Because for each thing "Everyone knows" by the time they're adults, every day there
+are, on average 10,000 people in the US hearing about it for the first time.
+====
+
+If I make fun of people, I train them not to tell me when they have those moments.
+
+- "Diet coke and mentos things"? What's that?
+- Oh man! Come on, we're going to the grocery store
+- Why?
+- You're one of the today's lucky 10,000
+
+_Some people only care about one architecture pattern or way of thinking, they
+don't know anywhere else_
+
+- And some people say "I only know C".
+
+**There are fundamental concepts that overlap, things that can be re-used anywhere,
+and be passed around from any realm of knowledge to another**.
+
+Separate out the underlying principle that can be taken anywhere, and then there
+are specifics that might not be used.
+
+_That's when you realize that you know more than you do_
+
+=== The myth of issues
+
+How to deliver quality software in a timely manner? It has been figured out. Knowledge
+**is** out there. But we are really bad at putting that knowledge out there for people.
+
+- Monolith => Has been repurposing its meaning, with a negative connotation. People
+were struggling with "large and indivisible". You'd want an elegant arrangement
+in your architecture.
+- Micro => Words drift, they move around, their journey is far and wide. However,
+there's a strong suggestion when "micro" is brought onto the table.
+
+**Moment of calibration:** Understand where people are "FIRST"
+
+- Lines of code, **should not** be read as this productivity correlation. But it's
+a good guide as to what kind of _developer experience_ you are going to be hit with.
+Cognitive overload, dissonance, and so on.
+
+- Microservices:
+	- Independent in testing, development, deployability
+	- We want stability, it should have an interface that should not reveal much,
+	as little as possible. **Implementation should not leak**
+	- Services should work together, yet we should not assume behavior on another
+	side.
+
+[IMPORTANT]
+====
+OOP to me means only messaging, local retention and protection and hiding of state-
+process, and extreme late-bindings of all things.
+====
+
+_Small Talk_
+
+This is the Unix philosophy => Write programs that do one thing well, and then
+combine small programs.
+
+- Wrap things in interfaces, that way things are independent
+	- An interface is a contract to deliver a certain amount of service; clients
+	of the interface depend on the contract
