@@ -2712,6 +2712,83 @@ Saving up to a target amount -> Use the future value annuity formula
 Converting a lump sum into equal withdrawals -> Use the present value annuity formula
 ====
 
+
+25. **Annuities** Several years ago, _The Wall Street Journal_ reported that the
+winner of the Massachussets State Lottery prize had the misfortune to be both
+bankrupt and in prison for fraud. The prize was $9,420,713, to be paid in 19
+equal annual installments. (There were 20 installments, but the winner had already
+received the first payment). The bankruptcy court judge ruled that the prize should
+be sold off to the highest bidder and the proceeds used to pay off the creditors.
+
+a. If the interest rate was 8%, how much would you have been prepared to bid for
+the prize?
+b. Enhance Reinsurance Company was reported to have offered $4.2 million. Use
+Excel to find the return that the company was looking for.
+
+FV = PMT (1 + r)^n - 1 / r
+9420713 - x = x (1 + 0.08)^19 - 1 / 0.08
+
+Correction
+
+The key is that $9,420,713 is **not** each payment. It's the value of the _remaining
+prize_, which is to be paid in **19 equal annual installments**.
+
+We have to find the annual payment PMT.
+
+Since there are 19 equal payments remaining:
+
+PMT = 9,420,713 / 19 = 495827
+
+The question is asking: What is the present value today of those 19 remaining payments?
+
+PV = PMT x (1 - (1 / (1 + r)^n)) / r
+PV = 495827 * (1 - (1 / (1 + 0.08)^19)) / 0.08
+PV = 4761723.78
+
+b)
+
+If a company only offered $4.2 million, we are now solving for **r**, that's the
+return, the RATE they are expecting to get back.
+
+This cannot be solved algebraically, so you can use in Excel:
+
+````
+=RATE(19,-9420713/19,4200000) = 10%
+````
+
+26. **Annuities** The _anually_ compounded discount rate is 5.5%. You are asked
+to calculate the present value of a 12-year annuity with payments of $50,000 per
+year. Calculate PV for each of the following cases.
+
+a. The annuity payment arrive at one-year intervals. The first payment arrives one
+year from now.
+b. The first payment arrives in six months. Following payments arrive at one-year
+intervals (i.e., at 18 months, 30 months, etc.)
+
+a. PV = 50000 * (1 - (1 / (1 + 0.055)^12)) / 0.055 = 430925.89
+b. I don't know how this change in the annuity payment date is interpreted in
+the formula
+
+Corrections
+
+When every payment is shifted earlier by the same amount, you can multiply the
+ordinary-annuity PV by the appropriate discount-factor adjustment. Here, shifting
+the annuity 0.5 years earlier means multiplying by (1 + r)^t.
+
+t = 0.5 => Because that's half a year.
+PV = 430925.89 * (1.055)^0.5
+PV = 442617.74
+
+- First Payment in 1 year => $430,925.89
+- First payment in 6 months => $442,617.74
+
+b. The annuity formula assumes the first payment is one full period from now. Here,
+the first payment arrives 0.5 years from now, so every payment is shifted half a
+year earlier.
+
+A cash flow received earlier is worth more today, so you can take the value from
+part (a) and discout it back only half a year instead of a full year
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
