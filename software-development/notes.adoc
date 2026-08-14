@@ -1,0 +1,89 @@
+= Notes
+
+Notes taken from https://www.youtube.com/watch?v=CTknA1gykmg
+
+Basically this is a video about tips, principles, good advice that is the result
+of 15 years of experience, and what to look out for, or keep in mind as constants
+or truths from the trade.
+
+== Disruption moves very fast, adaptation is very slow
+
+Experience can be "big". However, you might not have the experience that is
+demanded TODAY.
+
+If you can influence the speed at which you adapt => You will be much better off.
+
+Example: AI
+
+AI capabilities => LLMs, AI features
+
+If you have a lot of experience, you have more skills, and you need to spend just
+a bit of time skilling up in AI. (You have an advantage). And when you are in the
+other end of the spectrum, you can focus a lot on the skills that are being asked
+today.
+
+Fundamentals + AI enhanced development & learning
+
+**Pair things with AI learning and the usage of Agents**
+
+- Agentic Software Engineering
+
+== Find mentors
+
+Try to find a person you can offload skills from. Person to person is going to give
+you the most value.
+
+- _Engineering blogs_
+- _Finding a podcast you might be interested in_
+	- Instead of just tutorials, because that's where the real value is
+	- LLMs can explain, give examples
+		- But experiences, sharing tricks of the trade, is something you get from
+		PEOPLE
+
+_You learn how people think, what's valuable, what's not valuable, problems people
+face_.
+
+_Note: Check out Discord's article on their NO-SQL decision_
+
+Sometimes people jump from tutorial to tutorial, learning things that yes build
+over time and might give you an edge, but most of the time, you get so much more
+value, and in a fraction of the time, by weaving together concepts and experiences
+from someone that's better than you, or that has _more experience_
+
+== Adapting fast - Learning from experienced people
+
+- 30 years of wrong experience
+	- Or the same experience over and over again
+
+You need to balance out the new things, and how they can or cannot help you,
+and **connect**. Read from someone, message them.
+
+- People need to understand the bigger picture
+	- That's why roadmaps are popular
+
+== General Learning + Specialization
+
+Specialization can be broad: Backend Development.
+
+So you should cover a large base of things. And on top of that foundation you
+can build a **skyscraper**.
+
+Specialization => Means becoming very good at a specific number of things.
+
+You are not too good at something to do something special.
+
+**Courses:** End to end. Efficiently building, and with a weaved together goal.
+
+A good way to learn "similar concepts" can be captured in this example:
+
+You learn loops in Python. And then you can learn loops in Typescript.
+
+However, this shouldn't be the same journey as Python, you can encapsulate the
+translation of the syntax by asking a simple question:
+
+_How are loops different from Python to TS?_
+
+When you start building these connections amongst concepts and realms of knowledge,
+you inevitably enhance, and strengthen your memory's access to both of the realms
+of knowledge and your skill goes up even further, it's higher value than just
+thinking of them as their own silo.
