@@ -1732,3 +1732,109 @@ combine small programs.
 - Wrap things in interfaces, that way things are independent
 	- An interface is a contract to deliver a certain amount of service; clients
 	of the interface depend on the contract
+
+We had this idea of monolith, and using it as "negative". Then microservices were
+this "unconditional good". Then _Modular Monolith_.
+
+- Where you not already partitioning it?
+	- You can choose your paradigm, MAKE YOUR CHOICE
+	- 32-bit computing solved the issue of big source files
+
+````
+The design thinking required to create a good microservices architecture is the
+same as the needed to create a well-structured monolith
+````
+
+**It does not give you modularity**. That is something that's been available for
+decades. It gives another bunch of related stuff related to the runtime environment,
+the deployment environment, it can reinforce aspects of your cultural structure,
+team structure, how you choose to develop.
+
+_It can_. It's a choice. It's not mandatory.
+
+**If you aren't tuned to that, you will go past it**
+
+There are monoliths way more maintainable, scalable, faster deployable than microservices,
+it's not as "simple".
+
+**If you can't build a well-structured monolith, what makes you think you'll make
+a good microservices architecture?**
+
+_MESSY MONOLITH_ => This is bad.
+_Messy microservices_ => This is bad too.
+
+_Modular microservices_, _Modular monoliths_ => That's what people wanted, but
+didn't say it like that.
+
+There are four general principles that we can work on:
+
+- Clean separation of concerns
+- Data hiding
+- Modularity
+- Well-defined interfaces
+- Strong fault-protection mechanisms (*)
+	- Hugely important for Mars Rover code, not other realms
+
+Technology => Not all of it is fast changing. There are things that change **extremely
+slowly**
+
+There are principles and ideas, that are stable, and that we should focus on keeping
+in balance.
+
+=== Modules
+
+What are the modules?
+
+Develop => I see modularity through my code, the constructs of the programming language,
+how the files are organized
+Deployment => I can have units of modularity, that are the things that I put out
+there.
+Run => When I look at my memory, at the process tabe, do I see different units?
+
+You can go through other stages, or well, domains of execution.
+
+Modularity => It's not immediately apparent when someone is speaking about the same
+thing.
+
+_An architectural definition is something that answers three questions_
+
+- What are the structural elements of the system?
+	- There's a gap among the big things and small things in a system and its
+	components.
+- How are they related to each other?
+	- We have an HTTP connection, I'm calling an object on a thread, I'm a class
+	inheriting from another class
+- What are the underlying principles and rationale that guide the answers to the
+previous answered questions?
+
+=== Tradeoffs
+
+Let's talk about requirements.
+
+- Functional - Non-Functional => Stop. This only says "not-x", not WHAT IT IS.
+
+- Functional = Semantics. Stuff that normally is in User Stories. Something that
+can be tested with UT and Integration Tests.
+- Operational 
+- Developmental = What's the developer experience? How is it to maintain the
+system?
+
+If you go hard on operational, then developmental might take some negative hits.
+We should always trade. _More complexity, because of some operational things_
+
+_BUT, sometimes you get good tradeoffs, in where you get a win-win_ And other times
+(i.e., with microservices) things can become doubly-BAD.
+
+[IMPORTANT]
+====
+Whatever architecture choice. Whatever paradigm we choose.
+
+The modular monolith, of course, is using cutting-edge ideas from the early 1970s
+around structured programming, which some of us are still getting to grips with.
+====
+
+We should care about the boundaries, boundaries exist at different levels. And
+we should try to get them right. (How we consider our teams, how processes are
+architected, how your code is laid out).
+
+_The strength, and meaning of the boundaries is always present_
