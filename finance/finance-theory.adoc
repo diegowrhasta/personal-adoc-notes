@@ -2789,6 +2789,100 @@ year earlier.
 A cash flow received earlier is worth more today, so you can take the value from
 part (a) and discout it back only half a year instead of a full year
 
+27. **Annuities** Dear Financial Adviser,
+My spouse and I are each 62 and hope to retire in three years. After retirement
+we will receive $7,500 per month after taxes from our employers' pension plans and
+$1,500 per month after taxes from Social Security. Unfortunately our monthly living
+expenses are $15,000. Our social obligations preclude further economies.
+We have $1,000,000 invested in a high-grade, tax-free municipal-bond mutual fund.
+The return on the fund is 3.5% per year. We plan to make annual withdrawals from the
+mutual fund to cover the differences between our pension and Social Security income
+and our living expenses. How many years before we run out of money?
+Sincerely,
+Luxury Challenged
+Marblehead, MA
+You can assume the withdrawals (one per year) will sit in a checking account (no
+interest) until spent. The couple will use the account to cover the monthly shortfalls.
+
+- They only have $9,000, so they are in need of $6,000 extra.
+- 0.035 => Fund return => $1,000,000 on fund. => ANUAL withdrawals. We have to find
+t, the time that $1,000,000 is 0. So, we use the annuity formula and find t?
+
+Corrections
+
+That $6,000 is called "shortfall". Because each **MONTH** there's a shortfall,
+we need to get how much shortfall will have to be covered a **YEAR** if we want
+to start dealing with **YEARS**
+
+6,000 x 12 = 72,000
+
+Because **RIGHT NOW** they have 1,000,000 in the fund, that is a PRESENT VALUE.
+And now we can dive into a misconception about annuity and its formula.
+
+The annuity formula is not specifically an investment formula. It is a valuation
+formula for a series of equal payments. You can use the same formula in TWO directions:
+
+- Saving/investing: "If I invest a fixed amount each year, how much will I have in
+the future?" (future value of an annuity)
+- Withdrawing/spending: "If I have a fixed amount today and withdraw a fixed amount
+each year, how long will it last?" (present value of an annuity)
+
+The underlying cash-flow pattern is identical: equal payments ocrruing at regular
+intervals.
+
+In this problem the withdrawals are the **annuity payments**
+
+Intuitively you can verify the NEED for the annuity formula by saying "what if
+there was no interest?", the answer would be:
+
+1,000,000 / 72,000 = 13.9 years
+
+Because the fund does earn %3.5, each year some money is replenished by investment
+returns, so the withdrawals can continue longer than 13.9 years. **The annuity formula
+is the tool that incorporates that interest effect**
+
+[IMPORTANT]
+====
+This is a useful way to remember it:
+
+- Future value annuity formula -> Building a pot of money
+- Present value annuity formula -> Spending down a pot of money
+====
+
+So, with the PV formula:
+
+PV = C (1 - (1 + r)^-t) / r
+
+LET'S PLUG IN THE NUMBERS
+
+1,000,000 = 72,000 * (1 - (1.035)^-t) / 0.035
+1,000,000(0.035) / 72,000 = 1 - (1.035)^-t
+0.48611 = 1 - (1.035)^-t
+(1.035)^-t = 0.51389
+
+Now take natural logs:
+
+-tln(1.035) = ln(0.513889)
+
+t = -ln(0.513889) / ln(1.035) = 19.35 years (Why years? BECAUSE WE TURNED ALL THE
+NUMBERS INTO YEARS IN TERMS OF SCALE)
+
+The fund will last about 19 years after retirement
+
+Same annuity concept, opposite direction of the cash flows.
+
+R: Since they will retire in 3 years, they will run out of money when they are
+approximately 84 (62 years present + 3 years before retirement + 19 years the fund will
+last).
+
+[IMPORTANT]
+====
+The important word in the problem is **we plan to make annual withdrawals** that
+was the queue into how we should equalize the units of everything in terms of years.
+From the POV of the couple, it's probably made this way so that the interest still
+keeps them going for a bit further.
+====
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
