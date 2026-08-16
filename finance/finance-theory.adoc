@@ -2883,6 +2883,237 @@ From the POV of the couple, it's probably made this way so that the interest sti
 keeps them going for a bit further.
 ====
 
+28. **Perpetuities and annuities** Refer to Sections 2-3 and 2-4. If the rate of
+interest is 8% rather than 10%, how much would you need to set aside to provide each
+of the following?
+
+a. $1 billion at the end of each year in perpetuity
+b. A perpetuity that pays $1 billion at the end of the first year and that grows
+at 4% a year
+c. $1 billion at the end of each year for 20 years
+d. $1 billion a year spread evenly over 20 years
+
+2-3
+
+Plans to donate $10 billion to fight malaria and other infectious diseases. However,
+there should be growth in salaries and other costs, which averages 4% a year starting
+in year 1. So instead of $1 billion a year in perpetuity. You must provide $1
+billion in year 1, 1.04 x $1 billion in year 2, and so on. The growth rate can be
+"g"
+
+2-4
+
+We have assumed that cash flows occur only at the end of each year. This is sometimes the
+case, however there are countries in which things are done semi-anually (every
+6 months). In this instance, your compounded amount at 6 months will generate
+a new interest in the next 6 months. Which is not the same. **If you get paid
+before, that's good, because that can then generate its own interest**
+
+_10% compounded semianually is equivalent to 10.25% compounded anually_ The
+_effective annual interest rate_ on the bond is 10.25%.
+
+There's a distinction between the _quoted_ annual interest rate and the _effective_
+annual rate.
+
+Correction
+
+**What kind of cash-flow stream each part describes?**
+
+Interest rate: 8% = 0.08
+Cash flows happen at the end of each year
+PV = how much you need to set aside **today**
+The $1 billion payments are future cash flows, so we discount them back to today
+
+_Preliminary calculations_
+
+If you put $X aside today, after one year you will have:
+
+X(1.08)
+
+You want that to equal 1$ BILLION:
+
+X(1.08) = 1,000,000,000
+X = 1,000,000,000 / 1.08 = 925.93 million TODAY
+
+a. $1 billion at the end of each year forever
+
+Cash will flow like 1B, 1B, 1B, 1B
+
+The formula for a perpetuity is:
+
+PV = C / r
+
+PV = 1,000,000,000 / 0.08 = 12.5 billion
+
+Perpetuity abstracts this idea: Think of the $12.5 billion as being invested
+at 8%. Every year it earns = 12.5B(0.08) = 1B
+
+So you can withdraw the $1 billion interest every year while leaving the original
+$12.5 billion untouched. That's why perpetuity is:
+
+payment / interest rate
+
+b. $1 billion in year 1, growing at 4% per year forever
+
+This is a **growing perpetuity**
+
+PV = C1 / r - g
+
+PV = 1B / 0.08 - 0.04 = 25 billion
+
+**Why r - g?**
+
+[IMPORTANT]
+====
+You are getting money every year, **but the amount you're paying out gets larger
+every year**
+
+If r > g, that would mean the payments grow as fast or faster than the investment
+return, so the perpetuity can't be funded with a finite amount of money
+====
+
+c. $1 billion at the end of each yeare for 20 years
+
+This is no longer payments forever, it will be 1B, 1B ... 1B (at year 20)
+
+This is an ordinary annuity because:
+
+1. The payments are equal
+2. They occur periodically
+3. They have a finite number of payments
+4. Payments occur at the end of each period
+
+PV = C ((1 - (1 + r)^-n) / r)
+PV = 1 ((1 - 1.08^-20) / 0.08)
+PV = 9.818B
+
+Notice how this is **LESS**
+
+PV20-year annuity < PVperpetuity => You are only paying 20 times here, YES. YOU
+NEED LESS MONEY TODAY TO PUT AWAY TO THEN PAY AT EACH END OF YEAR.
+
+d. $1 billion a year spread evenly over 20 years
+
+This is being contrasted with c) that has a payment at the end of **each year**.
+This is saying we will get 1 billion but spread out evenly at different points in
+time of ONE year.
+
+With 8% interest rate:
+
+The continously compounded rate would be:
+
+rc = ln(1.08) = 0.07696
+
+The continous payment formula is:
+
+PV = C / rc * (1 - e^-rcT)
+PV = 1 / 0.07696 * (1 - e^-0.07696*(20))
+PV = $10.03B
+
+If you contrast d) to c) you would see how in terms of **present-value terms**,
+if you are going to spread things evenly across the year, that would mean a bigger
+investment **TODAY** (not by that much, but still)
+
+_Personal note:_ And yes, you would use weird-ass formulas.
+
+29. **Annuities due** The $40 million lottery prize that you have just won actually
+pays out $2 million a year for 20 years. The interest rate is 8%.
+a. If the first payment comes after 1 year, what is the present value of your winnings?
+b. What is the present value if the first payment comes immediately?
+
+Answer
+
+The second payment should be worth more. I should use the FV formula because I know
+that it will be in the end $40 million. But I forgot what formula puts FV and PV together.
+
+Correction
+
+a. First payment after 1 year.
+
+PV = 2M * ((1 - (1.08)^-20) / 0.08)
+PV = $19.64 million
+
+[IMPORTANT]
+====
+The $40 million mention is a distraction. It is a **nominal price** indeed, it's
+2M x 20 = $40 Million. That is the money "altogether". But $40 million received
+over 20 years IS NOT $40 million today.
+====
+
+You need to be asking the question: "How much are those future payments (of 2M) worth
+to me today at 8%"?
+
+b. First payment immediately
+
+This immediately is a cue into **Annuity due**
+
+Instead of t = 1, we have t = 0.
+
+The easiest trick is: PVannuity due = PVordinary annuity(1 + r)
+
+Therefore PV = 19.64 * 1.08 = $21.21 million
+
+30. **Annuities due** A store offers two payment plans. Under the installment plan,
+you pay 25% down and 25% of the purchase price in each of the next 3 years. If you
+pay the entire bill immediately, you can take a 10% discount from the purchase price.
+
+a. Which is the better deal if the interest rate is 5%?
+b. How will your answer change if the four payments on the installments do not
+start until the end of the year?
+
+PV = (0.25x) * ((1 - (1.05)^-3)/ 0.05) = 0.6806X
+PV = 2.72(0.25x) * (1 + 0.05) = 0.72x < 0.90x
+
+The better deal is installment, because we are paying 0.72 of the price instead of
+0.90.
+
+b. Not sure, because that means I would have to divide 100% amongst 3 years? So
+33.33%?
+
+PV = (0.33)x * ((1 - (1.05)^-3) / 0.05)
+PV = 0.90x = 0.90x => So, either option is the same
+
+Correction
+
+The down payment **doesn't need to be discounted**, because you are paying it today.
+
+So we get the payments discounted with the annuity formula:
+
+PV = (0.25x) * ((1 - (1.05)^-3)/ 0.05) = 0.6806X
+
+And then we can add down the payment (because that is already in today's money)
+
+0.25X + 0.6808X = 0.9308X > 0.90X
+
+Which means, it's better to just pay everything with the 10% discount.
+
+_Comment:_ Such bullshit. But I guess it makes sense.
+
+**We have to discount with t = 4**, because this is literally stating **4 payments**.
+
+So the formula is actually:
+
+PV = 0.25X * ((1 - (1.05)^-4) / 0.05)
+PV = 0.25X * 3.54 = 0.87X < 0.90X
+
+So in this instance, installments are better.
+
+**The longer you can wait to pay, the more valuable the installment plan becomes
+when the interest rate is positive**
+
+[IMPORTANT]
+====
+The real-world meaning of the **opportunity cost / discount rate** on these annuity
+problems answers things such as:
+
+_What you could earn elsewhere with similar risk, or what borrowing/debt you could
+avoid by retaining or using the money_
+====
+
+In the end it's all about you, what are your circumstances, certainly there are
+financial decisions you can make that take priority over others, but there's no
+"clear cut-answer"
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
