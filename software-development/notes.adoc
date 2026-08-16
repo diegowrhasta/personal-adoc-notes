@@ -87,3 +87,84 @@ When you start building these connections amongst concepts and realms of knowled
 you inevitably enhance, and strengthen your memory's access to both of the realms
 of knowledge and your skill goes up even further, it's higher value than just
 thinking of them as their own silo.
+
+By understanding the key concepts and then picking out the differences between
+programming languages and the like will allow you to cover more and faster.
+
+- Learning is actually painful. So if you are learning and this is **hard**. That's
+a good thing, unless it's too difficult.
+	- If you walk away without concrete things out the experience. Something is bad.
+		- You have to contrast info, take notes, and deep learning in general, has
+		to hurt just enough. With that, things can translate.
+
+[IMPORTANT]
+====
+Don't spend time learning the same thing but under a different environment. You
+won't progress that way.
+====
+
+**Knowledge Vault**
+
+This has to be reference for you and the AI.
+
+- I've been doing this, a markdown file folder.
+
+- Write skills within AI
+	- Research
+	- Code-translations
+	- Alternatives => Really valuable
+		- Conquering the topic from different angles. This is one of the biggest
+		challenges in modern learning which is silos concepts, and not understanding
+		how to translate that into the real world
+
+Skill: A prompt you give to an LLM, but you can reuse it all the time.
+
+**Stop thinking of AI as the enemy to learning, think of it as an enhancement to it**
+
+A great example of AI:
+
+- When you are reading docs, and there's some fact or note stated, whereas before
+you could've just trusted whatever it said (without a really clear understanding),
+you can ask AI to generate an example of what the docs say. And then you yourself
+can run it, and the concept can then get DEEPER inside of you.
+	- Where would you run different approaches, scenarios and real world examples.
+	Let's not focus on one isolation solution, use AI to get multiple approaches,
+	multiple things
+
+- Get more randomness to get more ideas, so fire off multiple agents and get multiple
+approaches to things.
+
+=== Building your own software
+
+- Real provable experience
+	- A little less true with AI. However, with Agents you are still supervising them
+		- Product mindset
+			- What features do we actually want
+			- What do we need?
+			- How much do things cost?
+			- We learn how code can be then used for practical applications
+	- Work with real data
+		- Work with customers
+	- Security
+	- You will be challenged and hopefully motivated
+
+You can short-circuit a lot of skills' acquisition time, BY BUILDING THINGS YOURSELF.
+
+- Live migrations?
+	- Protect data in production
+		- Whilst morph the data model
+		- How do you not corrupt data?
+			- How to push updates without affecting users
+
+[IMPORTANT]
+====
+Resourcefulness => Biggest skills. Somehow, make it work.
+
+Search for help in AI, people, alone. Etc.
+====
+
+=== Career moves
+
+Career + Life strategy
+
+- Stop being tied up in a role, title, company
