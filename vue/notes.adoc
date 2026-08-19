@@ -1,0 +1,69 @@
+= Notes
+
+Notes taken from:
+
+Vue - The Complete Guide (incl. Router & Composition API) - Udemy
+
+== What is "Vue.js"
+
+_Note:_ Apparently we are at Vue 3. Vue 2 was released some time ago and then
+things changed.
+
+_Vue.js (Vue) is a JavaScript framework that makes building interactive and reactive
+web frontends (= browser-side web applications) easier.
+
+"JavaScript" => A programming language that is supported by all browsers. It allows
+to manipulate the already-running page and hence provide richer user experiences.
+
+"framework" => This is a third-party library that exposes utility functionalities
+AND a "set of rules" (a clear guidence) on how to build your JavaScript application.
+It gives you a clear idea and structure of how to write your application code, so it's
+utility functions plus the rules.
+
+"reactive" => The idea is that we want to give the user a modern look and feel.
+Most of the time we are imitating mobile app UI/UX.
+
+"web frontends" => With javascript we control what the user sees. Vue helps us
+build javascript driven interfaces. It's all about the browser side code.
+
+**Why use Vue?**
+
+- Let's talk about mobile applications. They are really responsive, they are snappy,
+smooth animations. It all feels like one "unit". Mobile apps and desktop apps
+feel very reactive. We don't have to wait for html getting downloaded and rendering.
+
+The only thing that might take time is data loading.
+
+_In a traditional web page, we always waiting, it's a client-server model. Request
+and response_. **But JavaScript can help us circumvent this**. And that is by
+manipulating the DOM of the browser. The modern paradigm is always: We do a request
+ONCE, and then everything else gets changed in the browser.
+
+- Technically, just javascript can be used without frameworks.
+	- But you have to write all code on your own (re-invent the wheel)
+	- You might write suboptimal code or introduce errors & bugs
+	- Working in a team might be harder because not everyone knows your structure
+	and "code philosophy"
+	- So frameworks try to bridge that gap, to focus more on business requirements,
+	and features that help you solve the problem you are analyzing
+
+== Different Ways of Using Vue
+
+We can use Vue in two main ways.
+
+- To control parts of an HTML page, so that it's more interactive and responsive
+	- Chat overlay, pieces of HTML (we don't have to use Vue for everything on a
+	page if we don't need interactive elements)
+	- We can build "Widgets" so that parts of a page can be controlled by Vue 
+
+- We can also use Vue to control **everything**. This is the SPA approach. So
+no markup is sent on the first request/render, but all the javascript necessary
+for the bootstrapping and working of the app.
+
+**We will start with the widget approach for simplicity's case**.
+
+[IMPORTANT]
+====
+It's not about "the better approach". Move away from Dogma, each problem, will require
+either one of the approaches to using Vue.
+====
