@@ -3114,6 +3114,115 @@ In the end it's all about you, what are your circumstances, certainly there are
 financial decisions you can make that take priority over others, but there's no
 "clear cut-answer"
 
+31. **Amortizing loans** A bank requires you to pay $70,000 at the end of each of
+the next eight years. The interest rate is 8%.
+a. What is the present value of these payments?
+b. Calculate for each year the loan balance that remains outstanding, the interest
+payment on the loan, and the reduction in the loan balance.
+
+a. PV = 70000 * (1 + 0.08) / 0.08^8
+b. No idea how to do this
+
+Corrections
+
+a. PV = PMT * ((1 - (1 + r)^-n) / r)
+
+PV = 70,000 * ((1 - (1 + 0.08)^-8) / r)
+PV = $402,264.73
+
+b.
+
+Every year: Interest = Beginning loan balance x 8%
+
+Then the $70,000 payment is divided into:
+
+Payment = Interest + Reduction
+Reduction = $70,000 - Interest
+
+Ending balance = Beginning balance - Reduction
+
+So by year
+
+[cols="1,1,1,1,1,1"]
+|===
+|Year | Beginning balance | Interest (8%) | Payment | Reduction | Ending balance
+
+|1
+|$402,264.73
+|$32,181.18
+|$70,000
+|$37,818.82
+|$364,445.91
+
+|2
+|$364,445.91
+|$29,155.67
+|$70,000
+|$40,844.33
+|$324,601.58
+
+|3
+|$324,601.58
+|$25,888.13
+|$70,000
+|$44,111.83
+|$280,489.71
+
+|4
+|$280,489.71
+|$22,439.18
+|$70,000
+|$47,560.82
+|$232,928.87
+
+|5
+|$232,928.87
+|$18,634.31
+|$70,000
+|$51,365.69
+|$181,563.18
+
+|6
+|$181,563.18
+|$14,525.06
+|$70,000
+|$55,474.95
+|$126,088.24
+
+|7
+|$126,088.24
+|$10,087.06
+|$70,000
+|$59,912.94
+|$66,175.30
+
+|8
+|$66,175.30
+|$5,294.02
+|$70,000
+|$64,705.98
+|$1,469.32
+|===
+
+[IMPORTANT]
+====
+Amortization is: The payment stays constant, but the **interest portion decreases
+while the principal-reduction portion increases**
+====
+
+_In essence, you will be paying most of simply interest by the initial years_
+
+32. **Amortizing loans** Suppose that you take out a $200,000,20-year mortgage
+loan to buy a condo. The interest rate on the loan is 6%, and payments on the
+loan are made annually at the end of each year.
+a. What is your annual payment on the loan?
+b. Construct a mortgage amortization table in Excel similar to Table 2.1, showing
+the interest payment, the amortization of the loan, and the loan balance for each
+year
+c. What fraction of your initial loan payment is interest? What about the last
+payment? What fraction of the loan has been paid off after 10 years? Why is the
+fraction less than half?
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
