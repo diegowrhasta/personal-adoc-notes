@@ -4,7 +4,9 @@ Notes taken from:
 
 Vue - The Complete Guide (incl. Router & Composition API) - Udemy
 
-== What is "Vue.js"
+== Section 1: Getting Started
+
+=== What is "Vue.js"
 
 _Note:_ Apparently we are at Vue 3. Vue 2 was released some time ago and then
 things changed.
@@ -47,7 +49,7 @@ ONCE, and then everything else gets changed in the browser.
 	- So frameworks try to bridge that gap, to focus more on business requirements,
 	and features that help you solve the problem you are analyzing
 
-== Different Ways of Using Vue
+=== Different Ways of Using Vue
 
 We can use Vue in two main ways.
 
@@ -67,3 +69,231 @@ for the bootstrapping and working of the app.
 It's not about "the better approach". Move away from Dogma, each problem, will require
 either one of the approaches to using Vue.
 ====
+
+=== Exploring Vue Alternatives
+
+Vue => Complete component-based UI framework, includes most core features for
+modern web applications. A bit less popular than React & Angular.
+
+Reach.js => Alternative to Vue. It's officially a library. Lean and focused
+component-based UI library. Certain features (e.g. routing) are added via community
+packages. (Vue has everyting built in, e.g., routing)
+
+Angular => Complete component-based UI framework, packed with features. Uses TypeScript.
+Can be overkill for smaller projects. (Big in Enterprise, and it's TypeScript-based)
+
+In general all three are very popular and used alot. If you want to switch to a
+different alternative, switching is easier once you know **one framework**. The
+core concepts and paradigms are interchangable
+
+=== Building A First App With Just JavaScript
+
+There will be course resources that can be downloaded. The recommended editor
+is `VS Code`. And of course, there are Vue extensions for it.
+
+We will first start by writing vanilla code, to then appreciate actual Vue code.
+
+Thje `gs-1` folder has 3 files:
+
+- app.js
+- index.html
+- style.css
+
+With just javascript we want to code a simple Todo app.
+
+It doesn't react at all. So we need access to the markup's button, input, list
+
+[source, html]
+====
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A First App</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div>
+        <label for="goal">Goal</label>
+        <input type="text" id="goal" />
+        <button>Add Goal</button>
+      </div>
+      <ul>
+        <li>Test</li>
+      </ul>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
+
+====
+
+[source, js]
+====
+const buttonEl = document.querySelector('button'); <.>
+const inputEl = document.querySelector('input');
+const listEl = document.querySelector('ul');
+
+function addGoal() {
+    const enteredValue = inputEl.value;
+    const listItemEl = document.createElement('li');
+    listItemEl.textContent = enteredValue;
+    listEl.appendChild(listItemEl); <.>
+    inputEl.value = ''; <.>
+}
+
+buttonEl.addEventListener('click', addGoal); <.>
+====
+<.> With vanilla javascript this is the pattern. You have to select all the
+elements that are living in the markup file, you use selectors for that.
+<.> And you can them programatically add new markup elements, or change properties
+that after the execution "look reactive", without a page reload
+<.> This is a QoL type of change, so that after you input the goal to add to the list,
+then the input is cleared (so you add something new and don't have to delete yourself)
+<.> And this is also another really common pattern, you will attach callbacks to
+different functions that are triggered on all sorts of interactions with the UI
+elements (this idea is still used in the frameworks, albeit, in more elegant and
+declarative ways)
+
+=== Re-building the App with Vue
+
+You can import vue directly into an html by doing this:
+
+````
+<script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js"></script> 
+````
+
+(The course has a note that the import changes, because it used to be something
+else)
+
+_In order to switch to vue, first, comment the `app.js`_.
+
+That way the code won't have any effect now on markup interactions.
+
+The course makes a remark: The docs are there to help you, and are extremely useful.
+
+https://vuejs.org/guide/quick-start.html
+
+In there you can see many ways of installing/setting up Vue. However, for our purposes
+and also just to know this, the easiest way to start interfacing with it, is by
+importing it into your markup through a CDN.
+
+You should import it like this:
+
+````
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A First App</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <label for="goal">Goal</label>
+      <input type="text" id="goal" />
+      <button>Add Goal</button>
+    </div>
+    <ul>
+      <li>Test</li>
+    </ul>
+  </div>
+  <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
+````
+
+_Before you `.js` script.
+
+Now, we can access vue's functions.
+
+Let's get this something out the way:
+
+[IMPORTANT]
+====
+The vanilla way is an **imperative** approach. We literally declare every single
+thing manually. But by using something such as `Vue` we switch to a **declarative
+approach**, we declare the inputs/base components, and then let Vue figure out what
+to do with it, by leveraging its own functions and pre-conceptions.
+====
+
+After we have imported Vue, we can then add "directives" that then tie into javascript
+code:
+
+[source, html]
+====
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A First App</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <div>
+      <label for="goal">Goal</label>
+      <input type="text" id="goal" v-model="enteredValue" /> <.>
+      <button v-on:click="addGoal">Add Goal</button> <.>
+    </div>
+    <ul>
+      <li v-for="goal in goals">{{ goal }}</li> <.>
+    </ul>
+  </div>
+  <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
+====
+<.> If you want to hook into an input and bind its value so that then the model
+(backend code) is constantly receiving changes, you'd use the `v-model` directive.
+<.> When hooking into UI element's events, you'd use `v-on:click="function"`
+<.> And lastly if you want to iteratively render something `v-for="..."`
+
+As you can see we are using directives that will tell Vue what we want, but he
+will do the heavy lifting in the background.
+
+[source, js]
+====
+Vue.createApp({ <.>
+    data() { <.>
+        return {
+            goals: [],
+            enteredValue: ''
+        };
+    },
+    methods: {
+        addGoal() { <.>
+            this.goals.push(this.enteredValue); <.>
+            this.enteredValue = '';
+        }
+    }
+}).mount('#app'); <.>
+====
+<.> We will feed a whole object to `Vue.createApp` in there all the data of
+the screen will respond to a specific property of the object, and then another
+property will hold methods that then will more than likely all act as callbacks
+<.> This is "by convention" always `data()`, inside you would return all the
+values you would need to be tied to UI element's values
+<.> This is but one method that will react to some UI element event
+<.> As you can see this is referring to `goals` as in the ones that are under
+`data()`, Vue does a bit of magic here, but the convention is that if you set
+`this.xxx` it will trace back to the bound data that is right now the "Model" of
+the screen.
+<.> Lastly, we need to tell vue where is the markup that it needs to watch and
+then manipulate, luckily the HTML has a selector `id="app"`, by calling `mount("#app")`
+which is a CSS selector syntax, vue will find the markup, and just after setting this
+we would have the same behavior that we created with vanilla javascript.
+
