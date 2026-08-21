@@ -297,3 +297,51 @@ then manipulate, luckily the HTML has a selector `id="app"`, by calling `mount("
 which is a CSS selector syntax, vue will find the markup, and just after setting this
 we would have the same behavior that we created with vanilla javascript.
 
+=== Vue vs "Vanilla JavaScript" (just JavaScript)
+
+There's a lot of magic happening. But the key thing: **With Vue we define the end
+result, and with the features offered by it, data and logic and UI end up connected**.
+
+Vue allows to build any kind of app, by following this "declarative-result". Which
+allows us to declare the steps, not the "how we get there".
+
+The bigger the applications, with just JavaScript it will grow just more and more
+in terms of maintenance, whilst with something like Vue, things can still remain
+lean, but evolvable and maintainable. (And hopefully less-error-prone)
+
+=== Setting Up The Course Development Environment
+
+- VS Code
+  - Dark Theme
+- Shortcut
+  - Format document => Ctrl + K, Ctrl + F **really important**
+  - If this isn't working, install the Prettier format extension
+    - And then on settings make sure prettier-vscode is selected
+      - This is the baseline to have more readable code
+
+=== Course Outline & What's In the Course
+
+Basics => No prior Vue knowledge. Syntax, templates, directives, data, computed
+properties, watchers (Foundation)
+Intermediate => Components, component communication, Behind the Scenes, Forms,
+Http, Routing, Animations
+Advanced => Vuex, Authentication, Deployment & Optimizations, Composition API,
+Re-using Code
+
+- Dozens of Small Demos / Mini Projects
+- Multiple bigger Course Projects
+- Assignments, Challenges
+
+=== How To Get The Most Out Of This Course
+
+- Watch the Videos: At your pace
+- Code along: Try things on your own (code along, code ahead)
+- Repeat Concepts - Repeat videos or sections if unclear
+  - All concepts should come together through a project
+- Google, Stackoverflow: Search the web, on threads with the solutions. However if
+you are stuck => Q&A Section. You will learn more if you help fellow students.
+(Forum for discussion)
+- Facing an Error? - Compare course code to your own
+- Code snapshots => Can be used for debugging, troubleshooting.
+
+== Section 2: Basics & Core Concepts - DOM Interaction with Vue
