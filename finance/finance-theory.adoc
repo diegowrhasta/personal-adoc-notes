@@ -3323,6 +3323,71 @@ to cover these bills?
 c. You have invested $60,476 at 8%. After paying the above school fees, how much
 would remain at the end of the six years?
 
+a. Need to apply the annuity formula but for future value
+b. Need to apply annuity formula directly onto a payment of 12,000 per period (for
+PV)
+c. So, I need to discover how on each year, the invested amount that keeps on growing,
+takes a cut, and by the end how the investment amount looks like?
+
+Correction
+
+a. This wants to know: **How much must I invest today so that it grows to $10,000
+in 5 years at 5%?
+
+This is a **single future value** so we can use the ordinary PV formula:
+
+PV = FV / (1 + r)^t
+PV = 10,000 / (1 + 0.05)^5
+PV = $7,835.26
+
+b. This is an ordinary annuity
+
+What single amount today would be equivalent to all those future $12,000 payments?
+
+PV = C ((1 - (1 + r)^-t) / r)
+PV = 12,000 * ((1 - (1.08)^-6) / 0.08)
+PV = $55,474.56
+
+c. This can be brute forced by calculating each year by taking remaining balance
+and how it grows and then subtract the payments. But we can be smart by using the
+**future value at year 6 of the 6 withdrawals**. And we can then calculate the total
+growing of the investment at year 6, and the difference being what we will have as
+outstanding.
+
+60,476 * 1.08^6 = $95,967.81
+
+FV = C ((1 + r)^t - 1 / r)
+FV = 12000 * ((1 + 0.08)^6 - 1 / 0.08)
+FV = $88,031.15
+
+R = $95,967.81 - $88,031.15
+R = $7,936.66
+
+**Another cool way of looking at it**
+
+We calculated that the 6 payments in today's money is $55,474.56. And the problem
+said we actually have today $60,476. We have excess, we can actually pay the whole
+thing "now"
+
+R = $60,476 - $55,474.56
+R = $5,001.44
+
+Now, this excess, is subject to interest generation as well, so if you apply the
+future value formula:
+
+5,001.44 * (1.08)^6 = $7,936.66
+
+We reach the same answer, but from different angles.
+
+34. **Growing annuities** You estimate that by the time you retire in 35 years,
+you will have accumulated savings of $2 million. If the interest rate is 8% and
+you live 15 years after retirement, what annual level of expenditure will those
+savings support?
+	Unfortunately, inflation will eat into the value of your retirement income.
+Assume a 4% inflation rate and work out a spending program for your $2 million in
+retirement savings that will allow you to increase your expenditure in line with
+inflation
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
