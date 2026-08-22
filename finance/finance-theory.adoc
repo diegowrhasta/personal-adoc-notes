@@ -3388,6 +3388,82 @@ Assume a 4% inflation rate and work out a spending program for your $2 million i
 retirement savings that will allow you to increase your expenditure in line with
 inflation
 
+- So I need to use the growing annuity formula to limit test for 15 years how much
+will 1 year have to yield.
+
+Corrections
+
+You have to think in **two steps**
+
+a) Constant annual expenditure
+
+$2 million is available at retirement, and the same amount has to be withdrawn
+every year for 15 years while earning 8%.
+
+So this is a present value of an ordinary annuity problem:
+
+PV = C ((1 - (1 + r)^-n) / r)
+2,000,000 = C * ((1 - (1.08)^-15) / 0.08)
+C = 2,000,000 / 8.56
+C = $233,659.09
+
+b) Expenditure grows with inflation
+
+Inflation is 4%, so the spending increases 4% every year.
+
+A series of expenditure could be seen as:
+
+C, C(1.04), C(1.04)^2, ...
+
+PV = C / (r - g) * (1 - ((1 + g)/(1 + r))^n)
+2,000,000 = C / (0.08 - 0.04) * (1 - ((1 + 0.04)/(1 + 0.08))^15)
+2,000,000 = C / 0.04 * 0.43
+C = 2,000,000 * 0.04 / 0.43
+C = $186,046.51
+
+It's clear to see that with inflation added to the equation, the yearly spending
+will have to be way less. Another framing for this is:
+
+````
+"I need to find the amount I can spend in year 1, then let that amount grow at
+4% for the remaining 14 years"
+````
+
+In this type of problem, you are esentially trying to answer: "How much can I spend
+in the first year?" The 8% return is what allows the remaining savings to finance
+the subsequent withdrawals.
+
+35. **Growing annuities** You are contemplating membership in the St. Swithin's
+and Ancient Golf Club. The annual membership fee for the coming year is $5,000,
+but you can make a single payment today of $12,750, which will provide you with
+membership for the next three years. Suppose that the annual fee is payable at the
+end of each year and is expected to increase by 6% a year. The discount rate is
+10%. Which is the better deal?
+
+So first, 12,750 * 0.90 = $11,475. And then I need to calculate the annuity for
+3 years:
+
+PV = 5,000 * ((1 - (1 + 0.06)^-3) / 0.06)
+
+And then compare in PV terms which one is less.
+
+Corrections
+
+So got confused by "discount rate" this means actually another term that can be
+fit to the **growing annuity formula**, this is for a cash flow of payment though.
+
+Discount can indeed mean (10% off on each payment), but, the thing is, the payment
+fee is also growing by 6%, so they are offsetting each other in a way but even
+against that competition, we can safely calculate what would be in terms of PV
+the total amount of payments.
+
+PV = C1 * (1 - ((1 + g) / (1 + r))^n / r - g
+PV = 5000 * (1 - ((1.06) / (1.10))^3) / 0.04
+PV = $13,146.51
+
+So in short it's paying anually a total of $13,146.51 or paying today $12,750.
+Paying today is better by $396.51
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
