@@ -459,4 +459,149 @@ Interpolation and Vue attaching is the takeaway from all of this, this is the ba
 concept that will allow you to bring together whatever it is that Vue offers for
 reactivity and responsive UIs.
 
+=== Binding Attributes with the "v-bind" Directive
 
+You don't always want to use interpolation for binding data.
+
+Let's say you want links, (you'd use an anchor `<a href...`). The link could be
+hardcoded. However, we could also store the value in the vue state. And this will
+allow us to make things dynamic.
+
+````
+const app = Vue.createApp({
+    data() {
+        return {
+            courseGoal: 'Finish the course and learn Vue!',
+            vueLink: 'https://vuejs.org/'
+        };
+    }
+});
+
+app.mount('#user-goal');
+````
+
+[source, html]
+----
+<section id="user-goal">
+  <h2>My Course Goal</h2>
+  <p>{{ courseGoal }}</p>
+  <p>Learn more <a href="{{ vueLink }}">about Vue</a></p> <.>
+</section>
+----
+<.> If you want to bind state values to properties of markup. You can't use the
+double curly braces, it will be rendered as the literal string.
+
+And so, we will have to add a specific directive. An instruction that will be
+picked up by Vue, so, in this instance to set the value of an attribute dynamically,
+you can write:
+
+````
+<p>Learn more <a v-bind:href="vueLink">about Vue</a></p> <.>
+````
+<.> In essence you have to prefix with `v-bind` and then write after a colon,
+the name of the attribute you want to bind to, the value then inside will reference
+directly the vue's _data property name_.
+
+This is another key concept to know when it comes to Vue, inside of html markup
+you'd use double curly braces, and when trying to bind to attributes of html
+elements, you would use `v-bind`
+
+=== Understanding "methods" in Vue Apps
+
+For outputting and managing data, Vue offsets the responsibility to the HTML code.
+
+Now, let's add a new requirement:
+
+- Roll a dice, and then render based on the result a "goal".
+
+For this, we have to code some logic. And now leverage `methods`
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            courseGoal: 'Finish the course and learn Vue!',
+            vueLink: 'https://vuejs.org/'
+        };
+    },
+    methods: { <.>
+        outputGoal() { <.>
+            const randomNumber = Math.random();
+            if (randomNumber < 0.5) {
+                return 'Learn Vue!';
+            }
+
+            return 'Master Vue!';
+        }
+    }
+});
+
+app.mount('#user-goal');
+----
+<.> Another reserved name is `methods`. This receives an object that inside will
+hold different functions.
+<.> In this instance we are adding a function that will calculate a goal based on
+a random number
+
+We can then actually call this method from the `HTML`
+
+````
+<section id="user-goal">
+  <h2>My Course Goal</h2>
+  <p>{{ outputGoal() }}</p>
+  <p>Learn more <a v-bind:href="vueLink">about Vue</a></p>
+</section>
+````
+When you use string interpolation, inside you can technically run any JS code,
+the function is registered under the vue object, so this gets resolved and
+executed correctly, however you _could_ also just write code _in-line_.
+
+And if you keep on reloading the page, you will se how the goal text changes,
+due to the logic that calculates a random number on each iteration. This is the
+base concept to understand so that later down the line you can build tons of
+dynamic pages based on logic, binding and string interpolation.
+
+=== Working with Data inside of a Vue App
+
+It all depends on what you're building, and the goal. However, let's talk about
+how to register Vue data, and how to leverage it.
+
+By leveraging Vue `data()`, you can see how magic can happen:
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            courseGoalA: 'Finish the course and learn Vue!', <.>
+            courseGoalB: 'Master Vue and build amazing apps!',
+            vueLink: 'https://vuejs.org/'
+        };
+    },
+    methods: {
+        outputGoal() {
+            const randomNumber = Math.random();
+            if (randomNumber < 0.5) {
+                return this.courseGoalA; <.>
+            }
+
+            return this.courseGoalB;
+        }
+    }
+});
+
+app.mount('#user-goal');
+----
+<.> You can register some extra properties, in this instance for saving goals.
+<.> And you can then leverage `this` to reference those state properties by name.
+This might look super strange, since `this` is a really tricky reserved name in
+javascript
+
+Vue, will always take all the properties under `data()` and it will register them
+(alongside the methods in `methods`) as part of a global state. **This** is what
+enables us having the ability to call them with `this` and also for the markup
+to reference both methods and properties directly, regardless of interpolation or
+data binding constraints.
+
+=== Outputting Raw HTML Content with v-html
