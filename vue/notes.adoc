@@ -345,3 +345,118 @@ you are stuck => Q&A Section. You will learn more if you help fellow students.
 - Code snapshots => Can be used for debugging, troubleshooting.
 
 == Section 2: Basics & Core Concepts - DOM Interaction with Vue
+
+=== Module Introduction
+
+The Essentials:
+
+- How does Vue interact with HTML? - Templates
+- How do you output dynamic content?
+- How do you react to User Input?
+
+=== Creating and Connecting Vue App Instances
+
+Don't forget for the import:
+
+````
+<script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script> 
+````
+
+We are going to use a basic starter "project". Downloaded from the course. It
+has basic css, and html and js files.
+
+We already mentioned this, we need to mark a part of the page, that vue is going
+to attach to. (You need to control that with vue app).
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script> 
+    <script src="app.js" defer></script>
+  </head>
+  <body id="app">
+    <header>
+      <h1>Vue Course Goals</h1>
+    </header>
+    <section id="user-goal"> <.>
+      <h2>My Course Goal</h2>
+      <p></p>
+    </section>
+  </body>
+</html>
+----
+<.> We want to attach to this specific section of the markup, so we need to be
+sure to make usage of `id`, this is the best candidate for marking a section to
+attach Vue to.
+
+And then we can start writing Vue code:
+
+[source, js]
+----
+const app = Vue.createApp({ <.>
+    data() { <.>
+        return {
+            courseGoal: 'Finish the course and learn Vue!' <.>
+        };
+    }
+});
+
+app.mount('#user-goal'); <.>
+----
+<.> Notice how we can create an app object, with `Vue.createApp()`, and this
+can be saved under a reference variable.
+<.> The pre-defined `data` property, should be a function that **always returns an
+object**
+<.> And inside of there we can define all sorts of properties and what type of properties
+they are based on our use case/need/goal. That way they can be bound to UI elements
+and things.
+<.> The `app` object needs to be mounted somewhere, and you do that by calling `mount()`
+and inside feeding in the form of a _css selector_ the metadata that will help
+find the element we want to mount Vue to.
+
+=== Interpolation and Data Binding
+
+[IMPORTANT]
+====
+The import of Vue tip from the course is **mega important**. If you import vue
+"wrongly" none of the reactivity nor anything will work as expected. So be sure
+to import vue correctly.
+====
+
+And, so lastly, the final piece of the puzzle to then start displaying whatever
+vue has as state, you can make usage of special syntax that only when Vue is attached
+will behave in a certain way:
+
+````
+<section id="user-goal">
+  <h2>My Course Goal</h2>
+  <p>{{ courseGoal }}</p>
+</section>
+````
+When you use double curly braces and inside put a name (that should refer to a
+property that is under `data()`), then Vue takes care of injecting the value there
+and rendering in HTML. Without vue attached to the page **you will see literally
+as a string `{{ courseGoal }}`, but thanks to Vue, the module itself, you can
+see magic happening. Things are scored through javascript, and rendered on the view.
+
+**Interpolation** => Is the concept that helps declare values inside the vue app
+object, and that then gets rendered in some UI component.
+
+**Note:** Unless you are editing the HTML that is bound to the Vue app, you won't
+get the "swapping" of the property value, **bear that in mind, it's key**.
+
+Interpolation and Vue attaching is the takeaway from all of this, this is the base
+concept that will allow you to bring together whatever it is that Vue offers for
+reactivity and responsive UIs.
+
+
