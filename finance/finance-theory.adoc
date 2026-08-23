@@ -3464,6 +3464,118 @@ PV = $13,146.51
 So in short it's paying anually a total of $13,146.51 or paying today $12,750.
 Paying today is better by $396.51
 
+36. **Growing perpetuities and annuities**
+
+As winner of a breakfast cereal competition, you can choose one of the following
+prizes:
+
+a. $100,000 now.
+b. $180,000 at the end of five years.
+c. $11,400 a year forever.
+d. $19,000 for each of 10 years.
+e. $6,500 next year and increasing there after by 5% a year forever.
+If the interest rate is 12%, which is the most valuable prize?
+
+a. This is our reference already calculated.
+b. Need to apply the future value formula to bring this to PV
+c. Need to apply the perpetuity formula for $11,400 a year and with a 12% interest rate
+d. Need to apply the annuity formula with 12% interest rate and 10 years span
+e. Nee to apply a growing perpetuity formula of 5% (I don't know how 12% fits here
+though)
+
+Corrections
+
+a. $100,000
+b. We should use the **present value/ discounting formula**. Discount this value
+by 5 years to PV
+
+PV = FV / (1 + r)^t
+PV = 180,000 / (1 + 0.12)^5
+PV = $102,136.83
+
+c. Standard perpetuity
+
+PV = C / r
+PV = 11,400 / 0.12 = $95,000
+
+d. Yes, we need to calculate the present value of an annuity formula:
+
+PV = C * ((1 - ((1 / (1 + r)^n)) / r)
+PV = 19,000 * ((1 - (1 / (1 + 0.12)^10)) / 0.12)
+PV = $107,354.24
+
+e. The interest rate, can be also understood as **discount rate**. And then we have
+a growth rate. The payments grow by 5% every year. Since the payments are growing,
+the stream is **more valuable than a level perpetuity**.
+
+PV = C / r - g
+PV = 6,500 / 0.12 - 0.05
+PV = $92,857.14
+
+R: And so, it's clear that option `d` is the most valuable prize.
+
+37. **Growing perpetuities and annuities** Your firm's geologists have discovered
+a small oil field in New York's Westchester County. The field is forecasted to
+produce a cash flow of C1 = $2 million in the first year. You estimate that you
+could earn a return of r = 12% from investing in stocks with a similar degree of
+risk to your oil field. Therefore, 12% is the opportunity cost of capital. What
+is the present value? The answer, of course, depends on what happens to the cash
+flows after the first year. Calculate present value for the following cases:
+
+a. The cash flows are forecasted to continue forever with no expected growth or
+decline during that period
+b. The cash flows are forecasted to continue for 20 years only, with no expected
+growth or decline
+c. The cash flows are forecasted to continue forever, increasing by 3% per year
+because of inflation
+d. The cash flows are forecasted to continue for 20 years only increasing by
+3% per year because of inflation
+
+a. PV = C / r
+
+PV = 2 / 0.12
+PV = $16.67 M
+
+b. PV = C * ((1 - ((1 / (1 + r)^n))) / r)
+
+PV = 2 * ((1 - ((1 / (1 + 0.12)^20))) / 0.12)
+PV = $14.94 M
+
+c. PV = C / r - g
+
+PV = 2 / 0.12 - 0.03
+PV = $22.22 M
+
+d. The growing annuity formula
+
+Corrections
+
+PV = C / (r - g) * (1 - ((1 + g) / (1 + r))^n)
+PV = 2 / (0.12 - 0.03) * (1 - ((1 + 0.03) / (1 + 0.12))^20)
+PV = $18.06M
+
+R: Option C is the most profitable one.
+
+_Extras:_
+
+The intuition is useful:
+
+`Finite life < Perpetuity`
+
+and
+
+`Growing cash flows > Level cash flows`
+
+So you should expect: 14.94 < 16.67 < 18.04 < 22.22
+
+A key thing: Because the problem says the **first year's cash flow is $2 million**,
+C1 = 2 goes directly into the growing-annuity formula. If instead the problem gave
+today's cash flow C0, you'd first need to grow it to C1.
+
+38. **Compounding intervals** A leasing contract calls for an immediate payment
+of $100,000 and nine subsequent $100,000 semiannual payments at six-month intervals.
+What is the PV of these payments if the _annual_ discount rate is 8%?
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
