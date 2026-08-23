@@ -3576,6 +3576,169 @@ today's cash flow C0, you'd first need to grow it to C1.
 of $100,000 and nine subsequent $100,000 semiannual payments at six-month intervals.
 What is the PV of these payments if the _annual_ discount rate is 8%?
 
+- I know that 8% / 2 is not the equivalent for semi-annual discount, there's a
+concept of effective rate or something like that.
+
+Corrections
+
+There's **effective anual rate**. Which is the 8% mentioned. This needs to be
+converted to a semiannual rate.
+
+(1 + r)^2 = 1.08
+
+r = 1.08 ^ 1 / 2 - 1
+r = 0.03923
+
+Meaning, the six-month rate is around 3.923%
+
+Because the first payment is immediate, we take it as PV already, and then we
+add discounted rates for future ones:
+
+PV = 100,000 + 100,000 * ((1 - (1 + 0.03923)^-9) / 0.03923)
+PV = $846,138.93
+
+_Extra_
+
+If the problem said "8% annual rate compounded semiannually", then yeah 8 / 2 = 4 %.
+
+That would change it's reference to **nominal annual rate** with a semiannual
+periodic rate of 4%.
+
+But an 8% effective annual rate would mean something else, which due to our
+calculations is 3.923%. (That's the **effective rate**)
+
+39. **Compounding intervals** Which would you prefer?
+a. An investment paying interest of 12% compounded annually.
+b. An investment paying interest of 11.7% compounded semiannually.
+c. An investment paying 11.5% compounded continously.
+Work out the value of each of these investments after 1, 5, and 20 years.
+
+I'll put everything to be anually as the baseline.
+
+a. PV = x * ((1 - (1 + 0.12)^t) / 0.12)
+b. Need to understand the formula for compounding intervals on how to calculate
+anually the interest that every 6 months is 11.7%
+c. I don't understand what continously means.
+
+And then I need to apply 1, 5, 20 as a variable for each formula
+
+Corrections
+
+The problem is referring to investments, **not repeated payments**. So, we presumably
+invest $1 today and ask how much it becomes after 1, 5, and 20 years.
+
+a. 12% compounded annually
+
+FV = PV * (1 + 0.12)^t
+
+FV = (1.12)^1 = 1.12
+FV = (1.12)^5 = 1.76
+FV = (1.12)^20 = 9.65
+
+b. Semiannually = twice per year. The quoted rate is 11.7% per year, but interest
+is calculated twice per year.
+
+The key is in wording: **11.7 compounded semiannually** this means that every 6
+months an X is calculated that summed up with another x adds up to %11.7
+
+11.7 / 2 = 5.85%
+
+And so, if we want to work in terms of **years** The equivalence of the investment
+payments needs to be 2t. A bit strange to look at it like that, but that's because,
+you are compounding TWICE per year. So the payment is double each year. (Not in
+amount but the rate, the times you are being paid)
+
+FV = PV * (1 + (0.117 / 2))^2t
+FV = 1.0585^2 = 1.1204
+
+FV = 1.0585^10 = 1.7657
+
+FV = 1.0585^40 = 9.7193
+
+_Notice how this is "just slightly better at the 1 - 5 years mark", but later down
+the line it goes up way more.
+
+c. This sounds strange at first. But the idea is:
+
+With ordinary compounding, you have discrete periods: Annually, semiannually,
+quarterly, monthly.
+
+Continous compounding says:
+
+What if we compound an **infinitely large number of times**, with each individual
+compounding interval becoming infinitely small?
+
+This leads to a formula of:
+
+FV = PV * e^rt
+
+So for 11.5% continously compounded:
+
+FV = PV * e^0.115t
+
+FV = e^0.115 = 1.1219
+FV = e^0.115*5 = 1.7771
+FV = e^0.115*20 = 9.9742
+
+As you can see, at the early stages, things don't change as much, but the slight
+differences build up overtime and clearly the order of best deal is:
+
+c > b > a
+
+- **11.7% compounded semiannually** has an effective annual rate of:
+
+(1 + (0.117 / 2))^2 - 1 = 0.1204
+
+So although an advertisement might say 11.7%, the **effective annual return is
+12.0422%**
+
+11.5% continously compounded is also an effective annual rate of e^0.115 - 1 =
+12.186%
+
+At first, the "lower" rates might seem worse, but they are actually better than
+the 12% annual investment.
+
+**Key:** Converting everything to annual basis. That's the cleanest way of comparing
+the investments.
+
+_Question:_ When in real life would you see a continously compounding type of scenario?
+
+Continous compounding is much more common as a mathematical model than as the literal
+mechanism of a bank account.
+
+It's mostly used in finance, economics and quantitative modeling.
+
+So, for projections, and running models to then make inferences and much more,
+these concepts and operations are highly used.
+
+40. **Compounding intervals** You are quoted an interest rate of 6% on an investment
+of $10 million. What is the value of your investment after four years if interest
+is compounded:
+
+a. Annually?
+b. Monthly?
+c. Continously?
+
+a. FV = 10M * (1.06) = $10.6M
+b. FV = 10M * (1.06)^2 = $11.24M
+c. FV = 10M * e^0.06 = $10.62M
+
+Corrections
+
+This said for 4 years.
+
+a. FV = 10M * 1.06^4 = $12.62M
+b. Having 6% annual rate means, that has to be divided by 12 (months). Also the
+fact that there are 48 compounding periods. (12 * 4)
+
+FV = 10M * (1 + (0.06/12))^48
+FV = 12.70$
+
+c. FV = 10M * e^(0.06 * 4) = $12.71M
+
+**More frequent compounding gives a slightly larger final value**, but the difference
+becomes smaller and smaller as you move towards continous compounding.
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
