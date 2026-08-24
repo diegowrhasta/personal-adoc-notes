@@ -605,3 +605,132 @@ to reference both methods and properties directly, regardless of interpolation o
 data binding constraints.
 
 === Outputting Raw HTML Content with v-html
+
+There's another directive that is really useful. And that comes when you have
+scenarios in which you want to render structured HTML code. If you use html
+elements in a string and you output with interpolation, then for security measures
+it will not process the HTML. However, you can intentionally turn on that
+processing: `v-bind`
+
+````
+<p v-html="outputGoal()"></p>
+````
+So you add it as an attribute, and then call any of the methods or properties that
+the vue object is holding together.
+
+The use cases for this html rendering switch are not _that many_, remember that it's
+for security, it protects you against cross-site scripting. But if you ever need
+to pass dynamically rendered HTML, `v-html` is your friend.
+
+=== A First Summary
+
+The moment we attach vue to some specific section, all the children also can get
+manipulated. And when you attach vue to a section, you get access to special features
+that javascript reads and then acts on. Lots of behavior under the scenes is computed,
+but you only care about **declaring** what you want the behavior to be.
+
+You _pass an object to your vue app_, and this object configures the vue app.
+
+- data
+- methods
+
+These are all really important components of a vue object. The references across
+methods and properties can be referred as `this`. The approach that Vue takes is
+**_A declarative approach_**. Vue does all the magic behind the scenes, it updates
+real DOM, it changes things around, _on our behalf_. As developers we define the
+**final picture**, we architect based on behavior, we declare goals and those get
+executed.
+
+=== Assignment 1: Time to Practice: Data Binding
+
+Need to create a Vue instance, use all the learned things so far.
+
+Tasks:
+
+- Output name
+- Output age
+
+Use vue.js. Save as properties, and output them from there.
+
+- Output age + 5
+- Output random number, and this needs to be outputted two times, one with a method
+and another one without a method
+- Output an image, go to Google, search for some random free to use image URL and
+output the image (not throwing the URL, store that URL in the vue instance and
+fetch it from there and output with vue syntax)
+- Setting an `input` value with the _value attribute_
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script> <.>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <section id="assignment">
+      <!-- 1) Output your name -->
+      <h2>{{ name }}</h2>
+      <!-- 2) Output your age -->
+      <p>{{ age }}</p>
+      <!-- 3) Output your age + 5 -->
+      <p>{{ age + 5 }}</p> <.>
+      <!-- 4) Output a random number (0 to 1) -->
+      <p>Favorite Number: {{ getRandomNumber() }}</p>
+      <p>Favorite Number: {{ Math.random() }}</p>
+      <div>
+        <!-- 5) Display some image you found via Google -->
+        <img v-bind:src="imageUrl" /> <.>
+      </div>
+      <!-- 6) Prepopulate the input field with your name via the "value" attribute -->
+      <input v-bind:value="inputText" type="text" />
+    </section>
+  </body>
+</html>
+----
+<.> Don't forget that the import of the course is "wrong". So this has to be changed.
+<.> This evaluates javascript, it can just be a property reference or in-line
+code execution, hence this works just fine.
+<.> Remember that if you want to dynamically control attributes of HTML elements,
+you have to use `v-bind:<attribute>`. That is key, after you declare the attribute
+like that, you can safely execute js code or call methods or reference a property.
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            name: 'Diego',
+            age: 26,
+            imageUrl: 'https://future-architect.github.io/images/2025/20251022a/image.png',
+            inputText: 'YO'
+        }
+    },
+    methods: {
+        getRandomNumber() {
+            return Math.random();
+        }
+    }
+});
+
+app.mount('#assignment'); <.>
+----
+<.> Decided to do it like this for order purposes, and also because I noticed that
+this element was encasing all the html elements for the assignment.
+
+[IMPORTANT]
+====
+You can declare multiple "vue apps". Don't think it's just **one** mount that
+works. But be sure to decide a good css selector. An id (`#id`) is probably the
+best candidate, they have to be unique, otherwise Vue might get confused.
+====
+
