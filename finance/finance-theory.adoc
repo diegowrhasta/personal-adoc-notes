@@ -3780,6 +3780,40 @@ _Continous compounding:_ "I invest $1,000, and interest compounds continously".
 _Continous payments:_ "I receive $100 per year, but instead of getting it once a
 year, it arrives continously throughout the year."
 
+42. **Continuous compounding** How much will you have at the end of 20 years if
+you invest $100 today at 15% _annually_ compounded? How much will you have if you
+invest at 15% _continously_ compounded?
+
+a. PV = $100 * (1 + 0.15) / 0.15&^20
+b. PV = Don't know
+
+Corrections
+
+a. FV = PV (1 + r)^n
+FV = $100 * (1 + 0.15)^20
+FV = $1,636.65
+
+b. FV = 100 * e^(0.15)(20)
+FV = $2,008.55
+
+These problems are so abstract it's hard to picture a real world scenario this
+really takes hold. It's probably for financial models and estimations that this
+type of concepts take better root. But a "layman's explanation" is:
+
+- In the first case, at the end of each year you get an interest **on whatever
+you have deposited**. Because of this you are making interest on the compounded
+amount of the previous year after year 1.
+- In the second case, it's an impossible case, in which you are every single
+"instant" getting a mega ultra tiny amount on interest, and that is compounding
+with the previously mega-tiny compounded amount. That's when `e` comes into place,
+it's a "compounding intervals taken to the extreme - infinitely often"
+
+43. **Continuous compounding** The continuously compounded interest rate is 12%.
+a. You invest $1,000 at this rate. What is the investment worth after five years?
+b. What is the PV of $5 million to be received in eight years?
+c. What is the PV of a continuous stream of cash flows, amounting to $2,000 per
+year, starting immediately and continuing for 15 years?
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
