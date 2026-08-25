@@ -3688,7 +3688,7 @@ c > b > a
 - **11.7% compounded semiannually** has an effective annual rate of:
 
 (1 + (0.117 / 2))^2 - 1 = 0.1204
-
+4
 So although an advertisement might say 11.7%, the **effective annual return is
 12.0422%**
 
@@ -3738,6 +3738,47 @@ c. FV = 10M * e^(0.06 * 4) = $12.71M
 
 **More frequent compounding gives a slightly larger final value**, but the difference
 becomes smaller and smaller as you move towards continous compounding.
+
+41. **Perpetuities and continous compounding** If the interest rate is 7% compounded
+annually, what is the value of the following three investments?
+a. An investment that offers you $100 a year in perpetuity with the payment at the
+_end_ of each year.
+b. A similar investment with the payment at the _beginning_ of each year
+c. A similar investment with the payment spread evenly over each year.
+
+a. PV = 100 / 0.07
+b. PV = 100  + 100 / 0.07
+c. FV = 100 * e^0.07
+
+Corrections 
+
+a = $1,428.57
+b = $1,528.57
+c. The $100 is no longer arriving as a lump sum at the _end_ of each year. Instea,
+it is paid continously at a rate of $100 per year.
+
+We do indeed do weird math with `e` but it's an integral, that represents the
+continously arriving payments.
+
+But in short it gets simplified to PV = 100 / 0.07 = $1,428.57
+
+**Continous compounding:** Money already invested grows according to e^rt.
+**Continous payments:** Money arrives continously, so you discount each infitesimal
+payment and add them up.
+
+a) and c) have the **same present value** here. WHY? - An annual interest rate
+of exactly 7% and $100/year, the continous stream happens to have the same PV
+as the ordinary perpetuity formula.
+
+c. Is saying that we are getting at an _undisclosed time_ and _undisclosed amount_
+but that at the end of the year amounts to 100$. And we have to discount those small
+amounts at a rate of 7%. Careful around this:
+
+- There are **two things that can be "continous"**
+
+_Continous compounding:_ "I invest $1,000, and interest compounds continously".
+_Continous payments:_ "I receive $100 per year, but instead of getting it once a
+year, it arrives continously throughout the year."
 
 == Present Value Relations I
 
