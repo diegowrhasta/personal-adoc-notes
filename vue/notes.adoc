@@ -734,3 +734,126 @@ works. But be sure to decide a good css selector. An id (`#id`) is probably the
 best candidate, they have to be unique, otherwise Vue might get confused.
 ====
 
+=== Understanding Event Binding
+
+In modern web applications outputting data is half what you do. However, you
+need to build reactive web applications. You need to react based on events.
+
+We will use another testing project with pre-coded UI and some JS. But right now,
+it doesn't react based on anything. We want to code behavior so that buttons trigger
+some sort of event and the screen changes.
+
+Our requirement is really easy: When we press the `Add` button we will add to
+a counter, and when we press `Remove` we will decrease.
+
+Remember, we need to leverage a declarative approach. No imperative. **Declare
+the end result and let Vue do the magic**
+
+For that we can use the `v-on` directive
+
+````
+<button v-on:click="counter">Add</button>
+````
+
+After `-on` we can select any of the native HTML attributes `focus` for example.
+
+You can use a method that manipulates inline or calls a method:
+
+````
+<button v-on:click="onAdd">Add</button>
+<button v-on:click="onRemove">Remove</button>
+
+const app = Vue.createApp({
+  data() {
+    return {
+      counter: 0,
+    };
+  },
+  methods: {
+    onAdd() {
+      this.counter++;
+    },
+    onRemove() {
+      this.counter--;
+    }
+  }
+});
+
+app.mount('#events');
+
+````
+
+Inline (not really good practice, but):
+
+````
+<button v-on:click="counter++">Add</button>
+<button v-on:click="counter = counter - 1">Remove</button>
+````
+
+Look how little you need to write and still you get interactivity, reactivity and
+so on. That's the **core asset of frameworks such as Vue**.
+
+The framework does a lot of heavy lifting:
+
+- Reacts to events
+- Updates state and screen behind the scenes (knows where to replace)
+	- Everything is JS behind the scenes. Makes life as a developer, much-much
+	easier.
+
+=== Events & Methods
+
+As mentioned a bad practice:
+
+````
+<button v-on:click="counter++">Add</button>
+<button v-on:click="counter = counter - 1">Remove</button>
+````
+
+You should put as little as javascript in the html side of a view. Even though
+code is small or little, a good thing is to offload as much as possible to the
+controller-model side of the view.
+
+**Always remember to declare everything that vue leverages alongside its directives
+inside the object that's in `Vue.createApp({})`.
+
+Don't create functions outside, vue won't be able to see them, nor leverage them
+correctly. Remember that the framework does a lot of fancy things behind the scenes,
+remember that it's declarative and that is the philosophy behind all of its features.
+
+The _better way of doing_ => Coding the logic in Javascript. And then pointing to
+it from HTML. Even though you get the same result, as a habit, starting with methods
+abstracting away all logic, is cleaner code.
+
+[IMPORTANT]
+====
+When you write `v-on:click="add"` or `v-on:click="add()"`. Both syntaxes are correctly
+resolved by Vue. But the "more correct way" would be without actually executing the
+method = `add`. That's closer to vanilla JS.
+====
+
+Remember, we can bind methods to HTML events, and it's a core feature for building
+rich modern web apps.
+
+=== Working with Event Arguments
+
+Let's add and deduct not just _1_ in the method. That can be done by accepting a
+parameter.
+
+````
+methods: {
+	onAdd(number) {
+      this.counter += number;
+    },
+    onRemove(number) {
+      this.counter -+ number;
+	}
+}
+
+<button v-on:click="onAdd(5)">Add</button>
+<button v-on:click="onRemove(5)">Remove</button>
+````
+
+Look how we extend the method to take one argument, and we can then declare in
+the markup the argument. This is an important pattern. And that is because in reality,
+you will have this scenario when building some use case. So sending event arguments,
+turns really trivial actually.
