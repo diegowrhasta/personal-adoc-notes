@@ -3814,6 +3814,28 @@ b. What is the PV of $5 million to be received in eight years?
 c. What is the PV of a continuous stream of cash flows, amounting to $2,000 per
 year, starting immediately and continuing for 15 years?
 
+a. FV = 1,000 * e^(0.12)(5)
+b. FV = PV * e^(r)(t)
+PV = 5M / e^(0.12)(8)
+c. FV = 2,000 + 2,000 * (1 + 0.12)^15
+
+Corrections
+
+a. FV = $1,822.12
+b. PV = $1.91M
+c. This is **not a proper continous cash-flow calculation nor a proper annuity
+calculation**
+
+_The cash flows arrive continously, so an integral needs to be used_
+
+PV = Integral from 0 to 15 of 2000e^-0.12t dt
+
+PV = 2000 / 0.12 * (1 - e^-0.12(15))
+PV = $13,911.69
+
+(a) / (b) are **lump sums**, so you use e^rt, while (c) is a continous stream.
+So you integrate 2000e^-rt over the 15 years.
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
