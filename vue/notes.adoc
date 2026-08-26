@@ -857,3 +857,193 @@ Look how we extend the method to take one argument, and we can then declare in
 the markup the argument. This is an important pattern. And that is because in reality,
 you will have this scenario when building some use case. So sending event arguments,
 turns really trivial actually.
+
+=== Using the Native Event Object
+
+Let's enhance the mini-dummy a bit more. We will add an input field and then as
+something gets typed, the contents will be outputted in a another html element
+below:
+
+````
+<button v-on:click="onAdd(5)">Add</button>
+<button v-on:click="onRemove(5)">Remove</button>
+<p>Result: {{ counter }}</p>
+<input v-on:input="onInput" type="text">
+<p>Your name: {{ name }}</p>
+````
+Notice how we are attaching to the native element's `input` event a method. In
+the javascript side we would then code something like this:
+
+````
+const app = Vue.createApp({
+  data() {
+    return {
+      counter: 0,
+      name: '',
+    };
+  },
+  methods: {
+    onAdd(number) {
+      this.counter += number;
+    },
+    onRemove(number) {
+      this.counter -= number;
+    },
+    onInput(event) {
+      this.name = event.target.value;
+    }
+  }
+});
+
+app.mount('#events');
+````
+
+So, by default, html events will always get an event automatically fed to them,
+even on our `v-on:click` instance, we would get an event back, however because
+we wrtoe `onAdd(5)` and `onRemove(5)`. We overwrote that stock behavior and fed
+a custom argument. But on our `onInput` case, we are not overriding, we are letting
+it keep the original behavior, the browser will provide the default event object.
+This will have full of information about the event, HTML element in which the
+event ocurred, and we can read the current value stored in the element from there.
+
+The `target` will almost always refer to the HTML element that triggered the event,
+and in the case of an input, the `value` property will yield whatever is stored
+inside.
+
+[NOTE]
+====
+This is all vanilla javascript and html behavior. You can even search for mdn
+docs in google by typing something like "MDN input" for further information on
+the API and how to leverage it.
+====
+
+After this, and we reload, we can start typing in the input, and we will see
+'real-time" how the name changes in the places where updating is needed.
+
+If you open the Dev Tools of the browser, and you type, you will see how the
+parts that change, the text flashes. This is a corroboration that Vue is indeed
+changing really specific HTML components. It's not changing the whole page, by
+being smart Vue saves on performance.
+
+[NOTE]
+====
+You could have an scenario in which you need to pass the native event, plus some
+extra arguments. For this you can leverage a reserved keyword `$event`. Vue recognizes
+this and will inject the native element for you on the method calling
+====
+
+````
+<input v-on:input="onInput($event, 'Diego')" type="text">
+
+onInput(event, name) {
+	this.name = event.target.value + ' - ' + name;
+}
+````
+Be sure to remember this, it might come in handy when you least expect it.
+
+=== Exploring Event Modifiers
+
+Another useful feature built into Vue.
+
+Inheriting errors of the past, or well, different ways of thinking, if you have
+a form like this:
+
+````
+<form>
+	<input type="text">
+	<button>Sign Up</button>
+</form>
+````
+By default, when pressing the button, then the page will refresh, it will try to
+send an HTTP request to the server serving the page. And in our case of an SPA,
+we will lose **all our state**.
+
+Typically, you want to prevent this browser default, and you should handle this
+manually with javascript. **In the Vue app**. Programmatically read, treat and
+send requests to a backend.
+
+You can listen to the submit event: `v-on:submit="submitForm"` And do something
+like this:
+
+````
+<form v-on:submit="submitForm">
+	<input type="text">
+	<button>Sign Up</button>
+</form>
+
+submitForm(event) {
+	event.preventDefault();
+	alert('Submitted!');
+}
+````
+We attach ourselves to the form's `submit` event, and we use the native event object
+to stop the reload of the page with `preventDefault()` that way we don't lose all
+our state. However Vue has a nicer way:
+
+**Event modifiers:** Help you change event behaviors, depends on the event type
+and there are a couple of modifiers such as: `v-on:submit.prevent`. There's also
+another for preventing propagation. Modifiers can help change "when an event occurs"
+also.
+
+With less code, you keep the same behavior. You can even modify a click event
+to just react to right clicks `.click`. _Is this useful?_ Who knows, there may
+be a case in which it is. So don't dismiss it just yet.
+
+**There's also key modifiers**. What if we wanted to update an element only when
+a user presses "Enter"?
+
+````
+<input v-on:input="onInput($event, 'Diego')" v-on:keyup.enter="confirmInput" type="text">
+<p>Your name: {{ confirmedName }}</p>
+````
+
+And the code behind:
+
+````
+const app = Vue.createApp({
+  data() {
+    return {
+      counter: 0,
+      name: '',
+      confirmedName: '',
+    };
+  },
+  methods: {
+    onAdd(number) {
+      this.counter += number;
+    },
+    onRemove(number) {
+      this.counter -= number;
+    },
+    onInput(event, name) {
+      this.name = event.target.value + ' - ' + name;
+    },
+    confirmInput(event) {
+      this.confirmedName = this.name;
+    }, 
+    submitForm(event) {
+      alert('Submitted!');
+    }
+  }
+});
+
+app.mount('#events');
+````
+Notice how we have `v-on:keyup.enter` to react to another event. And only when
+pressing enter on the input element (should be focused), then we actually update
+an internal `confirmedName` property that then is set to be rendered in the below
+html `<p>` tag. This is a cool idea that could be useful under specific workflows.
+
+=== Locking Content with v-once
+
+Nieche scenarios. But still let's have a look at it.
+
+_What if we want for a value to never change after a first update?_
+
+````
+<p v-once>Starting Counter: {{ counter }}</p>
+<p>Result: {{ counter }}</p>
+````
+With `v-once`, Vue prevents the binding to the rendered value. It will only be
+rendered once, you lock an initial value. And any further update to the same
+property will not be reflected on these "frozen" elements.
