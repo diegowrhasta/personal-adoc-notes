@@ -3836,6 +3836,48 @@ PV = $13,911.69
 (a) / (b) are **lump sums**, so you use e^rt, while (c) is a continous stream.
 So you integrate 2000e^-rt over the 15 years.
 
+**Challenge Problems**
+
+44. **Future values and continous compounding** Here are two useful rules of thumb.
+The "Rule of 72" says that with discrete compounding the time it takes for an
+investment to double in value is roughly 72/interest rate (in percent). The "Rule
+of 69" says that with continous compounding the time that it takes to double is
+exactly 69.3/interest rate (in percent).
+
+a. If the annually compounded interest rate is 12%, use the Rule of 72 to calculate
+roughly how long it takes before your money doubles. Now work it out exactly.
+b. Can you prove the Rule of 69?
+
+a. 72 / 12 = 6 (years?)
+FV = 1 * (1.12) / 0.12 ^6 = ?
+b. So apply continous compounding formula?
+
+Corrections
+
+a. To "work out exactly" we can do maths (clever interpretations)
+PV = 1, FV = 2 => So we want a 1 to double.
+
+2 = 1(1.12)^n
+1.12^n = 2
+nln(1.12) = ln(2)
+n = ln(2) / ln(1.12)
+n = 6.17 years
+
+b. The compounding formula is
+
+FV = PV e^rt
+FV = 2PV
+2PV = PV * e^rt
+2 = e^rt
+ln(2) = rt
+t = ln(2) / r
+t = 0.693 / r
+
+If we turn the interest rate into percentage r = R / 100
+
+t = 0.693 / (R / 100)
+t = 69.3 / R
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
