@@ -1124,3 +1124,129 @@ as much reactivity as we want.
 <.> Keydown is executed when the key is released, so the behavior that the input
 lags behind one character is **expected**. Also, `event` is a browser default
 object that you get when an HTML element triggers an event
+
+=== Data Binding + Event Binding = Two-Way Binding
+
+Our goal is to have **another button**. That helps us reset the input in the
+input element. (**Not just the state value**). We could select the input element
+manually, and so on. But that's hacky, it's just hacky. Vue has features that allow
+for us to both manipulate some element's value through a side effect.
+
+````
+<input v-bind:value="name" type="text" v-on:input="setName($event, 'Schwarzmüller')">
+<p>Your Name: {{ name }}</p>
+<button v-on:click="resetInput">Reset Input</button>
+````
+`v-bind:value`, allows to enable _two way binding_. By not just listening to the
+input, you can send the stored value to the element, it's a really common use case.
+
+So common, we can simplify adding two events with a simple directive:
+
+````
+<input type="text" v-model="name">
+````
+This holds the same behavior, but with less code. **Two-way binding**, is that we
+are listening to the input event, and at the same time we are writing back the value
+to the HTML element, **through its property**. It's super useful, since updating
+values is so clean and useful.
+
+=== Methods used for Data Binding: How It Works
+
+So far we know:
+
+- DOM Interaction, Templates & Data Binding
+- Event Handling = Two-way binding
+
+_"Advanced Reactivity"_
+
+What if we want the behavior of computing a state value? Like adding a prefix to
+a name? - Mr <xxx>
+
+````
+<p>Your Name: {{ outputFullName() }}</p>
+
+outputFullName() {
+  if (this.name === '') {
+    return '';
+  }
+
+  return this.name + ', Sir!';
+}
+````
+This is great, we add now a computation behind a method that outputs a string in
+an element. _However it's not_. Because Vue, whenever a change in state is detected,
+**will always run any method behind any non-event bound attribute**. If you have
+tons of methods all spread across your view, you will be re-running all of them
+on each state change. That's not ideal, **the reason Vue does this**, is that he
+has to run them to know if the state that changed was affected so he can then
+update the view accordingly.
+
+_There's a better way of displaying computed properties_
+
+=== Introducing Computed Properties
+
+_First, we could put the code in-line instead of a method_ That way vue can see
+what's getting used and perhaps not run the javascript execution.
+
+**Not that readable though**
+
+And so, we can use a third option of the vue createApp method:
+
+[source, js]
+----
+const app = Vue.createApp({
+  data() {
+    return {
+      counter: 0,
+      name: ''
+    };
+  },
+  computed: {
+    fullname() { <.>
+      if (this.name === '') {
+        return '';
+      }
+
+      return this.name + ', Sir!';
+    }
+  },
+  methods: {
+    setName(event) {
+      this.name = event.target.value;
+    },
+    add(num) {
+      this.counter = this.counter + num;
+    },
+    reduce(num) {
+      this.counter = this.counter - num;
+      // this.counter--;
+    },
+    resetInput() {
+      this.name = '';
+    },
+    outputFullName() {
+      if (this.name === '') {
+        return '';
+      }
+
+      return this.name + ', Sir!';
+    },
+  }
+});
+
+app.mount('#events');
+----
+<.> Just like `methods` this needs to receive an object, and inside there will
+be functions. However, the naming convention is **really important**. Because in
+the HTML we would call this like a property, no execution `method()`.
+
+For performance, it's better using computed properties, that way you won't run
+the calculation every single time. Computed properties will keep track of the
+dependencies, so Vue will know if he has to actually run the logic or not.
+
+````
+<p>Your Name: {{ fullname }}</p>
+````
+You use computed properties for outputting things just like this. Straightforward.
+
+=== Working with Watchers
