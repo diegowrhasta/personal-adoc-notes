@@ -1250,3 +1250,84 @@ dependencies, so Vue will know if he has to actually run the logic or not.
 You use computed properties for outputting things just like this. Straightforward.
 
 === Working with Watchers
+
+A key feature for outputting dynamic values is indeed computed properties. However
+there is another reactivity feature: **Watchers**.
+
+This is basically a function that runs, every-time a dependency changes. You could
+actually replace computer properties for watchers (but that might not be the
+best idea)
+
+- Computed and data properties should not clash.
+
+So a watcher, is "attached" to a name by matching the name:
+
+[source, js]
+----
+data() {
+  return {
+    counter: 0,
+    name: '', <.>
+    fullname: '',
+  };
+},
+watch: {
+  name(value) { <.>
+    this.fullname = value + ' ' + ', BOSS!'; <.>
+  }
+},
+----
+<.> So we are going to configure a watcher for `name`.
+<.> The watcher automatically can receive the latest value of the property that's
+being watched, and you can also receive a second parameter that will old an old
+value
+<.> And in here you can then run some specific logic, as you can see by doing this
+we are emulating the same behavior as we had with the computed property
+
+But this is not good if say we have "two dependencies", say for fullname we compute
+with two propeties: `firstName` and `lastName`, we would have to write two
+watchers and do a lot of similar looking code.
+
+A computed property will easily grab as many properties and detect changes in them
+to then update as needed.
+
+Watchers, are good when focusing on **one value** and we need to perhaps control
+something in it, say a counter that after going to 50, it has to be reset to 0.
+Or something akin to that. In this scenario using computed properties you'd
+have lots of issues.
+
+**Another example:** HTTP requests, timers.
+
+=== Methods vs Computed Properties vs Watchers
+
+Methods:
+
+- Use with event binding OR data binding
+- Data binding: Method is executed for every "re-render" cycle of the component
+- Use for events or data that really needs to be re-evaluated all the time
+
+Computed Properties:
+
+- Use with data binding
+- Computed properties are only re-evaluated if one of their "used values" changed
+- Use for data that depends on other data
+
+Watch:
+
+- Not used directly in template
+- Allows you to run any code in reaction to some changed data (e.g., send Http
+request etc.)
+- Use for any non-data update you want to make
+
+_Note:_ You are probably going to use the least: Watchers. Because the other
+types are highly used in all sorts of use cases.
+
+=== v-bind and v-on Shorthands
+
+`v-on` was used a lot, and `v-bind` also.
+
+Instead of `v-on:click`, you can use the shorthand `@click=''`. This can still
+be combined with modifiers, it's just that `@` is used. It's less code to write,
+it's up to you to use it, but **be consistent**. Also `v-bind` can turn into `:value="..."`
+
+=== Assignment 3: Time to Practice: Reactivity
