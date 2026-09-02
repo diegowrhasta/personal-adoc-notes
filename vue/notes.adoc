@@ -1331,3 +1331,99 @@ be combined with modifiers, it's just that `@` is used. It's less code to write,
 it's up to you to use it, but **be consistent**. Also `v-bind` can turn into `:value="..."`
 
 === Assignment 3: Time to Practice: Reactivity
+
+Straight forward
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Reactivity in Action</h1>
+    </header>
+    <section id="assignment">
+      <button @click="onAddFive">Add 5</button> <.>
+      <button @click="onAddOne">Add 1</button>
+      <!-- 1) Connect the buttons and calculate a value (a number) -->
+      <!-- Show "Not there yet" until you reach a result of exactly 37 -->
+      <!-- Show "Too much!" if the result is greater than 37 -->
+      <p>Result: {{ result }}</p> <.>
+      <!-- 2) Watch for changes in "result" and reset the value to 0 after 5 seconds -->
+    </section>
+  </body>
+</html>
+----
+<.> Using the short handle `@click`
+<.> This is actually a computed property, yet referenced as if it was a normal property.
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            counter: 0,
+            timeout: null
+        };
+    },
+    watch: {
+        counter(value) {
+            const that = this; <.>
+
+            if (that.timeout == null && that.counter !== 0) { <.>
+                that.timeout = setTimeout(() => { <.>
+                    alert('Counter reset!');
+                    that.counter = 0;
+                    that.timeout = null;
+                }, 5000);
+            }
+        }
+    },
+    computed: {
+        result() {
+            if (this.counter < 37) {
+                return 'Not there yet';
+            }
+
+            if (this.counter > 37) {
+                return 'Too much!';
+            }
+
+            return this.counter;
+        }
+    },
+    methods: {
+        onAddFive() {
+            this.counter += 5;
+        },
+        onAddOne() {
+            this.counter += 1;
+        }
+    }
+});
+
+app.mount('#assignment');
+----
+<.> Due to the fact that when doing a `setTimeout` the handler has its own context,
+we have to capture the outside method's `this` under `that`
+<.> This is a bad attempt at having the timeout only run once, and not multiple
+timeouts. It still shows 2 alerts always.
+<.> And yeah, we are saving a timeout reference to mark that we allocated a timeout
+already, and inside we are both resetting the counter and also clearing out the
+timeout again for subsequent runs.
+
+=== Dynamic Styling with Inline Styles
+
+
