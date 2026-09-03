@@ -3878,6 +3878,46 @@ If we turn the interest rate into percentage r = R / 100
 t = 0.693 / (R / 100)
 t = 69.3 / R
 
+45. **Annuities** Use Excel to construct your own set of annuity tables showing the
+annuity factor for a selection of interest rates and years.
+
+Don't forget that ordinary annuity is:
+
+PV = PMT * (1 - (1 + r)^-n) / r
+
+Basically you have on y axis years and on x axis interest rate:
+
+Years 5% 6% 7% 8% 9% 10%
+1
+2
+3
+4
+5
+10
+15
+20
+25
+30
+
+And then apply the Annuity formula with a PMT of 1$ (which is a good general value)
+
+By looking at the value for 1$, that is the **annuity factor**. And you can draw
+conclusions from that like this:
+
+- Higher interest rate -> lower annuity factor
+- More years -> higher annuity factor
+
+Annuity factor = today's value of receiving 1$ per period for a specified number
+of periods.
+
+Higher interest rate => Future money is worth less today => lower annuity factor
+
+- If I can earn, say, 10% on money today, I'd require less money today to be
+economically equivalent to receiving those future payments.
+
+The factor is useful because once you calculate it you can then just multiply that
+value by whatever **equal-payment annuity** and get the discounted value.
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
