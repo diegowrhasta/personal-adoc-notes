@@ -1426,4 +1426,186 @@ timeout again for subsequent runs.
 
 === Dynamic Styling with Inline Styles
 
+So apparently, we can change styles based on user interactions, making it "dynamic
+stling".
 
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Vue Dynamic Styling</h1>
+    </header>
+    <section id="styling">
+      <div class="demo" :style="{ borderColor: boxASelected ? 'red' : '#ccc' }" @click="boxSelected('A')"></div> <.> <.>
+      <div class="demo" @click="boxSelected('B')"></div>
+      <div class="demo" @click="boxSelected('C')"></div>
+    </section>
+  </body>
+</html>
+----
+<.> To tap into styles, we can use the shorthand `:style`, and inside we have to
+feed an object, and the recommended approach to access all the css features that
+might be inside, is camelCase syntax. In this instance since our objective is to
+change a box's border we will use `borderColor` and this will refer back to the
+property in the vue app `boxASelected` and based on its value, we will paint the
+border red, otherwise it will be gray.
+<.> Notice also how we are using `@click` the shorthand to react to click events,
+and we are running the method of the vue app with an argument that helps us change
+the flag status for the respective box.
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            boxASelected: false, <.>
+            boxBSelected: false,
+            boxCSelected: false,
+        };
+    },
+    methods: {
+        boxSelected(box) {
+            if (box === 'A') {
+                this.boxASelected = true; <.>
+                return;
+            }
+
+            if (box === 'B') {
+                this.boxBSelected = true;
+                return;
+            }
+
+            if (box === 'C') {
+                this.boxCSelected = true;
+            }
+        }
+    }
+});
+
+app.mount('#styling');
+----
+<.> We have created three state properties for each box in the view, it will be
+a boolean because the two expected states are binary in nature (selected or not
+selected)
+<.> Whenever we receive a respective parameter for the respective box, we set
+its flag to true
+
+And just like this, we can change styling on a component in a dynamic fashion.
+
+=== Adding CSS Classes Dynamically
+
+[IMPORTANT]
+====
+Inline styles overrule any other style. Which sometimes might be the case, however
+in modern web development, they are not considered good practice. So we resort
+to css classes.
+====
+
+Our goal, is always to write less code, but that it's still understandable/readable.
+And with that in mind we can do something like this:
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vue Basics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <h1>Vue Dynamic Styling</h1>
+  </header>
+  <section id="styling">
+    <div
+      class="demo" <.>
+      :class="{ active: boxASelected }" <.>
+      @click="boxSelected('A')"></div>
+    <div class="demo" :class="{ active: boxBSelected }" @click="boxSelected('B')"></div>
+    <div class="demo" :class="{ active: boxCSelected }" @click="boxSelected('C')"></div>
+  </section>
+</body>
+
+</html>
+----
+<.> We can totally just declare the vanilla `class` property so that it will act
+as a hardcode actually.
+<.> And then we can inject the vue bound `:class` property, in here we can also
+leverage another feature which is this syntax that receives an object, and inside
+of it as keys/property names we can declare a class name, and the value of that
+key has to be a boolean (well, it will be computed as truthy, but boolean for simplicity).
+If that value is true, then vue will attach the respective class and merge it with
+the hardcoded class of the html element.
+
+Remember, that if we don't declare the css class, no style will be applied:
+
+````
+.active {
+  border-color: red;
+  background-color: salmon;
+}
+````
+
+And lastly, if you want to make selectable and unselectable a box, instead of
+just setting it to `true`, you can leverage the cancellation of the boolean directly:
+
+````
+boxSelected(box) {
+  if (box === 'A') {
+      this.boxASelected = !this.boxASelected;
+      return;
+  }
+
+  if (box === 'B') {
+      this.boxBSelected = !this.boxBSelected;
+      return;
+  }
+
+  if (box === 'C') {
+      this.boxCSelected = !this.boxCSelected;
+  }
+}
+````
+
+=== Classes & Computed Properties
+
+The code as much as nice it is, it's still suboptimal. :(. We want to move as
+much logic away from the HTML as possible. Hence, computed properties can help
+us with that:
+
+````
+<div
+  class="demo"
+  :class="boxAClasses"
+  @click="boxSelected('A')"></div>
+
+computed: {
+  boxAClasses() {
+      return { active: this.boxASelected };
+  }
+},
+````
+This can further simplify things. But beware that this should be reserved for
+complex computations, sometimes it's a bit overkill to put a whole computed
+property if the function is a literal one-liner.
