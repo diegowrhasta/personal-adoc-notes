@@ -1609,3 +1609,65 @@ computed: {
 This can further simplify things. But beware that this should be reserved for
 complex computations, sometimes it's a bit overkill to put a whole computed
 property if the function is a literal one-liner.
+
+=== Dynamic Classes: Array Syntax
+
+There's one more syntax supported by vue. You **can** have multiple class attributes,
+however, you can pass an array as well, where you pass the different classes or
+objects if you want:
+
+````
+:class="['demo', { active: boxBSelected }]"
+````
+
+This is another syntax to be aware off. There are multiple options, and it depends
+on your personal preference, and what you are building.
+
+_Super powerful and important_
+
+- With dynamic styling you can build amazing user interfaces.
+
+=== Assignment 4: Time to Practice: Dynamic Styling
+
+What I learned:
+
+For inline styling:
+
+````
+<p :style="{ backgroundColor: background }">Style me inline!</p>
+````
+You have to pass an object, and the **VALUES** will be evaluated by Vue. So
+if you define a property, that property can then be referenced by name and any
+mutations applied to it will be evaluated and then computed for styling.
+
+The solution of the instructor also is interesting, instead of capturing with callbacks
+on input (`@input`) you can just `v-model=` and directly reference the **PROPERTY**
+and it will be two-way bound easily.
+
+And another smart thing is to make usage of the true-false, addition of class,
+because there are two classes, you can bind them showing by having **two booleans**.
+
+=== Module Summary
+
+- DOM & Templates => Vue features that have reflecting changes on the page
+  - Vue makes usage of the **declarative approach**
+  - Connect Vue to HTML via "mount"
+  - Vue renders the real DOM based on the connected template
+- Data & Event Bindings
+  - You can bind data via interpolation `{{ }}` or the v-bind (`:`) directive.
+  - You listen for events via v-on `@`
+- Reactivity
+  - Vue updates the real DOM for you when bound data changes
+  - Computed properties and watchers allow you to react to data changes
+- Styling
+  - You want to make apps look pretty, RIGHT?
+    - Dynamic CSS class and inlite style bindings are supported by Vue
+  - Vue offers multiple **special syntaxes** (object-based, array-based) for
+  efficient bindings
+
+This is of course, but the tip of the ice-berg. _But this is something we can
+start with_
+
+== Section 3: Rendering Conditional Content & Lists
+
+
