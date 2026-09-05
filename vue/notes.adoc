@@ -1529,7 +1529,7 @@ And with that in mind we can do something like this:
   <title>Vue Basics</title>
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+  # <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 
@@ -1670,4 +1670,95 @@ start with_
 
 == Section 3: Rendering Conditional Content & Lists
 
+=== Module Introduction
 
+- Conditional Content & Lists
+  - Rendering More... Sometimes
+  - Rendering Content With Conditions
+  - Outputting Lists of Data
+  - A first look behind the scenes
+
+=== Understanding the Problem
+
+Basically a typical requirement of modern web applications is to display content
+conditionally, so that parts of the page change and display or behave differently.
+
+Another requirement is to display lists, or multiple elements that only change in
+details, but are overall part of a same type of pattern/entry.
+
+How can we achieve these type of outcomes? Vue should have some features that make
+it easy to deal with conditional rendering and list rendering.
+
+=== Rendering Content Conditionally
+
+- We have to hide the "no goals" paragraph if we have goals (so an item in a list
+state property)
+- Otherwise show the elements
+
+We can tackle first the conditional part of things:
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Vue Course Goals</h1>
+    </header>
+    <section id="user-goals">
+      <h2>My course goals</h2>
+      <input v-model="goal" type="text" /> <.>
+      <button @click="onAddGoal">Add Goal</button> <.>
+      <p v-if="!goals.length">No goals have been added yet - please start adding some!</p> <.>
+      <ul v-if="goals.length"> <.>
+        <li>Goal</li>
+      </ul>
+    </section>
+  </body>
+</html>
+----
+<.> We have an input that will capture the goal we want to add to the list of goals
+(don't forget that this is really straightforward with `v-model`)
+<.> And then when pressing an "Add Goal" button we add that very same goal to
+the list
+<.> And with `v-if` we can then feed some javascript syntax that should evaluate
+to truthy, and based on that the content will be shown (or not)
+<.> The list will be the opposite of the `No goals...` when it comes to its rendering
+condition
+
+[source, js]
+----
+const app = Vue.createApp({
+  data() {
+    return {
+      goals: [], <.>
+      goal: null <.>
+    };
+  },
+  methods: {
+    onAddGoal() {
+      this.goals.push(this.goal); <.>
+    }
+  }
+});
+
+app.mount('#user-goals');
+
+----
+<.> We have a list property (state property)
+<.> And then a property for the goal that we will bind the input to, that way we
+can reference it and its value
+<.> After pressing the button we can then put code that adds the `goal` state property
+into the `goals` state property element list
