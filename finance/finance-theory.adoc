@@ -3918,6 +3918,50 @@ economically equivalent to receiving those future payments.
 The factor is useful because once you calculate it you can then just multiply that
 value by whatever **equal-payment annuity** and get the discounted value.
 
+46. **Declining perpetuities and annuities** You own an oil pipeline that will
+generate a $2 million cash return over the coming year. The pipeline's operating
+costs are negligible, and it is expected to last for a very long time. Unfortunately,
+the volume of oil shipped is declining and cash flows are expected to decline by
+4% per year. The discount rate is 10%.
+
+a. What is the PV of the pipeline's cash flows if its cash flows are assumed to
+last forever?
+b. What is the PV of the cash flows if the pipeline is scrapped after 20 years?
+
+a. Need to use the perpetuity formula, but need to multiply the 2 million cash by
+0.96? I don't know how to fit in the decline of 4% into a perpetuity formula. I
+know the discount rate fits in nicely though (0.10)
+b. Now this will be an annuity formula, with 20 for period, right?
+
+Corrections
+
+a. This is a **growing/declining perpetuity*. The first cash flow is $2 million
+over the coming year, so:
+
+C1 = $2 million
+g = -4% = -0.04
+r = 10% = 0.10
+
+For a growing perpetuity you would do: PV = PMT / (1 - (1 + r)^-n)
+
+But, a declining one can be further simplified to: PV = C1 / r - g
+
+PV = 2,000,000 / 0.10 - (-0.04)
+PV = 2,000,000 / 0.14
+PV = $14,285,714.29
+
+The declining cash flows are incorporated through g = -4%
+
+b. This is a **declining annuity**, not an ordinary level-payment annuity.
+
+PV = C1 / (r - g) * (1 - ((1 + g) / (1 + r))^n)
+PV = 2,000,000 / (0.10 + 0.04) * (1 - ((1 - 0.04) / (1 + 0.10))^20)
+PV = $13,347,130.78
+
+In short. The payments decline in value, they are not constant, which means that
+we have to fit that declining rate somehow into the formula. Which results in the
+new formulas.
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
