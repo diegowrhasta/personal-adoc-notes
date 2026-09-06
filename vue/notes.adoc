@@ -1726,8 +1726,7 @@ We can tackle first the conditional part of things:
         <li>Goal</li>
       </ul>
     </section>
-  </body>
-</html>
+  </body></html>
 ----
 <.> We have an input that will capture the goal we want to add to the list of goals
 (don't forget that this is really straightforward with `v-model`)
@@ -1762,3 +1761,64 @@ app.mount('#user-goals');
 can reference it and its value
 <.> After pressing the button we can then put code that adds the `goal` state property
 into the `goals` state property element list
+
+=== v-if, v-else and v-else-if
+
+In `v-if` you will always evaluate things as **TRUTHY**. You can make complex
+boolean operations (in-line), or you can execute methods that return a truthy
+or falsy value.
+
+**However**, there are other directives that help connecting with if-else like
+logic. As we already did, we can put two `v-if` with inverted conditions. You can,
+however, you have `else`, instead of repeating `if`.
+
+**`v-else` has to be before a `v-if` element, always**
+
+And if you need more granular checks, there's also `v-else-if`.
+
+[IMPORTANT]
+====
+It's not just "hiding", as if the element is still there in the DOM. Vue actually
+**removes the node from the DOM**. Conditional rendering is super important. You
+will use it a lot
+====
+
+=== Using v-show instead of v-if
+
+This directive actually goes against what v-if has built into it. This does **hide**.
+The DOM element is still there, with a `display: none` css property.
+
+Which approach is better? Showing and hiding elements can be performant. _However,
+fallback into `v-show` if its visibility changes a lot, only there, `v-if` should
+be the default at the beginning_
+
+=== Rendering Lists of Data
+
+It would be nice to render our actual goals instead of the dummy **Goal** we have
+currently. Vue covers us for that as well.
+
+Lists are everywhere in web apps, so Vue gives us a feature that helps us outputting
+repeatable content. `v-for` directive.
+
+````
+<ul v-else-if="goals.length > 0">
+  <li v-for="goal in goals">{{ goal }}</li>
+</ul>
+````
+Syntax, again, will mirror javascript. However in vue it's **_recommended_** to
+be `goal in goals`, `of` is supported, but not the standard recommendation. The
+syntax plays into opening up the possibilities to deal with each element that is
+being iterated over. In our case, since it's a list of simple strings, we will simply
+evaluate its value (in our case inside the `li` tag), and that will be rendered,
+and just like this, we have managed to know render repeatable lists as html elements.
+
+[NOTE]
+====
+Just like a regular javascript type of for-loop, outside of the main element that has
+the `v-for` directive, the iteration variable is not accesible, and won't work
+at all.
+====
+
+Also, it's great that Vue has performance in mind, so he surgically adds and
+removes elements into the DOM. Whenever you add a new element, only that new
+element gets rendered, when you remove, only that element gets removed.
