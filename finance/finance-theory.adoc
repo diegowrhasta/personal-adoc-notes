@@ -3962,6 +3962,110 @@ In short. The payments decline in value, they are not constant, which means that
 we have to fit that declining rate somehow into the formula. Which results in the
 new formulas.
 
+**Finance on the web**
+
+So, finance.yahoo.com => Source of stock price data.
+
+You can look up "Analyst Estimates" for Apple (AAPL). For example.
+
+You can find the EPS (Earnings per share) for the current year, the percentage
+annual growth rate of EPS for the past five years, and also a five-year EPS growth-rate
+forecast.
+
+What will be Apple's EPS after five years if EPS grows at the five-year historical
+average rate? What will EPS be if it grows at the analysts' forecasted rate? Try the
+same exercise for other stocks, for example Microsoft (MSFT), Merck (MRK), or the
+railroad CSX (CSX)
+
+- Currently the EPS is $319.97
+- I have no idea where to find the percentage annual growth in this tab for the past
+five years
+- Estimates I only see under "Analysis" and it's for the next year and it says
+AAPL and S&P 500
+
+Corrections
+
+- 319.97 is the STOCK PRICE. EPS is DIFFERENT.
+
+Also, Yahoo Finance is no longer the king. One page that is good and helps answer
+all these questions is **Finviz** (finviz.com).
+
+AAPL
+- EPS (ttm) => 8.72
+- EPS (Past Five years) => 17.91%
+- EPS (Next Five years) => 12.64%
+
+How will it grow by using the growth rates?
+- EPS => 8.72 * 1.1791^5 = 19.87
+- EPS => 8.72 * 1.1264^5 = 15.81
+
+**It's really important that Finviz is providing the AVERAGE growth rate, so if
+we want to forecast that into 5 years, we have to apply the power to the number of
+periods (in this case 5 years)**
+
+MSFT
+- EPS (ttm) => 17.95
+- EPS (Past Five years) => 17.38%
+- EPS (Next Five years) => 18.29%
+
+Growth?
+- EPS => 17.95 * 1.1738^5 = 39.99
+- EPS => 17.95 * 1.1829^5 = 41.57
+
+MRK
+
+- EPS (ttm) => 1.25
+- EPS (Past Five years) => 21.33%
+- EPS (Next Five years) => 5.35%
+
+Growth?
+- EPS => 1.25 * 1.2133^5 = 3.27
+- EPS => 1.25 * 1.0535^5 = 1.62
+
+CSX
+- EPS (ttm) => 1.73
+- EPS (Past Five years) => 5.15%
+- EPS (Next Five years) => 15.98%
+
+Growth?
+- EPS => 1.73 * 1.0515^5 = 2.22
+- EPS => 1.73 * 1.1598^5 = 3.63
+
+Clearly a discrepancy here. Also, CSX, actually went down in growth, so... doesn't
+that mean these are in the end just guesses, and things could implode?
+
+2. You need to have accumulated savings of $2 million by the time that you retire
+in 20 years. You currently have savings of $200,000. How much do you need to save
+each year to meet your goal if your savings earn a return of 10%? Find the savings
+calculator on www.msn.com/en-us/money/tools/retirementplanner to check the answer.
+
+That site is also dead. But a good alternative is:
+
+https://www.bankrate.com/banking/savings/simple-savings-calculator/
+
+This has to be an annuity problem. Right?
+
+Corrections
+
+Using the simple savings calculator. It says:
+
+Initial deposit => $200,000, Monthly Contribution => $915, Over a period of 20 Years,
+APY => 10% => $2,002,707.18.
+
+So around 915$ savings per year? => Now, this is monthly contributions in the calculator's
+terms. So actually that has to be multiplied by 12 => 10,980
+
+Now let's resolve the PMT on:
+
+2,000,000 = 200,000*(1.10)^20 + PMT * ((1.10)^20 - 1) / 0.10
+PMT = 654,500.01 / 57.28
+PMT = $11,427.32
+
+You can clearly see a discrepancy here, in the real world. There is no "Right Answer".
+I mean there is, but it will always be mired with perception, biases, and the things
+you have in hand. So it takes a bit of a gut feeling, and art when it comes to making
+a correct guess, and using the right model or assumption to forecast and take decisions.
+
 == Present Value Relations I
 
 When you don't know what you are bidding for, you are not gonna get it right
