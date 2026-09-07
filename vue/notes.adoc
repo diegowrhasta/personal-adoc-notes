@@ -1822,3 +1822,94 @@ at all.
 Also, it's great that Vue has performance in mind, so he surgically adds and
 removes elements into the DOM. Whenever you add a new element, only that new
 element gets rendered, when you remove, only that element gets removed.
+
+=== Diving Deeper into v-for
+
+With `v-for` you can pull out also the index of the iteration, not just the
+element.
+
+````
+<li v-for="(goal, index) in goals">{{ goal }} - {{ index }}</li>
+````
+
+You can also loop through more than just arrays. You can loop through objects.
+
+_Although arrays will probably be the more useful data structure_
+
+````
+<li v-for="(value, key) in { name: 'Max', age: 31 }">{{ value }}</li>
+````
+You can even get the index, (if you add a third tuple element to the iteration
+element)
+
+You can even looping through an array of numbers:
+
+````
+<ul>
+  <li v-for="num in 10">{{ num }}</li>
+</ul>
+````
+
+=== Removing List Items
+
+How can we remove items from the list?
+
+Well, we can attach a listener to each list element so that it triggers a callback
+that can then invoke some method on the array to get rid of said element:
+
+````
+<li v-for="(goal, index) in goals" @click="removeItem(index)">{{ goal }} - {{ index }}</li>
+
+methods: {
+  onAddGoal() {
+    this.goals.push(this.goal);
+  },
+  removeItem(index) {
+    console.log(index);
+    this.goals.splice(index, 1);
+  },
+}
+````
+In this case, index comes in really handy because we can pass that directly to the
+method and then make usage of `splice` which needs an index, and then a number
+of deletions (in our case we only want to delete 1 element starting at that index)
+
+[NOTE]
+====
+Be careful, the index is not "snapshotted" so when deleting an element, the whole
+list rendering gets evaluated again, so all the element's index gets recalculated
+and in short they are moved one index back.
+====
+
+_Barely any code at all, and we have a dynamic list behavior_. Writing the whole
+thing in javascript, would be 10 times more difficult.
+
+=== Lists & Keys
+
+So, if you are not aware of the `:key` non-standard attribute to a list. You might
+get into weird behaviors. Like deleting an element, and losing an element's content
+or state.
+
+````
+<li v-for="(goal, index) in goals" :key="goal" @click="removeItem(index)">
+  <p>{{ goal }} - {{ index }}</p>
+  <input type="text" @click.stop>
+</li>
+````
+Without `:key`, you could create multiple goal items. Write something in the input,
+and if you delete the previous element, then the content would move only for the
+dynamically rendered one. The input text would be thrown out the window.
+
+_Why?_ Because Vue, tries to optimize things as much as possible, it doesn't compare
+the whole element's values, yet it tries to shift around content from further elements
+into previous DOM elements (because the less costly operation is to remove as least
+DOM elements as possible and shift around the rendered content).
+
+In order for us to provide Vue with more metadata, that allows for text such as
+input text to be taken as "different" and influencing Vue's algorithm to not
+just skip over elements such as this, is by adding a `:key`. Towards each list
+element. In this case we can bind it directly to the `goal` text itself, but in
+other use cases, it might be a database primary key or so on. The main takeaway
+is that to avoid these weird bugs, you should provide keys for your list elements.
+
+=== Assignment 5: Time to Practice: Conditional Content & Lists
