@@ -1913,3 +1913,141 @@ other use cases, it might be a database primary key or so on. The main takeaway
 is that to avoid these weird bugs, you should provide keys for your list elements.
 
 === Assignment 5: Time to Practice: Conditional Content & Lists
+
+A bit hard because I forgot syntax, but managed to pull it off
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <h1>Vue Lists and Conditional Content</h1>
+    </header>
+    <section id="assignment">
+      <h2>Assignment</h2>
+      <!-- 1) Add code to manage a list of tasks in a Vue app -->
+      <!-- When clicking "Add Task" a new task with the entered text should be added -->
+      <input v-model="newTask" type="text"> <.>
+      <button @click="onAddTask">Add Task</button>
+      <ul :class="listClasses"> <.>
+        <!-- 2) Output the list of tasks here -->
+         <li v-for="task in tasks">{{ task }}</li>
+      </ul>
+      <!-- 3) When the below button is pressed, the list should be shown or hidden -->
+      <!-- BONUS: Also update the button caption -->
+      <button @click="onVisibility">{{ visibilityLabel }}</button>
+    </section>
+  </body>
+</html>
+----
+<.> Don't forget that to two-way bind you have to use `v-model`. That's the directive
+<.> For dynamic styling or classes don't forget to prefix with `:`
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            newTask: '',
+            tasks: [],
+            visible: true,
+        }
+    },
+    computed: {
+        visibilityLabel() {
+            if (this.visible) { <.>
+                return 'Hide List';
+            }
+
+            return 'Show List';
+        },
+        listClasses() {
+            return { visible: this.visible, 'not-visible': !this.visible }; <.>
+        }
+    },
+    methods: {
+        onAddTask() {
+            this.tasks.push(this.newTask);
+        },
+        onVisibility() {
+            this.visible = !this.visible;
+        }
+    }
+});
+
+app.mount('#assignment');
+----
+<.> Always use `this` for state properties. Otherwise the app will break, since
+you will be referrencing a non-existent variable.
+<.> This syntax is a bit funn at first, but it's powerful under the premise that
+if the value is evaluated to true the respective class name will be added to the
+class property
+
+[source, css]
+----
+// Stuff
+.visible {
+  display: block;
+}
+
+.not-visible {
+  display: none;
+}
+----
+Went the route with two classes that simply hide the button, could've used conditional
+rendering though...
+
+````
+<ul v-if="visible">
+  <!-- 2) Output the list of tasks here -->
+  <li v-for="task in tasks">{{ task }}</li>
+</ul>
+ ````
+Yeah, actually with `v-if` it's simpler, no need for a computed property, and no
+need for styles in the `.css` file.
+
+[NOTE]
+====
+Forgot to add `:key`. That is a good habit to develop! Always add that to the
+elements that are being iterated with `v-for`
+====
+
+=== Module Summary
+
+We have the core basics to build Vue applications now. Great Job!
+
+- Conditional Content
+  - v-if (and v-show) allow to render content only if a certain content is shown
+  - v-else, v-else-if have to be used under a v-if, but help extending more
+- Lists
+  - v-for can be used to render multiple elements dynamically
+  - v-for can be used with arrays, objects and ranges
+- v-for Variations
+  - You can extract values and indexes, keys as well
+  - If you need v-for and v-if, DON'T use them on the same element. Use a wrapper
+  with v-if instead
+- Keys
+  - Vue re-uses DOM elements to optimize performance. This can lead to bugs if
+  elements contain state
+  - Bind the **key** attribute to a unique value to help Vue identify elements
+  that belong to list content
+
+== Section 4: Course Project: The Monster Slayer Game
+
+=== Module Introduction
+
+We will build an actual project. To put to use/practice all the knowledge we had
+reviewed (core basics).
