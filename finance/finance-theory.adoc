@@ -4076,13 +4076,27 @@ However, in practice. You might get amazing deals.
 "Securities => Are promises" => Relationships are built on these.
 
 You need money to do good on the promises. If you don't have a flow of cash,
-to do good. You screwed.
+to do good. You are screwed.
 
-**Trading Game** => Under pressure, make decisions. And value securities in real-time
+**Trading Game** => Under pressure, make decisions. And value securities in real-time.
+This can give you more insight, and context as to how the real world works on the
+industry.
 
 - Money needs to come from somewhere in any financial transaction
-	- In the grand scheme of things, for the USA, measuring 10 of millions of
-	dollars against tax payer money. It's not much
+	- In the grand scheme of things, for the USA, measuring 10 of billions of
+	dollars against tax payer money. It's not much, however the concern after
+	a recession is the ripple effects and inter-generational obligations
+	- If you print too much money, without much backing. Then the piece of paper
+	doesn't hold as much value as people think.
+
+_When you are too big to fail, lots of risks pop-up, lots of abuses_
+
+- You have to balance costs and benefits
+	- Because after going bankrupt in mortgages, there's always people that actually
+	benefitted from it, there is people that are happy to live in the home they
+	have, that paid their dues.
+	- Of course, people holding the paper related to the mortgages might be scared,
+	and you might lose capital
 
 [IMPORTANT]
 ====
@@ -4095,4 +4109,207 @@ decisions, problems and so on.
 give you money for various reasons, by thinking what you have is valuable, or
 they need to hedge something, or whatever**
 
+_Perpetuity and annuity_ are mathematical abstractions that bring value into the
+whole idea of "Present Value"
+
 === Cashflows and Assets
+
+Cash Flow => Money that is coming to you or going away from you
+
+What is an asset?
+
+- Business entity
+- Property, plant, and equipment
+- Patents, R&D
+- Stocks, bonds, options, ...
+- Knowledge, reputation, opportunities, etc
+
+What is a really valuable asset that is not physical?
+
+- Algorithms that Google uses
+	- How do you know they are assets? They generate money/value.
+		- Google has patented the algorithms. This allows the algorithms to be
+		tradeable, to be licensed.
+
+**Trade Secret:** Anti-patent.
+
+Patent = Legal agreement that as a requirement asks of you to disclose fully
+what a business process, algorithm, recipe is. To the legal entity and the world,
+how to reproduce, how to make things, all of that is disclosed. And if the legal
+entity deems all of that information as something new, something useful. It can
+grant you the right to be sole owner of it, legally that is your property, intellectual
+and/or tangential. **For a limited amount of time, say 17 years**.
+
+For 17 years, if someone has to use that algorithm, they have to pay you to use
+it. It's a monopoly you get for a specific period of time. You disclose it, and
+share it with everyone. (And you get an insane amount of money)
+
+After your patent's expiry, anyone can grab it and do whatever it wants with it.
+
+Patent is actually a clever spin to monetize an idea, share it with the world,
+and sort of make knowledge, an asset. (That's one path)
+
+Another path => Secret. Don't disclose it. Coca-Cola example.
+
+- The value of a company's reputation, is different from its trade secret. That's
+**another asset**
+
+[IMPORTANT]
+====
+What is the fundamental core property of an asset?
+
+An asset in a given point in time, it's equal to a sequence of **future cash flows**
+====
+
+It's a very subtle idea. And we will take that definition for the remainder of
+the course.
+
+An asset is a sequence of current and future cash flows.
+
+- **It doesn't define past cash flows**
+	- It's not enough to say "Coca-Cola is an asset". You need to say "It is TODAY,
+	vs 100 years ago vs 100 years from now"
+		- The point in time **MATTERS**
+
+At every point in time, an asset is a different asset.
+
+The stock of Fanny May as an asset is very different five years ago vs today.
+They are cash flows, but the cash flows are different depending on the point in
+time you are talking about.
+
+- Given market conditions, a cash flow takes a **shape**
+	- For the purpose of financial analysis, the cash flows are ALL that matters.
+
+The basic building blocks of the thoery, are assets. (Unified theory of finance).
+
+- Maybe instead of an asset, you can call something a "liability" when it's full
+of "negative cashflows". It's not a summation, it's a **sequence**.
+
+The past doesn't matter, all that you are looking at is current and future cash
+flows. They are ordered in time. You might not know what the future cash flows
+are but you can acknowledge them as abstractions.
+
+The additional cash flow you get based on a reputation, that is the value of the
+asset. You can have common cash flows across different assets.
+
+**Perspective:** When you start thinking about various complicated assets and
+many other things, the more complicated it gets, the more important a baseline,
+a bottom line, makes you find the way. The conceptual framework, is key, to clear
+doubts.
+
+=== Valuing an asset
+
+How do you value a sequence of cash flows?
+
+Because we might have a different perspective as to what a cash flow is worth.
+
+- Let's create a notation
+
+V = Vt => This is a function that takes as its input a sequence of cash flows
+and spits out a number. That will be the **Value of Asset**
+
+[IMPORTANT]
+====
+If there is a Market. You get a price.
+====
+
+Any market will due. For now. But after you know the basics, you might start
+getting into questions of "which market is better?"
+
+- Is there a perfect market?
+	- What really works?
+
+When you let the market dictate what Vt is (the value). You get interesting results.
+
+**There is a time element to the cash flows**
+
+In order to understand the value of a asset, you need to know the timing of the
+cash flows. Timing means everything in Finance.
+
+Now, there's accounting that will indeed come into play, and that will ground a lot
+of what the finance and abstract theory tries to capture and get at. However, they
+are grounded and are analyzed in terms of better or good accounting practices,
+after understanding first the basics.
+
+There's a value operator => A function to which you stick cash flows, and out goes
+a VALUE.
+
+Without the timeline. We don't know.
+
+- Line things up CORRECTLY. IN A TIMELINE.
+
+**How is value determined?**
+
+- No Uncertainty
+	- Let's focus on the value operator. For cases in which we have cash flows
+	at certain point in time, and it's certain there will be **cash flows**
+- Uncertainty
+	- Let's abstract from this first. Let's get rid of the randomness.
+	- We will later introduce uncertainty again
+
+=== The Perfect Certainty Case
+
+Consider manipulating foreign currencies.
+
+Yen 150 + Pound 300 = ?? (450)
+
+There's no interpretation for this. You can't add these two like this.
+
+That natural aversion to adding up dollars or yen in different currencies, that
+exact same attitude has to be developed for different cash flows in different points
+in time.
+
+300 pounds => Converts into a certain amount of yen
+150 yen => Converts into a certain amount of pounds
+
+**Apples to Apples**, we need to convert everything in the same units.
+
+**We have to pick a numeraire** Which is a standard in which we measure everything.
+
+To analyze how much money you have, you need to talk in the same units. That same
+idea, has to be used when talking about money today, and money in the future.
+
+**Use the appropriate exchange rates**
+
+- Past and future cannot be combined without first converting them
+- Once "exchange rates" are converted, cash flow processing is trivial
+
+The base currency that we will use is **dollars today**. Every cash flow has to
+become **THAT**.
+
+I need to multiply the cash flow by the exchange rate:
+
+How many dollars in day 1 per day 0. How many dollars in day 2 per day 0.
+
+**The Value Operator**
+
+Once you have the exchange rates, across the different currencies. The value of
+the collection of cash flows is the sum of the values of all the cash flows in
+the same currency => Day 0 dollars.
+
+**Net Present Value**
+
+Date-0 cashflow CF0
+
+When you are valuing an investment, you have to pay something upfront and then
+you get cash flows. So your net investment is a summation of all of that money.
+
+It's not a "simple summation". You need to convert everything to present dollars.
+
+You are netting initial investment with all the future cash flows.
+
+CF0 + ($1 / $0) * CF1 + ($2 / $0) * CF2 + ...
+
+Once you convert everything to today's dollars. And add the numbers. You get a
+value, and then you decide if you like it or not.
+
+**Where do we get the exchange rates?** => From the market.
+
+- That's the exchange rate between today and next year (example)
+	- From here in 5 years?
+		- From here in 10 years?
+			- Is there a "good way" to get exchange rates? Yeah, but in some markets
+			you literally just ask. Ask people, and they will give you a number
+
+When running financial analysis **we need financial markets**. Without them, the
+analysis is impossible, we lack enough data.
