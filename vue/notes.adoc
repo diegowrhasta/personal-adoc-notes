@@ -2051,3 +2051,216 @@ We have the core basics to build Vue applications now. Great Job!
 
 We will build an actual project. To put to use/practice all the knowledge we had
 reviewed (core basics).
+
+=== Project Setup & First Methods
+
+We have to download the scaffold of the course. We will create everything that
+is Vue related from scratch. But styles and HTML will be already provided to
+save up on time.
+
+There are multiple routes to take. But let's understand the requirements:
+
+- This is a monster slayer game, in which you fight a monster, you can choose
+to attack the monster, do a special attack, heal yourself or surrender.
+  - The monster will also take actions in the background to attack you and reduce
+  your health
+
+So we have to program all this behavior
+
+- Let's not use a hard-coded value for damage, that way the game is not too predictable
+
+`data()` is a core concept in Vue apps. Because any app that you code, you need
+state. `data()` are the regular variables you might use in JS.
+
+What are the different variables that we need to manage? (as state) Health values
+for starters.
+
+- playerHealth
+- monsterHealth
+
+This is good. But we need ways to change the health now, for example attacks.
+That screams, **methods**, they will be the actions that the Vue application
+executes.
+
+The methods will calculate a random attack number to reduce the health of the
+player or the monster.
+
+Remember that inside the methods you should reference state values as `this.`,
+because Vue exposes them through a global state object.
+
+````
+attackMonster() {
+  const damage = Math.floor(Math.random() * (12 - 5)) + 5;
+  this.monsterHealth -= damage;
+},
+attackPlayer() {
+  const damage = Math.floor(Math.random() * (20 - 5)) + 5;
+  this.monsterHealth -= damage;
+}
+````
+We are applying a known formula to generate a random number between a range we
+want (12 max, 5 minimum), (20 max, 5 minimum)
+
+And a new concept is introduced:
+
+[source, js]
+----
+function getRandomValue(min, max) { <.>
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
+const app = Vue.createApp({
+    data() {
+        return {
+            monsterHealth: 100,
+            playerHealth: 100
+        }
+    },
+    methods: {
+        attackMonster() {
+            const damage = getRandomValue(5, 12); <.>
+            this.monsterHealth -= damage;
+
+            this.attackPlayer(); <.>
+        },
+        attackPlayer() {
+            const damage = getRandomValue(5, 20);
+            this.playerHealth -= damage;
+        }
+    }
+});
+
+app.mount('#game');
+----
+<.> So, inside of your javascript module, you can of course register functions
+as you see fit. These will not be related to the binding of HTML, but can be leveraged
+by Vue itself.
+<.> As you can see, we can call the functions declared on the same module and reuse
+a generalized function instead of repeating code
+<.> And this is the new concept. The global vue object will contain everything that
+is declared under the different properties, so inside of vue methods, you can call
+other declared methods. And this effectively makes it so that after the player
+attacks the monster, the monster then attacks the player.
+
+=== Updating the Health Bars
+
+Let's now engage with the view. So that actions on the UI call the logic we have
+programmed.
+
+This is easy to bind the click of attack:
+
+````
+<button @click="attackMonster">ATTACK</button>
+````
+
+But we need to give feedback to the player now, we have to also update the healthbars.
+
+So we can bind the health bar styles to our state values:
+
+````
+<section id="monster" class="container">
+  <h2>Monster Health</h2>
+  <div class="healthbar">
+    <div class="healthbar__value" :style="{ width: `${monsterHealth}%` }"></div>
+  </div>
+</section>
+<section id="player" class="container">
+  <h2>Your Health</h2>
+  <div class="healthbar">
+    <div class="healthbar__value" :style="{ width: `${playerHealth}%` }"></div>
+  </div>
+</section>
+````
+As you can see, in trying to make it more readable, we use string interpolation
+and leverage the object notation for `:style`. But as a good practice, remember
+that we want to offset as much logic from the view as possible.
+
+[NOTE]
+====
+Also, this is one of the use cases in which makes sense to use inline styles.
+_Why?_ Because this will override any class styles that currently exist for the
+bar elements. Because the style will be bound to state, then the health bars
+become dynamic.
+====
+
+But now, in hopes of making code more readable, we can leverage computed properties
+for the whole style object:
+
+````
+computed: {
+    monsterBarStyles() {
+        return { width: `${this.monsterHealth}%` };
+    },
+    playerBarStyles() {
+        return { width: `${this.playerHealth}%` };
+    },
+},
+
+<section id="monster" class="container">
+  <h2>Monster Health</h2>
+  <div class="healthbar">
+    <div class="healthbar__value" :style="monsterBarStyles"></div>
+  </div>
+</section>
+<section id="player" class="container">
+  <h2>Your Health</h2>
+  <div class="healthbar">
+    <div class="healthbar__value" :style="playerBarStyles"></div>
+  </div>
+</section>
+````
+
+=== Adding a "Special Attack"
+
+Now, a next action can be coded.
+
+The rule is.
+
+- Special attack will pack more damage to the monster, and it will be available
+only every 3 rounds.
+
+````
+<button @click="specialAttackMonster" :disabled="!canSpecialAttack">SPECIAL ATTACK</button>
+
+computed: {
+    monsterBarStyles() {
+        return { width: `${this.monsterHealth}%` };
+    },
+    playerBarStyles() {
+        return { width: `${this.playerHealth}%` };
+    },
+    canSpecialAttack() {
+        return this.round % 3 === 0;
+    }
+},
+methods: {
+    attackMonster() {
+        const damage = getRandomValue(5, 12);
+        this.monsterHealth -= damage;
+
+        this.attackPlayer();
+        this.round++;
+    },
+    attackPlayer() {
+        const damage = getRandomValue(5, 20);
+        this.playerHealth -= damage;
+    },
+    specialAttackMonster() {
+        const damage = getRandomValue(10, 25);
+        this.monsterHealth -= damage;
+
+        this.attackPlayer();
+        this.round++;
+    }
+}
+````
+The most important takeaways is the usage of `:disabled` to access the specific
+html property, we can then bind this to a computed property (for offsetting of
+logic) and we can apply the simple calculation of a `% 3 === 0` so that if this is
+`true` it's not disabled, and if it's `false` it will be disabled. Besides that
+we have added a new method that will trigger on the special attack button click,
+and the attacks will increment a round state value that was also added to `data()`
+
+And with this, our new game rule has been successfully implemented.
+
+
