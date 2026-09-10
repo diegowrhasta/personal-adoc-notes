@@ -2263,4 +2263,175 @@ and the attacks will increment a round state value that was also added to `data(
 
 And with this, our new game rule has been successfully implemented.
 
+=== Adding a "Heal" Functionality
 
+Let's add a heal method on the methods.
+
+````
+healPlayer() {
+    const healValue = getRandomValue(8, 25);
+    if (this.playerHealth + healValue > 100) {
+        this.playerHealth = 100;
+    }
+    else {
+        this.playerHealth += healValue;
+    }
+
+    this.attackPlayer();
+    this.round++;
+}
+
+<section id="controls">
+  <button @click="attackMonster">ATTACK</button>
+  <button @click="specialAttackMonster" :disabled="!canSpecialAttack">SPECIAL ATTACK</button>
+  <button @click="healPlayer">HEAL</button>
+  <button>SURRENDER</button>
+</section>
+````
+In short, we bind a click on `HEAL` so that now we can add to the player health,
+progress a round and also let the monster attack the player.
+
+=== Adding a "Game Over" Screen
+
+We need to now code the WON and LOST conditions.
+
+We need to be checking the monster and player health. We could do the check in
+multiple methods, all over the place (repeated code).
+
+**Watcher** can help us now. So that we watch the player health and monster health.
+
+[source, js]
+----
+data() {
+    return {
+        monsterHealth: 100,
+        playerHealth: 100,
+        round: 1,
+        gameOver: false, <.>
+        gameOverText: '' <.>
+    }
+},
+watch: {
+    playerHealth(value) {
+        if (value <= 0 && this.monsterHealth <= 0) {
+            this.gameOverText = 'Draw!'; <.>
+            this.gameOver = true;
+        } else if (value <= 0) {
+            this.gameOverText = 'Monster wins!';
+            this.gameOver = true;
+        }
+    },
+    monsterHealth(value) {
+        if (value <= 0 && this.playerHealth <= 0) {
+            this.gameOverText = 'Draw!';
+            this.gameOver = true; <.>
+        } else if (value <= 0) {
+            this.gameOverText = 'Player wins!';
+            this.gameOver = true;
+        }
+    }
+},
+----
+<.> We will have a flag that can allow us to mark the game as over (this will come
+in handy to also conditionally show a game over message)
+<.> The course takes another route and adds tons of `v-if` but I decided to have
+a multi-usage message for the game over because we have 3 possible scenarios,
+this simplifies the HTML syntax
+<.> So when we hit a specific scenario we set the label/message that corresponds
+<.> And we mark the game as over
+
+[source, html]
+----
+<section v-if="gameOver" class="container"> <.>
+  <h2>Game Over!</h2>
+  <p>{{ gameOverText }}</p> <.>
+</section>
+<section id="controls">
+  <button @click="attackMonster">ATTACK</button>
+  <button @click="specialAttackMonster" :disabled="!canSpecialAttack">SPECIAL ATTACK</button>
+  <button @click="healPlayer">HEAL</button>
+  <button>SURRENDER</button>
+</section>
+<section id="log" class="container">
+  <h2>Battle Log</h2>
+  <ul></ul>
+</section>
+----
+<.> As you can see, the game over message is behind a `v-if` so only if the game
+is truly over, then we show the message to the player
+<.> And then on one `<p>` element the different scenario-driven message will be
+displayed
+
+=== Finishing the Core Functionality
+
+So, right now when a game ends, the health bars never reach 0. And that's because
+the health drops to negative and css does not cover width for negatives. So we
+can actually get in between this, and return a 0% width:
+
+````
+computed: {
+    monsterBarStyles() {
+        if (this.monsterHealth < 0) {
+            return { width: '0%' };
+        }
+
+        return { width: `${this.monsterHealth}%` };
+    },
+    playerBarStyles() {
+        if (this.playerHealth < 0) {
+            return { width: '0%' };
+        }
+
+        return { width: `${this.playerHealth}%` };
+    },
+    canSpecialAttack() {
+        return this.round % 3 === 0;
+    }
+},
+````
+And with this we finally have health bars that reach 0.
+
+Lastly we can add a simple button to start the game again.
+
+````
+<section v-if="gameOver" class="container">
+  <h2>Game Over!</h2>
+  <p>{{ gameOverText }}</p>
+  <button @click="restartGame">Start New Game</button>
+</section>
+
+restartGame() {
+    this.gameOver = false;
+    this.gameOverText = '';
+    this.playerHealth = 100;
+    this.monsterHealth = 100;
+    this.round = 1;
+}
+````
+Straightforward, a new button on the game over section. It has a `@click` listener
+to a method that sets all the state values to the original values. And with that
+we have a replayable health.
+
+One missing feature is the Battle Log, we should see a retelling of a match as well!
+
+However, let's just implement the surrender button.
+
+````
+<section v-if="!gameOver" id="controls">
+  <button @click="attackMonster">ATTACK</button>
+  <button @click="specialAttackMonster" :disabled="!canSpecialAttack">SPECIAL ATTACK</button>
+  <button @click="healPlayer">HEAL</button>
+  <button @click="surrender">SURRENDER</button>
+</section>
+
+surrender() {
+    this.gameOver = true;
+    this.gameOverText = 'Monster wins!';
+}
+````
+This is but a new `@click` on the surrender button, its specific logic. And an
+extra QoL. When the game is over the controls are still present, so the health-bars
+can still show and the player can interact with them. By adding `v-if="!gameOver"`
+we can hide the controls, that way the player can't play after the game is over.
+
+=== Adding a Battle Log
