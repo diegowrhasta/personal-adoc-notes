@@ -2518,3 +2518,131 @@ new value to a property, Vue receives a notification. Once Vue picks up on this
 change, Vue goes to the screen to check where that dynamic content is displayed
 and then swaps out the UI element behind the scenes.
 
+=== Vue Reactivity: A Deep Dive
+
+[source, javascript]
+----
+let message = 'Hello';
+
+let longMessage = message + ' World!';
+
+console.log(longMessage);
+
+message = 'Hello!!!!';
+
+console.log(longMessage);
+----
+In Vanilla javascript once a specific variable takes a value, any related property
+that in theory should also trigger an update on all related properties (reactivity),
+that value doesn't change, it doesn't "auto-update". With that premise, and seeing
+how Vue ends up with us assuming such a concept, can only mean that Vue is doing
+the heavy lifting enabling reactivity as a concept.
+
+This is done through **proxies**.
+
+This is a known object in modern javascript that takes an object and a handler
+
+[source, javascript]
+----
+const data = {
+  message: 'Hello!',
+  longMessage: 'Hello! World!'
+};
+
+const handler = {
+  set(target, key, value) {
+    if (key === 'message') { <.>
+      target.longMessage = value + ' World!' <.>
+    }
+
+    target.message = value;
+  }
+}
+
+const proxy = new Proxy(data, handler);
+
+proxy.message = 'Hello!!!!';
+
+console.log(proxy.longMessage); <.>
+----
+<.> It is within the handler that is also an object but that holds "traps", which
+in this case it holds a `set` trap function, that we can listen to changes in
+an object's (target) property, and based on that change also update another property
+of the same object.
+<.> As you can see here, this ends up being reactive to changes on one property,
+and updates other related properties
+<.> Lastly, we will see how the value of the `longMessage` gets updated correctly.
+As if the property was directly consolidated.
+
+Vue takes care of doing all of this under the hood. It has way more complex
+code, but the essence is that it works like this. Setting up proxies and updating
+related content/state properties is what allows Vue to be the way it is.
+
+=== One App vs Multiple Apps
+
+In all the lectures we have only had **One app**. But you can absolutely have
+more than one app.
+
+````
+<section id="app">
+  <h2>How Vue Works</h2>
+  <input type="text" @input="saveInput">
+  <button @click="setText">Set Text</button>
+  <p>{{ message }}</p>
+</section>
+<section id="app2">{{ favoriteFood }}</section>
+
+app.mount('#app');
+
+const app2 = Vue.createApp({
+  data() {
+    return {
+      favoriteFood: 'Pizza'
+    }
+  }
+});
+
+app2.mount('#app2')
+````
+Each of them is their own world though. You can't access properties of another
+app from another app. So bear that in mind. Each state, each method belongs to
+its own specific Vue app.
+
+=== Understanding Templates
+
+The correct term to refer the "html" that is connected to a Vue app. You should
+use **Template**.
+
+Sometimes things are referred as "managed HTML" but that's not the right term.
+The moment that you mount your Vue app against a piece of content, that HTML
+content indeed is your Vue Template.
+
+- The first section is the template of the first Vue app
+- The second section is the template of the second Vue app
+
+Connecting through a css selector to an HTML element is the most "common" way to
+setup a Vue template. But there's also a `template` property!
+
+````
+<section id="app2">
+  <!-- <p>{{ favoriteFood }}</p> -->
+</section>
+
+const app2 = Vue.createApp({
+  template: `
+    <p>{{ favoriteFood }}</p>
+  `,
+  data() {
+    return {
+      favoriteFood: 'Pizza'
+    }
+  }
+});
+````
+As you can see, you can feed the HTML through a property. You still need to mount
+that app somewhere, but with this specific syntax you can write the whole content
+of the mount point.
+
+Now, this approach is not really recommended, you lose syntax highlighting, formatting
+and many other nice features when you keep syntax separated. But it's a concept
+to be aware of, on top of `Template`.
