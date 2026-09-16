@@ -2435,3 +2435,86 @@ can still show and the player can interact with them. By adding `v-if="!gameOver
 we can hide the controls, that way the player can't play after the game is over.
 
 === Adding a Battle Log
+
+There are many ways of implementing this. The log is basically a place in which
+we add messages and we keep track of who did an action, the value of the action
+and so on.
+
+````
+addLogMessage(who, what, value, round) {
+    this.log.unshift({
+        round: round + 1,
+        actionBy: who,
+        actionType: what,
+        actionValue: value
+    });
+}
+
+<ul>
+  <!-- <li v-for="message in log">{{ `Round: ${message.round} ${message.actionBy} ${message.actionType} ${message.actionValue}` }}</li> -->
+  <li v-for="message in log">
+    <span
+      :class="{ 'log--player': message.actionBy === 'player', 'log--monster': message.actionBy !== 'player' }">{{
+      message.actionBy === 'player' ? 'Player' : 'Monster' }}</span>
+    <span v-if="message.actionType === 'heal'"> heals himself for <span class="log--heal">{{ message.actionValue
+        }}</span></span>
+    <span v-else>
+      attacks and deals <span class="log--damage">{{ message.actionValue }}</span>
+    </span>
+  </li>
+</ul>
+````
+Basically, on each action, we would reuse a new method that will start adding
+messages in an array to log who did what, the value of that action (heal or damage)
+and even the round. Then we can iterate over the list of messages and access the
+objects that we have in a property (that for this instance we named `log`)
+
+_Note:_ The `unshift` method in javascript is cool because it adds to a list but
+from the beginning, not from the end like `push`.
+
+The pre-made practice project had styles already in place so that the log looks
+a bit nicer with colors, but in short, on each action taken to kill a monster,
+we would see the player or the monster with different colored texts, and their
+action and value for heal or attack.
+
+This showcases all the concepts seen in the section really nicely.
+
+== Section 5: Vue: Behind the Scenes
+
+=== Module Introduction
+
+We now have the basics of Vue. But another fundamental piece of knowledge is
+getting to know how Vue behaves _behind the scenes_.
+
+Having the extra behind the scenes knowledge will help you as a developer, because
+understanding how the tool works. You will leverage it even better.
+
+- How Vue Works
+- Understanding "Virtual DOM" & DOM Updating
+
+=== An Introduction to Vue's Reactivity
+
+We have to download a simple Vue app that is already pre-setup.
+
+A simple Vue side and a view, they are already wired up. Plus styles.
+
+- We have an input
+- We can type something, press the button next to the input
+- The message will be displayed below
+
+Everything is achieved with the basic concepts we already learned about in the previous
+sections.
+
+- The moment we click the button
+  - The part of the view is updated by Vue behind the scenes
+    - This is called **reactivity**
+
+The idea is that Vue tracks the data object, and all the properties will be a
+part of the global object. Managed by Vue, methods and everything else is attached.
+
+The data object in Vue, is turned in a reactive object. This is done by **proxies**.
+This is a Javascript property, so that whenever a state property gets assigned a
+new value to a property, Vue receives a notification. Once Vue picks up on this
+change, Vue goes to the screen to check where that dynamic content is displayed
+and then swaps out the UI element behind the scenes.
+
