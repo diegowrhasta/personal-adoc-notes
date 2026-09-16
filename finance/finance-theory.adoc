@@ -4314,4 +4314,151 @@ value, and then you decide if you like it or not.
 When running financial analysis **we need financial markets**. Without them, the
 analysis is impossible, we lack enough data.
 
+The power of the financial markets, is **the wisdom of the crowds**.
 
+The value of a sequence of cash flows is today's dollars. You need to convert
+all cash flows to TODAY'S DOLLARS. That's the **Present Value**.
+
+The exchange rates are typically defined as **discount factors**. Because they
+are less than `1`.
+
+What are you discounting if there's no uncertainty?
+
+**Impatience:** People want to consume now, vs later. So if you want to facilitate
+that, you need to offer people an **incentive**. You need to make it interesting
+for the people. "You pay extra", "Or something else"
+
+- The further you go into the future, the higher the discount will be.
+	- Further into the future, those dollars are worth less today.
+
+**Once you have the right numbers in front of you, `management` becomes trivial**
+
+The hard part, is _How do you get the numbers to make the decision?_
+
+=== Takeaways
+
+- We can value cash flows
+	- We make some assumptions: We know the cash flow values, we know exchange rates
+	(that we get from the market places), conversion happens without friction
+		- These are all hypotheticals, to a much more complex reality. But if you
+		know how the model works. We can make the assumptions more realistic and
+		then see how they affect the outcome
+
+[IMPORTANT]
+====
+You can't handle the truth. Brother. "Not Yet"
+====
+
+Supply and demand => More people want money today, than money tomorrow. Hence
+the exchange rate is a thing.
+
+Discount => Turn a value into a value less than 1.
+
+1$ in Year 0 = (1 + r)^T
+
+r => Opportunity cost of capital, Interest Rate, Growth Rate, Cost of Capital, The
+User Cost. Basic: The reverse of the exchange rates when trying to bring everything
+into today's dollars
+
+A way to unify all exchange rates into one `r`. This helps with calculations.
+
+Market => They give us different `r`'s, so that can be a problem.
+
+$1 / (1 + r) in Year 0 = $1 in Year 1
+$1 / (1 + r)^2 in Year 0 = $1 in Year 2
+
+Those are the mechanics and maths of Present Value.
+
+Under certainty, and all the assumptions we took. Any cash flow in the world
+can be valued with **one number**. Therefore, any asset can be valued.
+
+**Valuation operator**
+
+- How do we use this then?
+
+== Chapter 2 Notes
+
+=== How to Calculate Present Values
+
+Companies invest in lots of different things. Some are _tangible assets_ that is,
+assets you can kick, like factories, machinery, and offices. Others are _intangible
+assets_, such as patents or trademarks. In each case, the company basically lays
+out money in hopes of receiving **more** in the future.
+
+Individuals also make investments. For example, your college education may cost
+you $40,000 per year. That is an investment you hope will pay off in the form
+of a higher salary later in life. You are sowing now and expecting to reap later.
+
+Companies pay for their investments by raising money and, in the process, assuming
+liabilities. For example, they may borrow money from a bank and promise to repay
+it with interest later. You also may have financed your investment in a college
+education by borrowing money that you plan to pay back in the future out of that
+fat salary.
+
+All these financial decisions require comparisons of cash payments at different
+dates. Will your future salary be sufficient to justify the current expenditure
+on college tuition? How much will you have to repay the bank if you borrow to
+finance your degree?
+
+In this chapter, we take the first steps toward understanding the relationship
+betweenm the values of dollars today and dollars in the future. We start by
+looking at how money invested at a specific interest rate will grow over time.
+We next ask how much you would need to invest today to produce a specified
+future sum of money, and we describe some shortcuts for working out the value
+of a series of cash payments.
+
+The term _interest rate_ sounds straightforward enough, but rates can be quoted
+in different ways. We, therefore, conclude the chapter by explaining the difference
+between the quoted rate and the true or effective interest rate.
+
+Once you have learned how to value cash flows that occur at different points in time,
+we can move on in the next two chapters to look at how bonds and stocks are valued.
+After that, we will tackle capital investment decisions at a practical level of detail.
+
+For simplicity, every problem in this chapter is set out in dollars but the concepts
+and calculations are identical in euros, Japanese yen, or Mongolian tugrik.
+
+=== Future Values and Present Values
+
+_Calculating Future Values_
+
+Money can be invested to earn interest. So if you are offered between $100 today
+and $100 next year, you naturally take the money now to get a year's interest. 
+
+Financial managers do the same, or well, think the same thing, _money has a time
+value_. Or the most basic principle of finance:
+
+_A dollar today is worth more than a dollar tomorrow_
+
+Suppose you invest $100 in a bank account that pays interest of r = 7%. In the
+first year, you will earn interest of .07 x $100 = $7 and the value of your
+investment will grow to $107:
+
+Value of investment after 1 year = $100 x (1 + r) = 100 x 1.07 = $107
+
+[IMPORTANT]
+====
+By investing, you give up the opportunity to spend $100 today, but you gain the
+chance to spend $107 next year.
+====
+
+If you leave your money in the bank for a second year, you earn interest of .07
+x $107 = $7.49, and your investment will grow to $114.49:
+
+Value of investment after 2 years = $107 x 1.07 = $100 x 1.07^2 = $114.49
+
+In the second year you earn interest on both your initial investment ($100) and
+the previous year's interest ($7). Thus your wealth grows at a _compound rate_
+and the interest that you earn is called **compound interest**
+
+If you invest your $100 for t years, your investment will continue to grow at
+a 7% compound rate to $100 x (1.07)^t. For any interest rate r, the future value
+of your $100 investment will be:
+
+Future value of $100 = $100 x (1 + r)^t
+
+The higher the interest rate, the faster your savings will grow.
+
+A few percentage points added to the interest rate can do wonders for your future
+wealth. E.g., By the end of 20 years, $100 invested at 10% will grow to $100 x (1.10)^20
+= $672.75. If it is invested at 5%, it will grow to only $100 x (1.05)^20 = $265.33
