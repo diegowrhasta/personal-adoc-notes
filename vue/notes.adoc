@@ -2745,3 +2745,74 @@ lifecycle hooks**
 And that's as far theory goes, it really depends on your use case, but all these
 hooks are here in place so that you can leverage them. If you know your stuff,
 and identify the correct use case, USE IT.
+
+=== Vue App Lifecycle - Practice
+
+All the hooks can be called by name at the same level as the base `data, methods`
+properties:
+
+````
+const app = Vue.createApp({
+  data() {
+    return {
+      currentUserInput: '',
+      message: 'Vue is great!',
+    };
+  },
+  methods: {
+    saveInput(event) {
+      this.currentUserInput = event.target.value;
+    },
+    setText() {
+      // this.message = this.currentUserInput;
+      this.message = this.$refs.userText.value;
+    },
+  },
+  beforeCreate() {
+    console.log('beforeCreate()');
+  }
+});
+````
+
+The course shows us also how we can debug in the browser the `.js` file. So we
+can set breakpoints on our lifecycle hook methods and analyze the current status
+of the application.
+
+`beforeCreate()` => At this point no vue controlled app is rendered.
+`beforeMount()` => Still nothing visible on the screen
+`mounted()` => When debugging this hook we will see things rendered
+
+You can group hooks into:
+
+- **The Creation Lifecycle** => This only happens one time, when the Vue app is
+brought to life.
+- **The Updates Lifecycle**
+  - `beforeUpdate()`, `updated()` => These hooks are engaged only after some reactivity
+  type event is triggered.
+- **The Unmount Lifecycle**
+  - `beforeUnmount()`, `unmounted()`
+
+In order to use or leverage unmount lifecycles, you would have to kill the app on
+purpose. There is the `app.unmount()` method, which is great to test this, but,
+it's not that realistic. There is however a really useful use case in which unmounting
+makes sense to learn and analyze from (but for now, we can just trigger manually
+an app unmount)
+
+[IMPORTANT]
+====
+In reality, you'd probably use a few of the hooks consistently. However, it's good
+to know about all these hooks at least in a general sense.
+====
+
+== Section 6: Introducing Components
+
+=== Module Introduction
+
+In the previous section we talked about the possibility of having multiple Vue
+apps, but the key there is that these apps **can't be connected**. But based
+on the ideas set out by "multiple apps" we are going to analyze `Components`,
+specifically **Vue Components**. The kicker is that they indeed share state.
+
+=== Understanding the Problem
+
+
