@@ -2646,3 +2646,102 @@ of the mount point.
 Now, this approach is not really recommended, you lose syntax highlighting, formatting
 and many other nice features when you keep syntax separated. But it's a concept
 to be aware of, on top of `Template`.
+
+=== Working with Refs
+
+So far, we have seen how we can use methods to update state properties, as well
+as how to straight up two-way bind them. However, there's also another tool we
+can use to retrieve DOM element values or things we might need if needed and
+that is `References`
+
+[NOTE]
+====
+`console.dir()` is a cool log method to see a much more detailed description of
+an object (works well when analyzing DOM objects)
+====
+
+Basically, you can use a non-standard HTML property to then manifest a reference
+to said DOM element:
+
+````
+<input type="text" ref="userText">
+
+setText() {
+  // this.message = this.currentUserInput;
+  this.message = this.$refs.userText.value;
+},
+````
+After you give a name to the element, which should be the value for `ref` you
+can access it through `$refs`. _All Vue, built-in properties will always be
+suffixed with dollar signs btw._. Inside `$refs` you get access to any ref elements
+you have tagged. And just like any other DOM element, they will have all their
+properties available to them.
+
+So in this instance, instead of watching every keystroke and so on, we can just
+react based on the `setText` button trigger and assign to our state property the
+referenced input value. (Same behavior, different approach)
+
+=== How Vue Updates the DOM
+
+Reactivity => Is the mechanism to detect updates, apply those updates.
+
+There is an extra mechanism at play though, for **performance reasons**. And
+that is used with a Virtual DOM.
+
+So, we have a template side (let's call it the backend side) to whatever is happening
+on the page, we are adding non-native html tags, properties, and syntax that doesn't
+render properly if parsed through a normal HTML browser. However Vue catches all
+of that syntax and transforms it into a browser readable form and renders it
+accordingly. That's the virtual DOM, the version of the website that is full of
+framework specific lingo so that he then renders the DOM respectively.
+
+Now, as you can see this opens up the premise that Vue is constantly re-rendering
+the DOM based on whatever event takes place and all that meta-data information.
+However, Vue is smart, it doesn't re-generate the entire DOM, even for elements that
+actually had nothing to do with an event and don't affect and shouldn't be computed
+at all.
+
+**Only the parts that changed should be actually CHANGED**
+
+_How can Vue ensure that the entire screen is that not the entire screen is re-rendered?_
+
+- You could compare all the old values in the DOM with the new values in the DOM
+  - Good idea, but... not that good. Reading the entire real DOM all the time
+  is pretty performance intensive. Not as bad a re-rendering all the time, but not
+  that better either.
+
+**Virtual DOM** Is a JS-based DOM which exists only in memory. It has a bunch of
+properties, and objects. That's its "form".
+
+Changes are computed to the virtual DOM first, and the comparisons made in a
+virtual DOM (in-memory) pinpoint the places to change and those places are then
+applied to the real DOM. (Memory comparison is way more performant).
+
+However, don't think of it too deeply, it has a bunch of performance optimizations,
+and it's not that "simple". But it's good to have a general idea.
+
+=== Vue App Lifecycle - Theory
+
+Sometimes you need to run code during steps of components rendering. **Vue has
+lifecycle hooks**
+
+- createApp({...}) => it all starts here
+  - As things are getting created, lifecycle phases start running in sequence
+    - beforeCreate()
+    - created()
+      - Vue only knows properties, and configuration. The template is computed and
+      then we move onto:
+    - beforeMount() - Right before Vue is going to bring something onto the screen
+    - mounted() - We see something on the screen
+      - Vue handed over all HTML elements to the browser
+      - A mounted Vue Instance is then a place in which we lie in wait for events/actions
+        - Data changes and then:
+    - beforeUpdate()
+    - updated() => And we remain here indefinitely repeating a cycle between
+    updated() and beforeUpdate()
+    - beforeUnmount()
+    - unmounted()
+
+And that's as far theory goes, it really depends on your use case, but all these
+hooks are here in place so that you can leverage them. If you know your stuff,
+and identify the correct use case, USE IT.
