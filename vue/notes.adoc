@@ -2966,3 +2966,39 @@ building cool UIs.
 
 We can then render multiple elements in a repeatable way, and they all have independent
 state, independent behaviors. On top of also the ability of passing around state.
+
+=== The Why: Building Complex User Interfaces With Components
+
+The full potential of components will only be unlocked once you build a semi-complex
+application.
+
+The idea is that to structure the logic of complex apps, piecing things into small
+reusable pieces makes it way more maintainable.
+
+=== Multiple Vue Apps vs Multiple Components
+
+As mentioned before, whilst it's possible to create **multiple Vue apps** and sort
+of manage them, there is **no official way to share state amongst them**. They
+would be a solution for a really specific problem or situation, but in most cases
+the SPA way recommends to just have **one Vue app**. And then to encapsulate behavior
+and data, you use `components`. It is also a feature of components the ability to
+**share date amongst themselves** too.
+
+== Moving to a Better Development Setup & Workflow with the Vue CLI
+
+=== Module Introduction
+
+In order to start building a better Vue application, we need now to introduce
+ourselves to a new way of developing. We are going to start using the Vue CLI
+so that we get a better developer experience, something that scales and is
+maintainable.
+
+We will learn about this by answering common questions and moving onto demoing it:
+
+- What is the Vue CLI?
+- Why do we need it?
+- How does the CLI work?
+
+=== Why We Need A Development Server
+
+
