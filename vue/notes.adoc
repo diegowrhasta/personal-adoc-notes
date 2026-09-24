@@ -2815,4 +2815,154 @@ specifically **Vue Components**. The kicker is that they indeed share state.
 
 === Understanding the Problem
 
+We basically have a pre-built project in which we have a list of friends, it holds
+two people currently and displays their information. It's basically a list iterated
+in nature.
 
+We are going to generate friends based on a list of friends:
+
+[source, html]
+----
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vue Basics</title>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/vue@3.4.9/dist/vue.global.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <header>
+    <h1>FriendList</h1>
+  </header>
+  <section id="app">
+    <ul>
+      <li v-for="friend in friends" :key="friend.id">
+        <h2>{{ friend.name }}</h2>
+        <button @click="toggleDetails">{{ detailsAreVisible ? 'Hide' : 'Show' }} Details</button>
+        <ul v-if="detailsAreVisible"> <.>
+          <li><strong>Phone:</strong> {{ friend.phone }}</li>
+          <li><strong>Email:</strong> {{ friend.email }}</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+</body>
+
+</html>
+----
+<.> In here all the rendered elements will hide or show this section that is based
+on a state property.
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            detailsAreVisible: false,
+            friends: [
+                { id: 'manuel', name: 'Manuel Lorenz', phone: '01234 5678 991', email: 'manuel@localhost.com' },
+                { id: 'julie', name: 'Julie Jones', phone: '09876 543 221', email: 'julie@localhost.com' },
+            ]
+        }
+    },
+    methods: {
+        toggleDetails() {
+            this.detailsAreVisible = !this.detailsAreVisible; <.>
+        }
+    }
+});
+
+app.mount('#app');
+----
+<.> After clicking on the details show buttons, we invert the boolean value of
+`detailsAreVisible`.
+
+However this currently setup has a big flaw, all the elements on the list show
+their details or not. You can't just allow one specific or a specific subset to
+hide or show. Even if you tried it would be cumbersome, and really verbose.
+
+**Components can help us achieve this granularity in state and render**
+
+=== Introducing Components
+
+Components are great if there are certain pieces of HTML that you use a lot and
+that should hold some sort of behavior (that is repeatable).
+
+Component is an official feature of Vue.js. That you can leverage by calling a
+special vue method: `component`
+
+**Important:** A component is basically a custom HTML element. Always have component
+names with a dash (kebab case). And make them **multi-word** because all built-in
+html elements are single word.
+
+A component can be seen just like **another vue app**, but that can actually live
+within other vue apps. _An app that will be connected to our main app_
+
+[source, js]
+----
+const app = Vue.createApp({
+    data() {
+        return {
+            friends: [
+                { id: 'manuel', name: 'Manuel Lorenz', phone: '01234 5678 991', email: 'manuel@localhost.com' },
+                { id: 'julie', name: 'Julie Jones', phone: '09876 543 221', email: 'julie@localhost.com' },
+            ]
+        }
+    },
+});
+
+app.component('friend-contact', {
+    template: `
+    <li>
+        <h2>{{ friend.name }}</h2>
+        <button @click="toggleDetails">{{ detailsAreVisible ? 'Hide' : 'Show' }} Details</button>
+        <ul v-if="detailsAreVisible">
+            <li><strong>Phone:</strong> {{ friend.phone }}</li>
+            <li><strong>Email:</strong> {{ friend.email }}</li>
+        </ul>
+    </li>
+    `,
+    data() {
+        return { detailsAreVisible: false, friend: { id: 'manuel', name: 'Manuel Lorenz', phone: '01234 5678 991', email: 'manuel@localhost.com' } };
+    },
+    methods: {
+        toggleDetails() {
+            this.detailsAreVisible = !this.detailsAreVisible;
+        }
+    }
+});
+
+app.mount('#app');
+----
+A component has a name, and then an object with the same `data()`, `methods` and
+so on properties. But what's key is that each component will hold its own state.
+
+**IMPORTANT:** The component _needs_ a template. Without `mount` because that's
+not how you connect to html with components. Hence we are leveraging `template`,
+in-line. But remember _later we will actually switch to a much more convenient
+method_.
+
+And lastly after we have registered our component, we can render it as if it were
+a normal HTML element:
+
+````
+<section id="app">
+  <ul>
+    <friend-contact v-for="friend in friends" friend="friend"></friend-contact>
+  </ul>
+</section>
+````
+It's with components that we can easily replicate a piece of HTML and encapsulate
+both **data** and **logic** (on top of UI)
+
+Having this type of concept at your disposal, is an extremely useful tool when
+building cool UIs.
+
+We can then render multiple elements in a repeatable way, and they all have independent
+state, independent behaviors. On top of also the ability of passing around state.
