@@ -4462,3 +4462,40 @@ The higher the interest rate, the faster your savings will grow.
 A few percentage points added to the interest rate can do wonders for your future
 wealth. E.g., By the end of 20 years, $100 invested at 10% will grow to $100 x (1.10)^20
 = $672.75. If it is invested at 5%, it will grow to only $100 x (1.05)^20 = $265.33
+
+**Calculating Present Values**
+
+We first saw how things will evolve from today to the future. So, we saw a
+**future value**. But what if we wanted to know the inverse result? So what is
+the **present value** of a **future value**?
+
+If we didn't know the answer we can run the future value calculation in reverse
+and divide the future payoff by (1 + t)^n
+
+PV = $114.49 / (1.07)^2 = $100
+
+In general, you can suppose that you will receive a cash flow of C1 dollars at the
+end of year t. The present value of this future payment is:
+
+Present value = PV = Ct / (1 + r)^t
+
+The rate, r, in the formula is called the discount rate, and the present value
+is the discounted value of the cash flow, Ct. You sometimes see this present value
+formula written differently. Instead of dividing the future payment by (1 + r)^t,
+you can equally well multiply the payment by 1 / (1 + r)^t. The expression 1 / (1 + r)^t
+is called the **discount factor**. It measures the present value of one dollar
+received in year t. For example, with an interest rate of 7% the two-year discount
+factor is:
+
+DF2 = 1 / (1.07)^2 = .8734
+
+Investors are willing to pay $.8734 today for delivery of $1 at the end of two
+years. If each dollar received in year 2 is worth $.8734 today, then the present
+value of your payment of $114.49 in year 2 must be:
+
+Present value = DF2 X C2 = .8734 * 114.49 = $100
+
+The longer you have to wait for your money, the lower its present value. This is
+illustrated in Figure 2.2. Notice how small variations in the interest rate can
+have a powerful effect on the present value of distant cash flows. So the further
+into the future the payment is, the less the initial "investment" would be.
