@@ -4499,3 +4499,49 @@ The longer you have to wait for your money, the lower its present value. This is
 illustrated in Figure 2.2. Notice how small variations in the interest rate can
 have a powerful effect on the present value of distant cash flows. So the further
 into the future the payment is, the less the initial "investment" would be.
+
+**Valuing an Investment Opportunity**
+
+How would you decide whether an investment opportunity is worth undertaking? Suppose
+you own a small company that is contemplating construction of a suburban office
+block. The cost of buying the land and constructing the building is $700,000.
+Your company has cash in the bank to finance the construction. Your real state
+adviser forecasts a shortage of office space and predicts that you will be able
+to sell next year for $800,000. For simplicity, we will assume initially that this
+$800,000 is a sure thing.
+
+The **rate of return** on this one-period project is easy to calculate. Divide the
+expected profit ($800,000 - $700,000 = $100,000) by the required investment ($700,000).
+The result is 100,000 / 700,000 = .143 or 14.3%.
+
+With this in mind, you could be at a cross-roads, you can choose to invest in the
+project (so use the $700,000) or pay cash out to shareholders, who can then invest
+on their own. We assume that they can earn a 7% profit by investing for one year
+in safe assets. Or they can invest in the stock market, which is risky but offers
+an average return of 12%.
+
+Which one would you say is the cost of capital? 7% or 12%? The answer is 7%: That's
+the rate of return the company's shareholders can get by investing on their own at
+the same level of risk for the proposed project. _Because we assume the risk level
+for the office block is zero_. Meaning that you are squaring up a 14% return vs a
+7% return in finance markets.
+
+The office project then is a "go", but how much is it really worth and how much would
+the investment add to one's **wealth**? The project produces a cash flow at the
+end of one year. To find its present value we discount the cash flow by the
+opportunity cost of capital:
+
+Present value = PV = C1 / 1 + r = 800,000 / 1.07 = $747,664
+
+Suppose that as soon as you have bought the land and paid for the construction,
+you decide to sell your project. How much could you sell it for? The answer is
+actually quite simple, if this "asset" returns a surefire $800,000, then it ought
+to be worth its PV of $747,664 today.
+
+That is what investors in the financial market would need to pay to get the same
+future payoff. If you try to sell for more, there would be no takers because the
+return would be lower than safe options (bonds). You could sell the property for
+less maybe? But why sell lesser than what the market can bear?
+
+The mathematically calculated $747,664 price satisfies both buyer and seller. Therefore,
+the present value of the property is also its market price.
