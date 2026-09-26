@@ -3001,4 +3001,104 @@ We will learn about this by answering common questions and moving onto demoing i
 
 === Why We Need A Development Server
 
+"Proper Development Web Server"
 
+Currently we are double-clicking the `index.html` in the app. But this is unrealistic,
+because we are using the file protocol instead of the `http/https` protocol.
+
+- `file:\\`
+- `http:\\`
+
+Based on the protocol, there are actually features that only work on specific setups.
+
+The users of the web app, they will in the end use a website. **You are building a
+website that will be hosted in some server**.
+
+Therefore, the site will be served by `http`, the `file` protocol is only available
+to you by double-clicking. It's **not an actual analog of what the users will see**.
+
+Going forward, we'd like to switch to a more realistic development server.
+
+That dev server will serve the app through HTTP, hence giving us a local development
+"closer experience" to the user's experience.
+
+=== Why We Need a Development Server
+
+- Thus far the way we write code works, but it has flaws
+  - Our way of writing and testing the Vue app has:
+    - Always reload the page when we change the code. However if you are writing a
+    lot of code and for days and hours. It gets annoying, and also when reloading
+    a page, all the state is lost. (Development takes longer and becomes unnecesarily
+    harder)
+    - IDE auto-completion is highly limited
+      - We don't know what to do, how to do, a lot of metadata can be fed through
+      the IDE to the developer. (Even syntax highlighting, linters, formatters).
+    - We work with just one file OR multiple files that have to be imported manually,
+    and state cannot be transferred easily, we have to reload everything again (
+    and lose state).
+    - As apps get bigger, we might want to split code in multiple components and
+    so on. That will make things more readable/maintainable.
+
+The current state has room for improvement, what if...
+
+- Saved changes should be auto-detected and page should reload/update
+- IDE should provide better auto-completion and hints
+- We should be able to split code into multiple files and export/import via ES Modules
+(which is a modern javascript feature)
+
+The Vue CLI will help us with all of these things.
+
+=== Fixing npm run serve (Vue CLI)
+
+Apparently we have to run with the legacy ssl support flag on Vue, no idea why.
+
+=== Installng & Using the Vue CLI
+
+The Vue CLI is not a mandatory tool. It's not the Vue Framework. It's an additional
+tool managed by the Vue team. It helps us create projects with a certain configuration
+and built-in tools that give us all the nice features we'd like to have.
+
+The pre-requisites are:
+
+- node
+  - Because it comes with npm, and you can install the Vue CLI through there
+
+The course, of course, uses the Vanilla way. I know the truth, so I will stick to
+`pnpm`. on top of `nvm`.
+
+So, let's install the vue CLI:
+
+`pnpm install -g @vue/cli`
+
+The vue tool will be installed globally on the system after this.
+
+Once this is done, you can find a place on the system to create a Vue project, and
+we will use the CLI to create the project.
+
+`vue create first-vue-app`
+
+This will then throw you into a menu to setup whatever you want. The course was
+recorded at a point in time in which Vue was not really done. So Vue 3 was `preview`,
+however at the time of writing this is the default choice. However the course
+makes us choose a "custom setup" to select features:
+
+It has lots of options, but in short for the purpose of the course, a lot of
+defaults are left there, we are not installing the Router even for this module.
+
+Also the linter will be without prettier.
+
+[NOTE]
+====
+Due to `pnpm` the CLI also detects it and asks with which package manager to install
+the project. After choosing it, it will go into an error but that can be bypassed
+easily by running `pnpm approve-builds` and again `pnpm install` just in case.
+
+**Be sure to be in the folder of the project before running the commands**
+====
+
+Yeah, nah... just use `Vite`. Vue has moved away from maintining its CLI even.
+
+The setup is just like React with `vite`. And even Angular. Just, serve. And we
+get all the scaffolding that Vite knows and is **really good** with.
+
+=== Inspecting the Created Project
