@@ -4545,3 +4545,76 @@ less maybe? But why sell lesser than what the market can bear?
 
 The mathematically calculated $747,664 price satisfies both buyer and seller. Therefore,
 the present value of the property is also its market price.
+
+**Net Present Value**
+
+The office building is worth $747,664 today, but that does not mean you are $747,664
+better off. You invested $700,000, so the **net present value (NPV)** is $47,664.
+Net present value equals present value minus the required investment:
+
+NPV = PV - investment = 747,664 - 700,000 = $47,664
+
+In other words, your office development is worth more than it costs. It makes a
+_net_ contribution to value and increase your wealth. The formula for calculating
+the NPV of your project can be written as:
+
+NPV = C0 + C1 / (1 + r)
+
+Remember that C0, the cash flow at time 0 (that is, today) is usually a negative
+number. In other words C0 is an investment and therefore a cash outflow. In our
+example, C0 = -$700,000. When cash flows occur at different points in time, it is
+often helpful to draw a timeline showing the date and value of each cash flow.
+Figure 2.4 shows a timeline for your office development. It sets out the net present
+value calculation assuming that the discount rate r is 7%.
+
+**Risk and Present Value**
+
+We made one unrealistic assumption in our discussion of the office development:
+Your real estate adviser cannot be certain about the profitability of an office
+building. Those future cash flows represent the best forecast, but they are not a
+sure thing.
+
+If the cash flows are uncertain, your calculation of NPV is wrong. Investors could
+achieve those cash flows with certainty by buying $747,664 worth of U.S. government
+securities so they would not buy your building for that amount. You would have to cut
+your asking price to attract investors' interest.
+
+Here we can invoke a second basic financial principle: _A safe dollar is worth more
+than a risky dollar_. Most investors dislike risky ventures and won't invest in them
+unless they see the prospect of a higher return. However, the concepts of present
+value and the opportunity cost of capital still make sense for risky investments.
+It is still proper to discount the payoff by the rate of return offered by a risk-
+equivalent investment in financial markets. But we have to think of _expected_
+payoffs and the _expected_ rates of return on other investments.
+
+Not all investments are equally risky. The office development is more risky than
+a government security but less risky than a start-up biotech venture. Suppose
+you believe the project is as risky as investment in the stock market and that
+stocks are expected to provide a 12% return. Then 12% is the opportunity cost
+of capital for your project. That is what you are giving up by investing in the
+office building and _not_ investing in equally risky securities.
+
+Now recompute NPV with r = .12
+
+PV = 800,000 / 1.12 = $741,286
+
+NPV = PV - 700,000 = $14,286
+
+In here the office building still makes a net contribution to wealth however with
+much less volume, the other "risk-free" assumption provided way more value.
+
+The value of the office building depends, therefore, on the timing of the cash
+flows and their risk. The $800,000 payoff would be worth just that if you could
+get it today. If the office building is as risk-free as government securities,
+the delay in the cash flow reduces value by $52,336 to $747,664. If the building
+is as risky as investment in the stock market, then the risk further reduces
+value by $33,378 to $714,286.
+
+Unfortunately, adjusting asset values for both time and risk is often more complicated
+than our example suggests. So for the time being we will assume there is no risk, and
+that the expected rates are also pretty clear. But don't misunderstand, **financial
+markets have to cope with risk in the real world**.
+
+**Present Values and Rates of Return**
+
+
