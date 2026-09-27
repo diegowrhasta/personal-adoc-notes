@@ -3102,3 +3102,102 @@ The setup is just like React with `vite`. And even Angular. Just, serve. And we
 get all the scaffolding that Vite knows and is **really good** with.
 
 === Inspecting the Created Project
+
+We have `public`, `src` folders, and other files such as `package.json`.
+
+Within that manifest
+
+- `vue` or `vue-tsc`
+
+Is something that you will see, this replaces the CDN import that we were doing
+before.
+
+`devDependencies`
+
+- These are solely packages for development experience, they won't be packaged
+when publishing the website.
+
+`npm` downloads the packages into our project and stores them in the `node_modules`
+folder. You can run a command to install `npm install` so that it can read `package.json`,
+and install **all the packages**
+
+After you run `pnpm run dev` => Always keep the dev server up and running while
+you are coding. So order is:
+
+. Install `pnpm install`
+. And then get the dev server up `pnpm run dev`
+
+**Leave `node_modules` alone**
+
+`public` is a very simple folder with `html`, in there we have static files like
+`svg` files. _Note:_ The Vue CLI seems to had put `index.html` here, but with
+vite that's no longer the case.
+
+Reading `src` we will see multiple files here that are "strange" at first. This is
+a really important folder however.
+
+=== Inspecting the Vue code & `.vue` Files
+
+We have a `main.ts` or `main.js` file. In there we have a structure like this:
+
+[source, ts]
+----
+import { createApp } from 'vue' <.>
+import './style.css'
+import App from './App.vue' <.>
+
+createApp(App).mount('#app') <.>
+
+----
+<.> We are importing vue so that we start leveraging its methods
+<.> This is an import from a `App.vue` file
+<.> And this is the different way to mount the app with the new imports
+
+This is the **modern javascript way** of exporting and importing things.
+
+We used to pass an object to `createApp`, however we are now just sending an `App`
+module.
+
+`.vue` files allows us to write Vue components in a much nicer way. They allow us
+to split template, script, styles => **In three different sections**
+
+````
+<template>
+</template>
+
+<script>
+</script>
+
+<style>
+</style>
+````
+
+The code we write, is not the code that rides on the browser. Again, we are using
+next-gen and Vue-specific Syntax & Features, if the browser would were to try to
+render all of that syntax, it would explode.
+
+However, because Vue has under-the-hood tools that builds all that syntactic sugar
+and turns it into standard javascript code with standard javascript features.
+
+- **Build Step** => After this, the dev or real server receives something he can
+understand and he can then serve to a user.
+
+That's why code with separate special tags, gets turned into normal javascript code
+that runs in any browser.
+
+All `.vue` files are single file components, and they are actually a very convenient
+way of writing code.
+
+=== Adding the `Vetur` Extension to VS Code
+
+All the `.vue` files look really ugly in the editor, no linter, no auto-completion
+even. For that we can install an extension for Visual Studio Code
+
+Okay, the course recommends Vetur, and then that shows Volar but these extensions
+seem to have just gone into the deprecation side. Just use the Vue official plugin,
+seems to be right on.
+
+So yeah, just install the Vue official extension, reload VS Code, and you are set
+to go.
+
+=== More on ".vue" Files
