@@ -4647,3 +4647,52 @@ of their opportunity costs of capital
 Properly applied, both rules give the same answer, although we will encounter
 some cases in which the rate of return rule is easily misused. In those cases,
 it is safest to use the net present value rule.
+
+**Calculating Present Values When There Are Multiple Cash Flows**
+
+One of the nice things about present values is that they are all expressed in
+current dollars - so you can add them up. In other words, the present value of
+cash flow (A + B) is equal to the present value of cash flow A plus the present
+value of cash flow B.
+
+Suppose that you wish to value a stream of cash flows extending over a number
+of years. Our rule for adding present values tells us that the _total_ present value
+is:
+
+PV = C1 / (1 + r) + C2 / (1 + r)^2 + C3 / (1 + r)^3 + ... + CT / (1 + r)^T
+
+This is called the **discounted cash flow** or **DCF** formula. A shorthand way to
+write it is:
+
+PV = ∑ Ct / (1 +r)^t
+
+Where this is the sum of the series of discounted cash flows. To find the _net_
+present value (NPV) we add the (usually negative) initial cash flow:
+
+NPV = C0 + PV = C0 + DCF
+
+**Example 2.1 - Present Values with Multiple Cash Flows**
+
+Your real estate adviser has come back with some revised forecasts. He suggests
+that you rent out the building for two years at $30,000 a year, and predicts that
+at the end of that time you will be able to sell the building for $840,000. Thus
+there are now two future cash flows - a cash flow of C1 = $30,000 at the end of
+one year and a further cash flow of C2 = (30,000 + 840,000) = $870,000 at the end
+of the second year.
+
+The present value of your property development is equal to the present value of
+C1 plus the present value of C2. So you discount the first cash flow (year 1) and
+then the second cash flow (year 2)
+
+PV = C1 / (1 + r) + C2 / (1 + r)^2 = 30,000 / 1.12 + 870,000 / 1.12^2 = 26,786 + 69,559 = $720,344
+
+It looks as if you should take your adviser's suggestion. NPV is higher than if
+you sell in year 1:
+
+NPV = $720,344 - $700,000 = $20,344
+
+Your two-period calculations required just a few keystrokes on a calculator. Real
+problems can be much more complicated, so financial managers usually turn to
+financial calculators especially programmed for present value calculations or to
+computer spreadsheet programs. A box near the end of the chapter introduces you
+to some useful Excel functions that can be used to solve discounting problems.
