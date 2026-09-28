@@ -3313,4 +3313,138 @@ components now into this new setup.
 
 === Adding a Component
 
+In Vue you have Vue apps and Vue components. Every component is like a mini-app
+with the possibility to combine with other components to make **one app**. And
+those mini-apps will also be able to talk to each other to then build multiple
+complex interfaces.
 
+By convention:
+
+- Create a folder named `components` in the source folder. In here you will have
+Vue components.
+
+We will create a `FriendContact.vue` component.
+
+_You could also use kebab-case_. It doesn't really matter, just **be consistent
+with your naming convention**
+
+A component takes is like a mini-app, it takes the same configuration object, so
+we have to do a default export too.
+
+[source, vue]
+.FriendContact.vue
+----
+<template>
+    <li>
+        <h2>{{ friend.name }}</h2>
+        <button @click="toggleDetails">Show Details</button>
+        <ul v-if="detailsAreVisible">
+            <li><strong>Phone:</strong> {{ friend.phone }}</li>
+            <li><strong>Email:</strong> {{ friend.email }}</li>
+        </ul>
+    </li>
+</template>
+
+<script>
+export default { <.>
+    data() {
+        return {
+            detailsAreVisible: false,
+            friend: { id: 'manuel', name: '', phone: '', email: '' }
+        };
+    },
+    methods: {
+        toggleDetails() {
+            this.detailsAreVisible = !this.detailsAreVisible;
+        }
+    }
+};
+</script>
+----
+<.> As you can see we are doing a export default, and then returning over the typical
+vue configuration object we are familiar with by now.
+
+After we have set our component up, we will need to now "unlock" it in our Vue
+app: (more like registering)
+
+[source, js]
+.main.js
+----
+import { createApp } from 'vue';
+
+import App from './App.vue'
+import FriendContact from './components/FriendContact.vue'; <.>
+
+const app = createApp(App);
+
+app.component('friend-contact', FriendContact); <.>
+
+app.mount('#app'); <.>
+
+----
+<.> Basically we will import the default export of the Vue component file
+<.> And then we will register it with a specific tag name (that should be kebab
+case)
+<.> And lastly we then mount the application as usual (notice how we broke apart
+the `createApp` return object so that we can register first our custom component
+and then mount the app)
+
+Lastly, we can now start using this new component through the tag we used for its
+registration:
+
+[source, vue]
+.App.vue
+----
+<template>
+    <section>
+        <h2>My Friends</h2>
+        <ul>
+            <friend-contact></friend-contact> <.>
+            <friend-contact></friend-contact>
+        </ul>
+    </section>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            friends: [
+                {
+                    id: 'manuel',
+                    name: 'Manuel Lorenz',
+                    phone: '0123 45678 90',
+                    email: 'manuel@localhost.com'
+                },
+                {
+                    id: 'julie',
+                    name: 'Julie Jones',
+                    phone: '0123 45678 90',
+                    email: 'julie@localhost.com'
+                },
+            ]
+        };
+    },
+};
+</script>
+----
+<.> As you can see, we can start writing the element name (component), and if we
+go into the website, we will be able to see how this _just works_
+
+=== Adding Styling
+
+We will download the styling from the previous module under a `<style>` tag, it's
+just copy all the syntax inside of that tag, and just like that we will have a nice
+rendered component, no ugly stuff.
+
+[NOTE]
+====
+I also noticed that the hot reload doesn't really work, even though the dev server
+re-compiles after a save. Wonder if this just broke in new browsers.
+====
+
+=== A Small Addition
+
+We will also import fonts `@import url('https://fonts.googleapis.com/css2?family=Jost&display=swap');`,
+to make it look even better. On top of also making the button dynamic so that
+based on the status of the flag it says `Hide` or `Show` when it comes to details.
