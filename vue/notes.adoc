@@ -3201,3 +3201,116 @@ So yeah, just install the Vue official extension, reload VS Code, and you are se
 to go.
 
 === More on ".vue" Files
+
+`.vue` files are in the end just a file with all the configuration for a vue
+app or component. Template, script and styles are defined in those files.
+
+`assets` => Folder with static files
+
+`components` => A folder in which you should save `.vue` files.
+
+We are going to write all our logic/code in these `.vue` files, and we will bring
+them together to make a greater whole (app)
+
+=== A New Vue Project
+
+Just download the project that's attached to the course, do a `pnpm install` and
+do the approve bit too because the CLI complains.
+
+Anyhow, this project has no components nor anything, we are going to add things
+ourselves so that we learn properly. We will learn _step by step_ how to add
+Vue components and write Vue code.
+
+Remember that `node_modules` should never be versioned nor packaged for passing
+a project. That can be easily recreated with a `pnpm install`, otherwise everything
+will be worth 100's of megabytes.
+
+Remember that dependencies have their own dependencies so `pnpm install` is actually
+doing **a lot**. It's a complicated process but that is abstracted and automated
+for you.
+
+`pnpm run serve` starts the development server that serves our application. _Note:_
+Remember that this needs to run at the `package.json` level. _Keep the server
+running for hot reload_
+
+Now that we are setup, let's write component code.
+
+=== Creating a Basic Vue App
+
+Let's get back to the list of contents example we tried before. Let's create
+`App.vue` which is the convention for the main file that holds the main vue app
+configuration and setup.
+
+_We will have single-file components_, and it's the basic unit of separation/abstraction
+for separating and breaking apart a web app's code.
+
+_Remember:_ The `.vue` syntax is just for developers, it makes our lifes easier,
+but the browser will get a translated version of all of that.
+
+And for this we should still wiring our `.vue` main file to our `main.js` file:
+
+[source, vue]
+----
+<template> <.>
+    <section>
+        <h2>My Friends</h2>
+        <ul>
+            <li></li>
+        </ul>
+    </section>
+</template>
+
+<script>
+export default { <.>
+    data() {
+        return {
+            friends: [
+                {
+                    id: 'manuel',
+                    name: 'Manuel Lorenz',
+                    phone: '0123 45678 90',
+                    email: 'manuel@localhost.com'
+                },
+                {
+                    id: 'julie',
+                    name: 'Julie Jones',
+                    phone: '0123 45678 90',
+                    email: 'julie@localhost.com'
+                },
+            ]
+        };
+    },
+};
+</script>
+----
+<.> As you can see, we will define under `<template>` all the UI to render
+<.> And in here we will leverage a modern javascript feature which is a default
+export, so that this is what gets imported when referencing the file, which in our
+case is the configuration object for a `vue` method.
+
+[source, js]
+----
+import { createApp } from 'vue';
+
+import App from './App.vue' <.>
+
+createApp(App).mount('#app'); <.>
+
+----
+<.> When you don't put things behind curly braces `{ App }` vs `App`, you are
+immediately putting under a whatever name, the default export, and then having
+access to all of its exposed members (properties and methods). This is how we
+can get access to our default export from the `App.vue` component
+<.> And lastly, we have to feed the `createApp` method this default import, and
+also state the mounting point that's on `index.html`. We should actually leave
+`index.html` alone, besides just getting the id for the mounting point.
+
+With the dev server up and running and the syntax we wrote, we will be able to
+see something rendered in the website the dev server is serving.
+
+**This is just a different way to setup and create a Vue App**, let's jump into
+components now into this new setup.
+
+=== Adding a Component
+
+
