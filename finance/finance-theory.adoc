@@ -4617,4 +4617,33 @@ markets have to cope with risk in the real world**.
 
 **Present Values and Rates of Return**
 
+We have decided that constructing the office building is a smart thing to do since
+it is worth more than it costs. To discover how much it is worth, we asked how much
+you would need to invest directly in securities to achieve the same payoff. That
+is why we discounted the project's future payoff by the rate of return offered by
+these equivalent-risk securities-the overall stock market in our example.
 
+We can state our decision rule in another way: Your real estate venture is worth
+undertaking because its rate of return exceeds the opportunity cost of capital.
+The rate of return is simply the profit as a proportion of the initial outlay:
+
+Return = profit / investment = 800,000 - 700,000 / 700,000 = .143 or 14.3%
+
+The cost of capital is again the return foregone by _not_ investing in financial
+markets. If the office building is as risky as investing in the stock market, the
+return foregone is 12%.
+
+Since the 14.3% return on the office building exceeds the 12% opportunity cost,
+you should go ahead with the project.
+
+Building the office block is a smart thing to do, even if the payoff is just as
+risky as the stock market. We can justify the investment by either one of the following
+two rules:
+
+- _Net present value_ Accept investments that have positive net present values.
+- _Rate of return rule_ Accept investments that offer rates of return in excess
+of their opportunity costs of capital
+
+Properly applied, both rules give the same answer, although we will encounter
+some cases in which the rate of return rule is easily misused. In those cases,
+it is safest to use the net present value rule.
