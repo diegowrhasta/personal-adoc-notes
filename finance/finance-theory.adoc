@@ -4696,3 +4696,32 @@ problems can be much more complicated, so financial managers usually turn to
 financial calculators especially programmed for present value calculations or to
 computer spreadsheet programs. A box near the end of the chapter introduces you
 to some useful Excel functions that can be used to solve discounting problems.
+
+**The Opportunity Cost of Capital**
+
+By investing in the office building you are giving up the opportunity to earn an
+expected return of 12% in the stock market. The opportunity cost of capital is
+therefore 12%. When you discount the expected cash flows by the oppportunity cost
+of capital, you are basically asking the investors how much (a value, a specific
+percentage that results in some return), in the financial markets, are prepared
+to pay for a security that produces a similar stream of cash flows. Based on the
+calculations an investor would need to pay $720,344 for an investment that produces
+cash flows of $30,000 at year 1 and $870,000 at year 2. Therefore, they won't pay
+any more than that for your office building.
+
+Confusion sometimes sneaks into discussions of the cost of capital. Suppose a
+banker approaches. "Your company is a fine and safe business with few debts,"
+she says. "My bank will lend you the $700,000 that you need for the office block
+at 8%." Does this mean that the cost of capital is 8%? If so, the project would
+be even more worthwhile. At an 8% cost of capital, PV would be 30,000 / 1.08 +
+870,000 / 1.08^2 = $773,663 and NPV = $773,663 - $700,000 = +$73,663.
+
+But that can't be right. First, the interest rate on the loan has nothing to do
+with the risk of the project: it reflects the good health of your existing business.
+Second, whether you take the loan or not, you still face the choice between the
+office building and an equally risky investment in the stock market. A financial
+manager who borrows $700,000 at 8% and invests in an office building is not smart,
+but stupid, if the company or its shareholders can borrow at 8% and make an equally
+risky investment in the stock market offering an even higher return. That is why
+the 12% expected return on the stock market is the opportunity cost of capital
+for your project.
