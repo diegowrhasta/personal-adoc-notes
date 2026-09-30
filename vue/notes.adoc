@@ -3448,3 +3448,163 @@ re-compiles after a save. Wonder if this just broke in new browsers.
 We will also import fonts `@import url('https://fonts.googleapis.com/css2?family=Jost&display=swap');`,
 to make it look even better. On top of also making the button dynamic so that
 based on the status of the flag it says `Hide` or `Show` when it comes to details.
+
+== Component Communication
+
+=== Module Introduction
+
+We will take the component concept, and we will now start communicating and building
+re-usable components.
+
+Components are a really powerful concept, and modern Vue applications are **all**
+about Vue components.
+
+- Building a User Interface with Components
+- How Component Communication Works
+  - How do you pass data amongst components? Because passing data to components and
+  between components is highly important
+- Different Kinds of Component Communication
+  - What approaches exist, and when to use each different approach
+
+=== Introducing "Props" (Parent => Child Communication)
+
+We will use the same project as the previous section.
+
+The `FriendContact.vue` component has one flaw.
+
+The data are all stored inside the component in the `friend` data property. And
+that's a pattern we have been using so far. But with components, their power comes
+in the ability to become re-usable. Some data should be received from outside:
+That means the app or component that uses the component, that app should pass data
+into the component so that when we use the component twice, we can use the component
+with different data inside.
+
+- First iteration we output information about "Manuel"
+- Second iteration we output information about "Julie"
+
+Every usage contains the same data.
+
+Because this is such a crucial concept (configuring the same component with different
+data), Vue offers a way to feed data. This is with `props` which is short for properties,
+they are custom HTML attributes.
+
+We can then pass info like:
+
+````
+<friend-contact name="Manuel Lorenz" phone="0123 45678 90" email-address="manuel@localhost.com"></friend-contact>
+<friend-contact name="Julie Jones" phone="0123 45678 90" email-address="julie@localhost.com"></friend-contact>
+````
+
+Yes, you can write the attributes like this on the parent side, but we need to
+also make the component itself aware of the properties that can be fed to it,
+and then how to use it, so you have to go into the component and write:
+
+````
+<template>
+    <li>
+        <header>
+            <h1>{{ name }}</h1>
+        </header>
+        <button @click="toggleDetails">{{ detailsAreVisible ? 'Hide' : 'Show' }} Details</button>
+        <ul v-if="detailsAreVisible">
+            <li><strong>Phone:</strong> {{ phone }}</li>
+            <li><strong>Email:</strong> {{ emailAddress }}</li>
+        </ul>
+    </li>
+</template>
+
+<script>
+export default {
+    props: ['name', 'phone', 'emailAddress'],
+    data() {
+        return {
+            detailsAreVisible: false,
+            friend: {
+                id: 'manuel',
+                name: 'Manuel Lorenz',
+                phone: '0123 45678 90',
+                email: 'manuel@localhost.com'
+            },
+        };
+    },
+    methods: {
+        toggleDetails() {
+            this.detailsAreVisible = !this.detailsAreVisible;
+        }
+    }
+};
+</script>
+
+````
+A really important point here, a property that takes properties is `props` and its
+part of the config vue object, in the simplest form it can be an array, and inside
+you would declare all the properties in camel case, that are translated from the
+template that receives the properties in **kebab case**. Vue translates amongst these
+two naming conventions _remember that_.
+
+These `props` array members are in camel case, and they can be referenced in the template
+later as if they were `data` properties.
+
+You can also reference them as `this.name`, etc.
+
+Notice how this results in a specific syntax though, how from a parent you can
+feed information through HTML properties, and how in the component itself you
+can receive them and leverage them.
+
+[NOTE]
+====
+Make sure that you don't clash props and data names, otherwise Vue will get confused
+and you will get unintended behavior.
+====
+
+After all of this setup you will get all the components, working standalone, and
+rendering what we wanted.
+
+Components is an amazing concept in Vue and in general for any other framework,
+we should use it as often as needed with different kinds of data.
+
+- Own state
+- Own logic
+- Re-usable components
+
+**Props** is a core concept used for component design and implementation. It's useful,
+powerful, and key.
+
+=== Prop Behavior & Changing Props
+
+Props are super useful. We use them for `parent child communication`. So that the
+parent communicates to its child component.
+
+For `friend-contact`, the parent would become `App.vue`
+
+[IMPORTANT]
+====
+Props should not be mutated
+====
+
+If you try to change a property programmatically, we will get an exception (mutation error).
+
+And that is because Vue uses "unidirectional dataflow". Which is a guard at the
+framework level, that **stops you from mutating the prop content through the component
+itself**.
+
+**You can't change the prop state from the component** you have to do either of
+these two things:
+
+- Notify the parent, and the parent can change the data
+- We proxy the value onto a `data` property
+````
+data() {
+  return {
+    friendIsFavorite: this.isFavorite
+  }
+}
+````
+Being `isFavorite` a property, but that we use for setting an **initial value**
+to a `data` property. So a good way to set an initial value is like this. And if
+you mutate the `data` property you can do it safely.
+
+Now there is nuance to these patterns of course as to when and why do it a certain
+way. But always be aware that there's always MORE to do and in different ways,
+you have to be pragmatic and pick what is best for the situation in terms of readability,
+maintainabilty and evolvability of code.
