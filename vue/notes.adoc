@@ -3608,3 +3608,335 @@ Now there is nuance to these patterns of course as to when and why do it a certa
 way. But always be aware that there's always MORE to do and in different ways,
 you have to be pragmatic and pick what is best for the situation in terms of readability,
 maintainabilty and evolvability of code.
+
+=== Validating Props
+
+For simple apps and components, specially when working in a team, you might want
+to share more information about your props. So that Vue can feedback on some
+required prop or some other constraint.
+
+````
+props: {
+    name: { 
+        type: String,
+        required: true,
+        default: 'John Doe'
+    },
+    phone: String,
+    emailAddress: String,
+    // emailAddress: {
+    //     type: String,
+    //     required: false,
+    //     default: '0',
+    //     default: function() {
+
+    //     },
+    //     validator: function(value) {
+    //         return value === '1' || value === '0'
+    //     }
+    // }
+},
+````
+So instead of providing an array with each element having a name for a property,
+we can feed an object to `props`, and inside under properties, we can configure
+the same properties that were under the array.
+
+There are specific Vue determined names for the properties that cover most necessary
+use cases:
+
+`type`, `required`, `default`, `validator`. And you can feed to some of them functions
+themselves. This only helps even further giving more of a shape to how a property
+looks like. And in case there's some offense to the rules stated here, Vue will
+immediately output a `warning`. This helps spot such a mistake quicker, instead of
+wasting time trying to understand why a component stopped working.
+
+You can have really complex prop definitions to make sure the component is used
+**correctly**. So it's up to you how detailed you might want to be.
+
+[IMPORTANT]
+====
+If you are working alone. You might not need this that much. However in a team,
+or when sharing a component over, you might want to add all these extra verbosity
+to make life easier for everyone.
+====
+
+_Note:_ The course will default to simpler prop setups, but be aware of the power
+you have at your disposal.
+
+=== Supported Prop Values
+
+The docs are your friend for understanding how something works:
+
+https://v3.vuejs.org/guide/component-props.html
+
+But if you want a snapshot of what are the possible types:
+
+- String
+- Number
+- Boolean
+- Array
+- Object
+- Date
+- Function
+- Symbol
+
+On top of any contructor function (built-in ones like `Date` or custom ones)
+
+=== Working with Dynamic Prop Values
+
+Props can also be more than just values. Just like other HTML elements, you can
+bind them to dynamic values.
+
+[IMPORTANT]
+====
+Beware of something really important. When sending data through properties, all
+of the passed down data defaults to `string`. If you want to use other types,
+you have to bind the properties
+====
+
+````
+v-bind:is-favorite="true"
+````
+For example. If we want a boolean property, you will have to prefix it with `v-bind`.
+Only then we will get to passdown a boolean literal in this case. (Of course the property
+config should state that this is `Boolean`)
+
+We can use shorthand as well:
+
+`:is-favorite="true"`
+
+This is key for non-string values => BUT NOT JUST THAT.
+
+It's useful for making components more dynamic.
+
+We are going to use `v-for` for iterating our friend component:
+
+[source, vue]
+----
+<template>
+    <section>
+        <h2>My Friends</h2>
+        <ul>
+            <friend-contact v-for="friend in friends" :key="friend.id" :name="friend.name" :phone="friend.phone"
+                :email-address="friend.email"></friend-contact>
+        </ul>
+    </section>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            friends: [
+                {
+                    id: 'manuel',
+                    name: 'Manuel Lorenz',
+                    phone: '0123 45678 90',
+                    email: 'manuel@localhost.com'
+                },
+                {
+                    id: 'julie',
+                    name: 'Julie Jones',
+                    phone: '0123 45678 90',
+                    email: 'julie@localhost.com'
+                },
+            ]
+        };
+    },
+};
+</script>
+----
+As you can see we can apply `v-for` in `friend-contact` directly, and by binding all
+the properties to the iteration element's properties, if we look at the rendered
+page, it will be **the exact same as before**, but more declarative. Instead of
+indicating one by one the component. **This is true dynamic behavior**
+
+_We can use `v-for` and we can bind the properties to dynamic values_. Making things
+clearer and showcasing how components are so amazing.
+
+=== Emitting Custom Events (Child => Parent Communication)
+
+So when initializing children components, we could be sending information one way,
+meaning, from parent to child, and the child would render that information just fine.
+However, there are use cases in which the child would capture some user interaction
+which might update state, that we want to persist in a database, or notify the parent
+so he can orchestrate further interactions. For this need, we need a way to emit
+events from Child to Parent.
+
+"The opposite of props" => We need to send information the other way.
+
+We can go into "regular HTML events" for inspiration. And that is looking at the
+event callbacks that are part of DOM elements. We can emit our custom events inside
+a component to a parent.
+
+Quite easy actually on a callback from the child, we can reference a vue specific
+method:
+
+````
+toggleFavorite() {
+    this.$emit('toggle-favorite');
+}
+````
+And the way the parent can hook into this emission is through a `@` syntax:
+
+````
+<friend-contact v-for="friend in friends" :key="friend.id" :name="friend.name" :phone="friend.phone"
+    :email-address="friend.email" :isFavorite="friend.isFavorite"
+    @toggle-favorite="onFavoriteToggle(friend)"></friend-contact>
+````
+So by prefixing the emission name with `@` we can then hook a callback at the parent
+level, and with that we can react and do something:
+
+````
+methods: {
+    onFavoriteToggle(friend) {
+        friend.isFavorite = !friend.isFavorite;
+    }
+}
+````
+The course actually helps us understand that `$emit` also receives other parameters
+(as much as we want) if we want to pass a specific parameter. However I leveraged
+reference types to make things less verbose and convoluted. But yes, it's good
+to know that you can pass specific arguments to the callbacks from the child
+level.
+
+The course passes the `id` of the friend that is getting his favorite flag toggled,
+and then it leverages the array of friends to get the specific friend, and then
+toggle the property (`find`). Vue will detect the change in state, and re-render
+the component with the new value.
+
+=== Defining & Validating Custom Events
+
+So, unidirectional flow of information is still avowed. HOWEVER, we are then emitting
+events to the parent so that he updates his state, and then feeds that down the line
+to the children, so that the new change gets rendered. So it's always the parent
+holding the state, and applying changes, but children can tell the parent to change
+according to a specific interaction.
+
+=== Defining & Validating Custom Events
+
+On the Vue config object we can define emission events:
+
+````
+emits: [],
+````
+You do this to document your component, so that other developers know what events
+the component emits, and then how to leverage them. Otherwise you would have to spend
+more time reading the code and understanding what event is emitted.
+
+However, just like `props` instead of an array, you can declare an object with more
+metadata in mind:
+
+````
+emits: {
+  'toggle-favorite': function(friend) {
+    if (friend) {
+      return true;
+    } else {
+      console.warn('Id is missing!');
+      return false;
+    }
+  }
+}
+````
+You can even add some validations on top of the emission of the event, but you
+can see how we are declaring the interface of the callback, and some custom validation
+logic. **Just know this feature exists, but we will use the simpler array approach**
+
+=== Prop / Event Fallthrough & Binding All Props
+
+You can set props (and listen to events) on a component which you haven't registered
+inside of that component.
+
+For example:
+
+[source, vue]
+.BaseButton.vue
+----
+<template>  
+  <button>
+    <slot></slot>
+  </button>
+</template>
+ 
+<script>export default {}</script>
+----
+This button component (which might exist to set up a button with some default
+styling) has **no special props** that would be registered.
+
+Yet, you can use it like this:
+
+`<base-button type="submit" @click="doSomething">Click me</base-button>`
+
+No `type` property nor a `click` emission event are defined in the child component,
+however **the could would work**.
+
+Vue has this built-in `fallthrough` support for props and events.
+
+By declaring them, Vue adds them dynamically, and you can access them through:
+
+`$attrs` => `this.$attrs`.
+
+This can be handy to build "utility" or pure presentational components where you
+don't want to define all props and events individually.
+
+**Binding all Props**
+
+Say:
+
+[source, vue]
+.UserData.vue
+----
+<template>
+  <h2>{‌{ firstname }} {‌{ lastname }}</h2>
+</template>
+ 
+<script>
+  export default {
+    props: ['firstname', 'lastname']
+  }
+</script>
+----
+
+You could use it like this:
+
+[source, vue]
+----
+<template>
+  <user-data :firstname="person.firstname" :lastname="person.lastname"></user-data>
+</template>
+ 
+<script>
+  export default {
+    data() {
+      return {
+        person: { firstname: 'Max', lastname: 'Schwarz' }
+      };
+    }
+  }
+</script>
+----
+
+**But**, if you have an object which holds the props you want to set as properties,
+you can also **shorten the code a bit:**
+
+````
+<template>
+  <user-data v-bind="person"></user-data>
+</template>
+ 
+<script>
+  export default {
+    data() {
+      return {
+        person: { firstname: 'Max', lastname: 'Schwarz' }
+      };
+    }
+  }
+</script>
+````
+With `v-bind="person"` you **pass all key-value pairs** inside of `person` as
+props to the component. That of course requires `person` to be a JavaScript object.
+
+This is **purely optional** but it's a little convenience feature that could be
+helpful.
