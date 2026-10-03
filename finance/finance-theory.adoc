@@ -4725,3 +4725,58 @@ but stupid, if the company or its shareholders can borrow at 8% and make an equa
 risky investment in the stock market offering an even higher return. That is why
 the 12% expected return on the stock market is the opportunity cost of capital
 for your project.
+
+=== Looking for Shortcuts - Perpetuities and Annuities
+
+**How to Value Perpetuities**
+
+Sometimes there are shortcuts that make it easy to calculate present values. Let
+us look at some examples.
+
+On occasion, the British and French who fought wars, the British consolidated the
+debt they had issued during the war. And the securities issued in such cases were
+called consols. Consols are **perpetuities**. They are bonds that the government
+is under no obligation to repay but that offer a fixed income for each year to
+perpetuity. The British government is still paying interest on consols issued all
+those years ago. The annual rate of return on a perpetuity is equal to the promised
+annual payment divided by the present value:
+
+Return = cash flow / present value
+
+r = C / PV
+
+We can obviously twist this around and find the present value of a perpetuity given
+the discount rate _r_ and the cash payment C:
+
+PV = C / r
+
+If you were to provide $1 billion a year in perpetuity, starting next year. With
+an interest rate of 10% let's say, you need to write a check today for:
+
+PV = C / r = $1 billion / .1 = $10 billion.
+
+The perpetuity formula can be easily confused with the present value of a single
+payment. A payment of $1 at the end of one year has a present value of 1 / (1 + r).
+The perpetuity has a value of 1 / r. These are quite different.
+
+So a $10 billion endowment would provide the foundation with its first payment
+in one year's time. If you also want to provide an up-front sum, you will need to
+lay out an extra $1 billion.
+
+Sometimes you need to calculate the value of a perpetuity that does not start
+to make payments for several years. For example, suppose that you decide to
+provide $1 billion a year with the first payment four years from now. How much
+will these delayed payments be worth in year 3?. At that point the endowment will
+be an ordinary perpetuity with the first payment due at the end of the year. So
+our perpetuity formula tells us that in year 3 the endownment will be worth $1/r
+= $1/.1 = $10 billion. But it is not worth that much now. To find _today's_ value
+we need to multiply by the three-year discount factor.
+
+1 / (1 + r)^3 = 1 / (1.1)^3 = .751. Thus the "delayed" perpetuity is worth $10 billion
+x .751 = $7.51 billion. The full calculation is:
+
+PV = $1 billion x 1 / r x 1 / (1 + r)^3 = $1 billion x 1 / .10 x 1 / (1.10)^3 = $7.51 billion
+
+**How to Value Annuities**
+
+
