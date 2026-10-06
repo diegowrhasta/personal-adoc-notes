@@ -4779,4 +4779,27 @@ PV = $1 billion x 1 / r x 1 / (1 + r)^3 = $1 billion x 1 / .10 x 1 / (1.10)^3 = 
 
 **How to Value Annuities**
 
+An **annuity** is an asset that pays a fixed sum each year for a specified number
+of years. The equal-payment house mortgage or installment credit agreement are common
+examples of annuities. So are interest payments on most bonds.
 
+You can always calculate an annuity by calculating the value of each cash flow
+and finding the total. However, it is often quicker to use a simple formula that
+states that if the interest rate is r, then the present value of an annuity that
+pays $C a period for each of t periods is:
+
+Present value of t-year annuity = C[1 / r - 1 / r(1 + r)^t]
+
+The expression in brackets show the present value of $1 a year for each of t years.
+It is generally known as the t-year **annuity factor**.
+
+The way we reach this empirical formula is actually by combining the perpetuity
+concept from its normal form and its delayed form.
+
+An annuity can also be interpreted as: **The annuity must be equal to the value
+of the year-1 perpetuity less the value of a delayed perpetuity**
+
+That is, if you put in a timeline those two types of perpetuities, and then insert
+the cash flows, and then jot-down the annuity. You will see how the cash flow
+of the t-years of the annuity is going to be equal to whichever perpetuity in the
+timeline aligns.
