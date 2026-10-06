@@ -3940,3 +3940,127 @@ props to the component. That of course requires `person` to be a JavaScript obje
 
 This is **purely optional** but it's a little convenience feature that could be
 helpful.
+
+=== Demo: Adding Components & Connecting Them
+
+In short. Props are there to send data into components. Events help send data out.
+
+We will now focus on somehow making it possible to add a new friend, confirm the
+data and that be added to the list of friends.
+
+We can add a `form` behind the header in the page.
+
+**BUT WE SHOULD NOT DO THIS**
+
+Instead of having large Vue component files. We should build small components,
+and then combine all components.
+
+So we are going to make a form component.
+
+`NewFriend.vue` => This will be a component to capture all the information, and
+then after pressing a button we will send all that object straight into the
+`App.vue` component to add it to the array.
+
+So you know the deal, create a component, and then register it in `main.js`.
+
+We will limit all the capturing of user input to the form component, however we
+will need to emit the state to the parent later so that he can add it to the
+array of friends.
+
+[source, vue]
+----
+<template>
+    <form @submit.prevent="onSubmit">
+        <div>
+            <label>Name</label>
+            <input type="text" v-model="enteredName" />
+        </div>
+        <div>
+            <label>Phone Number</label>
+            <input type="text" v-model="enteredPhone" />
+        </div>
+        <div>
+            <label>E-Mail</label>
+            <input type="text" v-model="enteredEmail" />
+        </div>
+        <div>
+            <button type="submit">Add Contact</button>
+        </div>
+    </form>
+</template>
+
+<script>
+export default {
+    emits: ['add-contact'],
+    data() {
+        return {
+            enteredName: '',
+            enteredPhone: '',
+            enteredEmail: '',
+        };
+    },
+    methods: {
+        onSubmit() {
+            this.$emit('add-contact', this.enteredName, this.enteredEmail, this.enteredPhone);
+        },
+    },
+};
+</script>
+----
+Basically, we will add an event listener at the form level for a submit, of course
+modified so that the default browser reload is stopped. And then we emit through
+`add-contact` three arguments for a callback.
+
+On the parent `App.vue` we would then start listening to the event like so:
+
+````
+<new-friend @add-contact="addContact"></new-friend>
+
+addContact(enteredName, enteredPhone, enteredEmail) {
+    const newFriend = { id: new Date().toISOString(), name: enteredName, phone: enteredPhone, email: enteredEmail };
+    this.friends.push(newFriend);
+}
+````
+We need to have an `id` and for the sake of simplicity we will use a date timestamp
+in a string form (this isn't that recommended for production)
+
+=== Demo: Adding More Component Communication
+
+We also have a need for a new requirement:
+
+We need to allow the deletion of a contact. So a button that says "Delete" to
+remove the contact from the main array list. So we have to have at a child level
+the deletion event.
+
+[IMPORTANT]
+====
+However, we are going to emit the delete from the display component: `FriendContact.vue`
+====
+
+So at `FriendContact.vue` we can emit in-line:
+
+````
+<button @click="$emit('delete', emailAddress)">Delete</button>
+
+emits: ['toggle-favorite', 'delete'],
+````
+
+And on `App.vue` we can hook into it:
+
+````
+<friend-contact v-for="friend in friends" :key="friend.id" :name="friend.name" :phone="friend.phone"
+  :email-address="friend.email" :isFavorite="friend.isFavorite"
+  @toggle-favorite="onFavoriteToggle(friend)" @delete="onDelete"></friend-contact>
+
+onDelete(email) {
+    this.friends = this.friends.filter(x => x.email !== email)
+},
+````
+This is leveraging `filter` from the array prototype so that the email we send
+that we use as filtering criteria can act as the pivot to compare each list's element
+and decide whether to keep the element or not (in `filter` if the compare function
+yields `true` it means that this element should be kept).
+
+And just like that, we now can dynamically take out contacts from the contact list.
+
+
