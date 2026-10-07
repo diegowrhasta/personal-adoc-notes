@@ -4803,3 +4803,50 @@ That is, if you put in a timeline those two types of perpetuities, and then inse
 the cash flows, and then jot-down the annuity. You will see how the cash flow
 of the t-years of the annuity is going to be equal to whichever perpetuity in the
 timeline aligns.
+
+**Example 2.2 - Costing an Installment Plan**
+
+Most installment plans call for level streams of payments. Suppose that Tiburon
+Autos offers an "easy payment" scheme on a new Toyota of $5,000 a year, paid at the
+end of each of the next five years, with no cash down. What is the car really costing
+you?
+
+You can go the **long route** which takes each payment of each year, discounts it
+and then adds up the whole thing.
+
+$5,000 / 1.07 = $4,673
+$5,000 / 1.07^2 = $4,367
+$5,000 / 1.07^3 = $4,081
+$5,000 / 1.07^4 = $3,814
+$5,000 / 1.07^5 = $3,565
+
+Total = PV = $20,501
+
+However, the **shortcut** can be achieved by multiplying the $5,000 cash flow
+by the annutiy factor:
+
+PV = 5,000 * [1 / .07 - 1 / .07 * 1.07^5] = 5,000 x 4.1000 = $20,501
+
+There's even another "more intuitive" formula for the annuity factor:
+
+Present value of annuity = 1 / r x [1 - 1 / (1 + r)^t]
+
+1 / .07 * [1 - 1 / (1.07)^5] = 4.100
+
+**Valuing Annuities Due**
+
+When we costed the installment plan we assumed that the first payment was made at
+the end of the year. Suppose instead that the first of the five yearly payments
+is due immediately. How does this change the cost of the car?
+
+If we discount each cash flow by one less year, the present value is increased
+by the multiple (1 + r). In the case of the car purchase the present value of
+the payments becomes 20,501 x (1 + r) = 20,501 x 1.07 = $21,936.
+
+A level stream of payments starting immediately is called an **annuity due**. An
+annuity due is worth (1 + r) times the value of an ordinary annuity.
+
+So basically, an annuity due can be calculated by calculating a normal ordinary
+annuity and then multiplying by 1 + r.
+
+
