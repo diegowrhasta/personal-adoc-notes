@@ -4063,4 +4063,68 @@ yields `true` it means that this element should be kept).
 
 And just like that, we now can dynamically take out contacts from the contact list.
 
+=== Assignment 6: Time to Practice: Props & Custom Events
+
+Basically, download a project, install dependencies. And then follow the tasks
+that are in `main.js`
+
+Okay, not that complicated, course says "add styles". But yeah no.
+
+Things that I learned by effing up:
+
+````
+<form @submit.prevent="onSubmit">
+    <label>Username</label>
+    <input v-model="username" type="text" />
+    <label>Age</label>
+    <input v-model="age" type="text" />
+    <button type="submit">Update User</button>
+</form>
+````
+A "pattern" if you can even call it that, is on a form to have the `submit` event
+supressed and replaced by another callback `@submit.prevent="methodName"`. That
+way on the method itself you can run whatever logic you want (which more than likely
+is emitting an event or something that computes state)
+
+````
+methods: {
+    onSubmit() {
+        this.$emit('on-user-submit', this.username, this.age)
+    }
+}
+````
+Also, `methods` is supposed to be **an object**. Inside the object, the properties
+should be methods. (Due to modern javascript compilation we can use shorthands and
+directly type in the methods, but under the hood they will be properties with the
+same name: `onSubmit: function onSubmit()...`).
+
+_What the course does_
+
+- Yes, it creates a `components` folder and inside it has the two components I
+also created:
+  - ActiveUser.vue
+  - UserData.vue
+
+An interesting idea: Yeah, if you just want to check that things render, before
+adding props, before adding all the other connections to state APIs, can be
+delayed for just static data rendered.
+
+_Another interesting idea:_ `section` for each of the components as the parent
+container.
+
+**Note:** The `App.vue` component by convention is put next to `main.js`
+
+[NOTE]
+====
+The course is using a lot of property passing in a 1:1 fashion. But a more clean
+and concise approach is to pass directly objects, they can contain as much properties
+as you want, and you don't have to declare 10K properties at the parent level.
+====
+
+_Note:_ Inputs always treat the values as strings. Because the course added a check
+for the `age` so that it is a number. We get a warning when updating through the
+form value. The easiest fix to that is to turn a string into a number with `+age`
+
+=== A Potential Problem
+
 
