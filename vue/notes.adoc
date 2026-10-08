@@ -4127,4 +4127,203 @@ form value. The easiest fix to that is to turn a string into a number with `+age
 
 === A Potential Problem
 
+A new pre-setup project has to be downloaded to sort of take a look at some usual
+problem that starts showing its face the more you try to communicate components.
 
+In `App.vue` we are rendering: `active-element` and `knowledge-base`.
+
+In short it's a list showing some topics, and there's a feature to mark-highlight
+an active topic.
+
+````
+methods: {
+  activateTopic(topicId) {
+    this.activeTopic = this.topics.find((topic) => topic.id === topicId);
+  },
+},
+````
+This is a callback that the `knowledge-base` component triggers with a `@select-topic`
+event.
+
+If we look at the template:
+
+````
+<template>
+  <section>
+    <h2>Select a Topic</h2>
+    <knowledge-grid :topics="topics" @select-topic="$emit('select-topic', $event)"></knowledge-grid>
+  </section>
+</template>
+````
+Notice how there's `knowledge-grid` as a component and inside there's a `@select-topic`
+event (emission), inline it sends an emission. If you analyze a bit this, you might
+come to the conclusion that `knowledge-base` doesn't actually hold logic, at least
+not for emission.
+
+This is a **passthrough** component, that simply lets a child take care of things.
+Now, this is not unrealistic, there might be use cases like this.
+
+But, look at the grid component:
+
+````
+<template>
+  <ul>
+    <knowledge-element
+      v-for="topic in topics"
+      :key="topic.id"
+      :id="topic.id"
+      :topic-name="topic.title"
+      :description="topic.description"
+      @select-topic="$emit('select-topic', $event)"
+    ></knowledge-element>
+  </ul>
+</template>
+````
+This component **is also a passthrough component**. The `knowledge-element` component
+is emitting a `select-topic` event.
+
+That custom event is forwarded to the `App.vue` component. Events are funneled.
+
+[IMPORTANT]
+====
+Everything works. This is totally valid. However there's a more clean solution,
+that avoids having to pass emissions through N levels
+====
+
+=== Provide + Inject To The Rescue
+
+To save writing all that extra code, you can get rid of properties.
+
+We can pass `topics` to the knowledge grid, without going through `App`, `knowledge-base`.
+
+That is through the **Provide + Inject** pattern.
+
+The config object has another interesting element:
+
+````
+provide: {
+  topics: [
+    {
+      id: 'basics',
+      title: 'The Basics',
+      description: 'Core Vue basics you have to know',
+      fullText:
+        'Vue is a great framework and it has a couple of key concepts: Data binding, events, components and reactivity - that should tell you something!',
+    },
+    {
+      id: 'components',
+      title: 'Components',
+      description:
+        'Components are a core concept for building Vue UIs and apps',
+      fullText:
+        'With components, you can split logic (and markup) into separate building blocks and then combine those building blocks (and re-use them) to build powerful user interfaces.',
+    },
+  ],
+}
+````
+Note: This is at the `App.vue` level.
+
+[IMPORTANT]
+====
+You can only inject values that are provided by higher order components. So if
+the parent of a component has provided the values. You can't get provided values
+by children or sibling components
+====
+
+[source, vue]
+----
+<template>
+  <ul>
+    <knowledge-element v-for="topic in topics" :key="topic.id" :id="topic.id" :topic-name="topic.title"
+      :description="topic.description" @select-topic="$emit('select-topic', $event)"></knowledge-element>
+  </ul>
+</template>
+
+<script>
+export default {
+  inject: ['topics'], <.>
+  emits: ['select-topic']
+};
+</script>
+----
+<.> So in the component that you want to consume provided state, you can simply
+declare a variable under `inject`. And then you can use that provided value as
+you see fit.
+
+This is nice, if you reload the page, then the behavior will remain the same.
+
+However, we kept the `data` topics, which is for one, duplicated code.
+
+But secondly, in case we make a change on the state topics, that won't be reflected
+on the provided topics. They are independent arrays. Is there a way to trickle down
+the state array directly to provide?
+
+Yes
+
+````
+provide() {
+  return {
+    topics: this.topics
+  }
+}
+````
+The `provide` property has to be turn into a function and it should return an
+object, and in this case we keep the same property name, however, we will reference
+the `data` topics now. That way this is linked and any changes are reflected
+automatically.
+
+Even if we change at runtime the state of `data` topics, then the provided `topics`
+will mirror all of that into any `inject` components that require them.
+
+This is a helpful pattern if you want to avoid passing through components. This
+also helps with custom events not just properties.
+
+=== Provide + Inject for Functions / Methods
+
+We don't have a similar mechanism for events. But with a bit of tinkering and
+cleverness, you can actually emulate the same pattern.
+
+**We can actually retrieve functions that were injected as if they were simple values**.
+
+So we are injecting a function that will hold the context of the component that
+provided it:
+
+````
+<template>
+  <li>
+    <h3>{{ topicName }}</h3>
+    <p>{{ description }}</p>
+    <button @click="selectTopic(id)">Learn More</button>
+  </li>
+</template>
+
+<script>
+export default {
+  inject: ['selectTopic'],
+  props: ['id', 'topicName', 'description'],
+};
+</script>
+````
+So on the consumer side, we will simply declare injected a "property" but that
+is actually a function and on a callback we simply will pass it to the assigned
+event emitter. And since upstream we require an `id` we will pass that too.
+
+
+````
+methods: {
+  activateTopic(topicId) {
+    this.activeTopic = this.topics.find((topic) => topic.id === topicId);
+  },
+},
+provide() {
+  return {
+    topics: this.topics,
+    selectTopic: this.activateTopic,
+  }
+}
+````
+In `App.vue` we have the method that takes care of reacting on the selection of
+a topic and displaying its contents, and we are hooking into it with a provided
+`selectTopic` property (notice the same name that is used to inject downstream).
+And we pass directly to is with `this.` prefixed our activate topic calculation
+method.
