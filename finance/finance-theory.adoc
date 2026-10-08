@@ -4849,4 +4849,57 @@ annuity due is worth (1 + r) times the value of an ordinary annuity.
 So basically, an annuity due can be calculated by calculating a normal ordinary
 annuity and then multiplying by 1 + r.
 
+**Example 2.3 - Paying Off a Bank Loan**
+
+Bank loans are paid off in equal installments. Suppose that you take out a four-year
+loan of $1,000. The bank requires you to repay the loan evenly over the four years.
+It must therefore set the four annual payments so that they have a present value
+of $1,000. Thus,
+
+PV = annual loan payment X 4-year annuity factor = $1,000
+Annual loan payment = $1,000/4-year annuity factor
+
+Suppose that the interest rate is 10% a year. Then
+
+4-year annuity factor = [1 / .10 - 1 / .10(1.10)^4] = 3.170
+
+and
+
+Annual loan payment = 1,000 / 3.170 = $315.47
+
+And then when you pay off a loan, you are amortizing. The idea here is that if
+you borrow $1,000 at an interest rate of 10%, you would need to make an annual
+payment of $315.47 over four years to repay that loan with interest.
+
+Basically, you have a "balance". That balance each year gets the interest applied
+to it. From the installment amount you take it out from (Balance + year-interest).
+
+E.g.,
+
+$1,000 + $100 - $315.47 = $784.53 => This is the End-of-Year balance.
+
+However there's one other number to keep in mind and that's the **Amortization of Loan**
+
+Which is calculated by the difference between the installment amount and the interest.
+
+$315.47 - $100 = $215.47
+
+That's the **Amortization of Loan**.
+
+The amount that is actually going to payoff the principal.
+
+**Important:** Because of interest you are every year actually paying off interest,
+a lot of it. And by the end you end up amortizing from the principal.
+
+$100 of the first payment is absorbed by interest, and the remaining $215.47 is used
+to reduce the loan balance to $784.53.
+
+Because the loan is progressively paid off, the fraction of each payment devoted
+to interest steadily falls over time, while the fraction used to reduce the loan
+increases. By the end of year 4, the amortization is just enough to reduce the
+balance of the loan to zero.
+
+Loans that involve a series of level payments are known as _amortizing loans_.
+"Amortizing" means that part of the regular payment is used to pay interest on the
+loan and part is used to pay off or _amortize_ the loan.
 
