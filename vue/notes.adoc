@@ -4327,3 +4327,72 @@ a topic and displaying its contents, and we are hooking into it with a provided
 `selectTopic` property (notice the same name that is used to inject downstream).
 And we pass directly to is with `this.` prefixed our activate topic calculation
 method.
+
+=== Provide + Inject vs Props & Custom Events
+
+It's very useful to let components communicate with provide and inject.
+
+_Very important:_ You can only communicate between parent and children with provide
++ inject.
+
+_Do not try to use this pattern for everything_. The first option should be props
+and custom events. Only when this starts to become troublesome you should fallback
+into provide + inject.
+
+It can be cumbersome dealing with passthrough components, specially in big applications.
+Use that as a signal to switch the pattern.
+
+=== Module Summary
+
+In general: Components are used to build UIs by combining them.
+
+**You can encapsulate logic in a template and split code in multiple smaller pieces**.
+_On top of reusing components_
+
+Components build "parent-child" relations and use "**unidirectional** data flows"
+for communication. We have ways of passing data down or passing data up between
+components.
+
+_By default components lead us into establishing parent-child relationships_
+
+Props (parent => child)
+
+"Props" are used to pass data from a parent to a child component.
+
+Props should be defined in advance, possibly in great detail (type, required, etc)
+
+Custom Events (child => parent)
+
+"Custom Events" are emitted (via $emit) to trigger a method in a parent component.
+
+Custom events can carry data which can be used in the called method.
+
+**How do you communicate between neighbors?**
+
+You will use the common parent component to store state, talk to the parent from
+each sibling, and then have the parent passing down updated state or actions to
+the other sibling.
+
+**What if you have lots of components that are passthrough?**
+
+If the data has to travel through a lot of components (and components and custom events
+are becoming cumbersome)
+
+You can use **Provide + Inject**. A specific pattern for long-range communication.
+
+== Section 9: Diving Deeper Into Components
+
+=== Module Introduction
+
+- We now know that components can be very useful.
+- We can combine them
+- We can communicate them
+
+We should now dig deeper into components, so we can analyze further patterns for
+the different use cases you might come across into.
+
+- Component Registration & Styling
+- Slots & Dynamic Components
+- Naming & Folder Structure
+
+=== Project Setup
