@@ -4903,3 +4903,36 @@ Loans that involve a series of level payments are known as _amortizing loans_.
 "Amortizing" means that part of the regular payment is used to pay interest on the
 loan and part is used to pay off or _amortize_ the loan.
 
+**Example 2.4 Calculating Mortgage Payments**
+
+Most mortgages are amortizing loans. For example, suppose that you take out a
+$250,000 house mortgage from your local savings bank when the interest rate is
+12%. The bank requires you to repay the mortgage in equal annual installments
+over the next 30 years.
+Thus,
+
+Annual mortgage payment = $250,000/30-year annuity factor
+30-year annuity factor = [1 / .12 - 1 / .12(1.12)^30] = 8.055
+
+and
+
+Annual mortgage payment = 250,000/8.055 = $31,036
+
+[IMPORTANT]
+====
+REMEMBER THAT WHEN CALCULATING THE ANNUAL PAYMENT YOU DIVIDE BY THE ANNUITY FACTOR.
+====
+
+If you start doing an amortization table you will see across all years how in
+early years, almost all of the mortgage payment is eaten up by interest and only
+a small fraction is used to reduce the amount of the loan. Even after 15 years,
+the bulk of the annual payment goes to pay the interest on the loan. From then on,
+the amount of the loan begins to decline rapidly.
+
+**Future Value of an Annuity**
+
+Sometimes you need to calculate the _future_ value of a level stream of payments.
+
+**Example 2.5 - Saving to Buy a Sailboat**
+
+
