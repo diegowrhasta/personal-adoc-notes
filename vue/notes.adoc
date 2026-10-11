@@ -4396,3 +4396,166 @@ the different use cases you might come across into.
 - Naming & Folder Structure
 
 === Project Setup
+
+Same thing as before. Download the project, install the modules. And then serve it.
+
+We should see some app that currently has no interactivity. We are going to build
+all the features of it bit by bit, and introducing new concepts to learn along.
+
+In short we have this structure:
+
+- App
+  - The Header
+  - Badge List
+  - User Info
+    - Base Badge => Used in 2 components
+
+=== Global vs Local Components
+
+We are registering components with `.component()`. There isn't nothing "wrong"
+with this method. However there is an alternative.
+
+_When we register components like this, we are registering GLOBAL components_.
+So that the components can be used anywhere in the app. That's how other components
+get to reference other components inside of them.
+
+This is really useful because the components can be used as custom elements anywhere.
+
+- The more components we have
+  - The more code packages we have
+
+Vue needs to load all the global components when the page is loaded initially.
+However if you register everything globally, the list can be **super long** and
+it won't be obvious where the components are used.
+
+- Only register components globally if they are truly going to be used everywhere.
+  - It would be redundant to register components that are only used in one specific
+  place as global.
+
+Despite registering components globally, we can register them locally.
+
+In the initial project we downloaded we can delete the refence to `TheHeader`
+for example and go into the componen that uses it and declare it like this:
+
+[source, vue]
+----
+<template>
+  <div>
+    <the-header></the-header> <.> <.>
+    <badge-list></badge-list>
+    <user-info :full-name="activeUser.name" :info-text="activeUser.description" :role="activeUser.role"></user-info>
+  </div>
+</template>
+
+<script>
+import TheHeader from './components/TheHeader.vue' <.>
+
+export default {
+  components: {
+    'the-header': TheHeader, <.>
+  },
+  data() {
+    return {
+      activeUser: {
+        name: 'Maximilian Schwarzmüller',
+        description: 'Site owner and admin',
+        role: 'admin',
+      },
+    };
+  },
+};
+</script>
+
+<style>
+html {
+  font-family: sans-serif;
+}
+
+body {
+  margin: 0;
+}
+</style>
+----
+<.> This won't change we can keep the same naming convention
+<.> Another way to write component names is with pascal case, in which case you
+enable the usage of self-closing syntax: `<TheHeader />`. It's personal preference,
+yet you should know the possibilities.
+<.> And in the `<script>` tag we can actually import the component with the path
+relative to this parent component
+<.> You can register through the `components` object, key-value pairs that
+reference the name you will use for the custom HTML tag and then the object itself
+that we imported. Bear in mind that the name could also be `TheHeader: TheHeader`,
+and Vue behind the scenes normalizes the name back into `the-header`. However you
+can also migrate to pascal case and enable self closing tags.
+
+_NOTE:_ The course will stick to kebab case.
+
+_NOTE 2:_ The abstraction of object names can also be leveraged so that you only
+declare: components: { TheHeader }. So that it gets expanded to `TheHeader: TheHeader`.
+
+We can also declare locally the `BadgeList` component and delete its global registration
+from `main.js`. Even the `UserInfo`.
+
+The only component that we are going to keep in `main.js` is the `BaseBadge`. The
+current situation deems that reasonable or logical. It is a general purpose and
+usage component. So consider that possibility when designing and implementing
+your components.
+
+=== Scoped Styles
+
+We are going to stick to global-local as a paradigm. However we will focus
+on **Component Styling**.
+
+No matter **where you add your styling**, that would become a global style in
+a way.
+
+For example in `BadgeList.vue`:
+
+````
+<style>
+section h2 {
+  margin: 0.5rem 0;
+  color: #3a3a3a;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+li {
+  margin-right: 1rem;
+}
+</style>
+````
+This certain style, is actually a selector for any `section h2`, any `ul`, any `li`.
+
+So styles from one component can bleed into others. It can easily break the styles
+of your whole app.
+
+A good way to separate concerns is: Styles in `App` global. Component styles only
+affect the template of said component.
+
+**Vue supports this idea**
+
+You simply have to set the style tag like this:
+
+````
+<style scoped>
+````
+
+If we change all styles in all components we actually break a bit of the style.
+But it's better to fix those styles that were relying on global scopes, than then
+coupling styles between all components.
+
+The fixes are also really quick, copy one style to another component, adjust the
+selector and so on.
+
+_How does Vue implement this?_ Vue gives elements special attributes (HTML elements).
+And vue changes the selector behind the scenes to point to that special attribute (HASH),
+that way styling becomes scoped. Only that template markup gets affected by the custom
+attribute that is a unique ID in a way to only have the specific style applied to
+it.
