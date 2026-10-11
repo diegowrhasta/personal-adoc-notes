@@ -4935,4 +4935,46 @@ Sometimes you need to calculate the _future_ value of a level stream of payments
 
 **Example 2.5 - Saving to Buy a Sailboat**
 
+Perhaps your ambition is to buy a sailboat; something like a 40-feet Beneteau would
+fit the bill very well. But that means serious saving. You estimate that, once you
+start work, you could save $20,000 a year out of your income and earn a return
+of 8% on these savings. How much will you be able to spend after five years?
+
+We are looking here at a level of stream of cash flows - an annuity. There is a
+shortcut to calculate the _present_ value of an annuity. So there ought to be a
+similar formula for calculating the _future_ value of a level stream of cash flows.
+
+Think first how much your savings are worth today. You will set aside $20,000 in
+each of the next five years. The present value of this five-year annuity is therefore
+equal to
+
+PV = $20,000 x 5-year annuity factor
+
+= $20,000 x [1 / .08 - 1 / .08(1.08)^5] = $79,854
+
+Once you know today's value of the stream of cash flows, it is easy to work out
+its value in the future. Just multiply by (1.08)^5:
+
+Value at the end of year 5 = $79,854 x 1.08^5 = $117,332
+
+You should be able to buy yourself a nice boat for $117,000.
+
+So, in our case we **first** calculated the present value of an annuity and then
+we multiplied by (1 + r)^t. The general formula for the future value of a level
+stream of cash flows of $1 a year for t years is, therefore,
+
+Future value of annuity = present value of annuity of $1 a year x (1 + r)^t
+
+= [1 / r - 1 / r(1 + r)^t] x (1 + r)^t = (1 + r)^t - 1 / r
+
+Future Annuity Factor?? _Maybe_
+
+[IMPORTANT]
+====
+If you can find the present value of _any_ series of cash flows, you can always
+calculate future value by multiplying by (1 + r)^t
+====
+
+Future value at the end of year t = present value x (1 + r)^t
+
 
