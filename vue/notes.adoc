@@ -4559,3 +4559,162 @@ And vue changes the selector behind the scenes to point to that special attribut
 that way styling becomes scoped. Only that template markup gets affected by the custom
 attribute that is a unique ID in a way to only have the specific style applied to
 it.
+
+=== Introducing Slots
+
+Basically, if you have a component that you want to use as a wrapper, so that maybe
+it applies a standard style or other specific use case. You can leverage the feature
+of `slots`
+
+[source, vue]
+.BaseCard.vue
+----
+<template>
+    <div>
+        <slot></slot> <.>
+    </div>
+</template>
+
+<script>
+export default {
+}
+</script>
+
+<style scoped>
+div {
+    margin: 2rem auto;
+    max-width: 30rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+    padding: 1rem;
+}
+</style>
+----
+<.> This is a special HTML tag called `slot` that you should declare on your template
+so that any content that is fed to your wrapper component is rendered at that point.
+
+This component, is actually being registered globally in `main.js` because it's going
+to be used all over the place and specifically to be able to pass onto it custom
+HTML content that will be parsed through the style and rendered as we want.
+
+````
+<template>
+  <section>
+    <base-card>
+      <h2>Available Badges</h2>
+      <ul>
+        <li>
+          <base-badge type="admin" caption="ADMIN"></base-badge>
+        </li>
+        <li>
+          <base-badge type="author" caption="AUTHOR"></base-badge>
+        </li>
+      </ul>
+    </base-card>
+  </section>
+</template>
+````
+
+````
+<template>
+  <section>
+    <base-card>
+      <header>
+        <h3>{{ fullName }}</h3>
+        <base-badge :type="role" :caption="role.toUpperCase()"></base-badge>
+      </header>
+      <p>{{ infoText }}</p>
+    </base-card>
+  </section>
+</template>
+````
+
+And just by putting all the HTML content we want to render inside the slot inside
+of the component's tags, then we pass down all that will be rendered and processed
+at the wrapper component level.
+
+=== Named Slots
+
+This type of component is a **reusable component**. Because we are passing dynamic
+component through its tags to then render.
+
+However, there are some scenarios in which the custom component should have multiple
+slots.
+
+Perhaps you need two slots for the header, and then a slot for the main content,
+(we are grounding this in our current project and scenario)
+
+````
+<template>
+    <div>
+        <header>
+            <slot name="header"></slot>
+        </header>
+        <slot name="content"></slot>
+    </div>
+</template>
+````
+Basically you can declare multiple slot tags, however, if there's more than one
+slot without a name, you will run into errors, the only slot without a name becomes
+the "default" slot.
+
+You can assign content to different slots like so:
+
+````
+<template>
+  <section>
+    <base-card>
+      <template v-slot:header>
+        <h3>{{ fullName }}</h3>
+        <base-badge :type="role" :caption="role.toUpperCase()"></base-badge>
+      </template>
+      <p>{{ infoText }}</p>
+    </base-card>
+  </section>
+</template>
+````
+
+````
+<template>
+  <section>
+    <base-card>
+      <template v-slot:header>
+        <h2>Available Badges</h2>
+      </template>
+      <ul>
+        <li>
+          <base-badge type="admin" caption="ADMIN"></base-badge>
+        </li>
+        <li>
+          <base-badge type="author" caption="AUTHOR"></base-badge>
+        </li>
+      </ul>
+    </base-card>
+  </section>
+</template>
+````
+You need to wrap the content you want to assign to a specific slot with `template`
+which is a default HTML element that doesn't render anything, it's like a placeholder.
+
+And then with a special directive you can point all the wrapped content to be sent
+to the respective slot: `v-slot:<slot-name>`
+
+All other content that is not wrapped and assigned to a named slot, will immediately
+be wired to the default slot.
+
+However, you can be more _intentional" by using a `<template v-slot:default` tag.
+That makes intent and reading clearer and faster to grasp.
+
+=== Slot Styles & Compilation
+
+Slots are a powerful tool, however we just broke the styling. And that is because
+when working with slots, and when sending content into the slots. Scoped styles and
+availability of data do not become something else beyond what we learned. Everything
+is available in the originating component. The slot component will not get access
+to any of that backend. We simply send a computed markup that might get stylized,
+but nothing more than that.
+
+And so, we move some styles that are applied at `BadgeList.vue`, to `BaseCard.vue`
+so that way, the correct styling gets applied just like it was before.
+
+
