@@ -4977,4 +4977,28 @@ calculate future value by multiplying by (1 + r)^t
 
 Future value at the end of year t = present value x (1 + r)^t
 
+**2-3 More Shortcuts - Growing Perpetuities and Annuities**
 
+**Growing Perpetuities**
+
+First, let's ground things a bit with the example of a perpetuity that will start
+paying off a certain amount. That is in theory a _steady stream of cash flows_.
+
+However, there are costs, things such as salaries that grow also each year, so
+not all of that income can be used, some of it will have to go to costs. In this
+case the interest will start growing further and furter (or has to be calculated like
+that to simulate the idea that we need more income)
+
+There's a long series (geometric series) that can be calculated manually, however
+it can be simplified to this:
+
+C1 / r - g
+
+If you want to provide a perpetual stream of income that keeps pace with the growth
+rate in costs, the amount that you must set aside today is
+
+PV = C1 / r - g = $1 billion / .10 - .04 = $16.667 billion
+
+Which means you will need to identify at least 2 rates. One being for the rate that
+grows the income, and another for a rate that represents costs that eat away said
+income (each year more and more).
