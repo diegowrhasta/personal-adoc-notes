@@ -4717,4 +4717,336 @@ but nothing more than that.
 And so, we move some styles that are applied at `BadgeList.vue`, to `BaseCard.vue`
 so that way, the correct styling gets applied just like it was before.
 
+=== More on Slots
 
+Slots are clearly an important future because they give us a lot of flexibility.
+Without slots there are use cases that will be super complicated to implement.
+
+Now besides the _default slot_ you can actually declare default content.
+
+````
+<template>
+    <div>
+        <header>
+            <slot name="header">
+                <h2>The Default</h2>
+            </slot>
+        </header>
+        <slot></slot>
+    </div>
+</template>
+````
+See, how inside of `<slot>` we have some markup. In case the consumer component
+doesn't feed anything to the respective slot, then the default content will render.
+
+It really depends on the use case, and besides that, if it really makes sense for
+this to work. Basically this is **fallback content**
+
+_Empty div:_ Say you don't have a fallback slot content, and you don't provide
+the slot content upstream. You will have rendered an empty `div`, this can easily
+turn into noise and unneeded processing. There is a way of not rendering an empty
+element.
+
+You can leverage this Vue object:
+
+`this.$slots`, `this.$slots.default`, `this.$slots.header`
+
+This holds in memory references to all the slots from the reusable component.
+
+If we don't receive data for a specific slot, we can use that information to not
+render a certain element:
+
+````
+<template>
+    <div>
+        <header v-if="$slots.header">
+            <slot name="header">
+                <!-- <h2>The Default</h2> -->
+            </slot>
+        </header>
+        <slot></slot>
+    </div>
+</template>
+````
+Because the header slot doesn't have something provided to it, it will have an
+`undefined` reference. And that is a great control flag for conditional rendering.
+
+[IMPORTANT]
+====
+There's a short-hand for slot attributes: `v-slot:header` => `#header`. So there's
+a bit of a short-way of writing the slots on upstream components.
+====
+
+=== Scoped Slots
+
+Slots are a powerful feature. However there's one thing about slots that goes into
+advanced concept:
+
+````
+<template>
+    <ul>
+        <li v-for="goal in goals" :key="goal">{{ goal }}</li>
+    </ul>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            goals: ['Finish the course', 'Learn Vue']
+        };
+    },
+};
+</script>
+````
+Basically, within a simple component that might be getting leveraged in any place,
+you might want to add an even deeper level of customization. Perhaps sections that
+from upstream can be stylized, slots can help you reach such a level of API. A
+highly reusable and customizable component would actually take care of that.
+
+So we might want to do something like this:
+
+````
+<course-goals>
+  <h2></h2>
+</course-goals>
+````
+
+````
+<template>
+    <ul>
+        <li v-for="goal in goals" :key="goal">
+            <slot></slot>
+        </li>
+    </ul>
+</template>
+````
+However at this point in time, we are stuck, because from the parent, the component
+that passes the markup for the slot, you don't get access to the state of the
+slot component. We can't really say "with your x state render in h2, and then
+with your y state render this <section>".
+
+Vue has a feature that will bridge that gap, that is `scoped components`.
+
+````
+<template>
+    <ul>
+        <li v-for="goal in goals" :key="goal">
+            <slot :item="goal"></slot>
+        </li>
+    </ul>
+</template>
+````
+You can add a bound property to the `slot` tag and then bind it to whatever state
+you want.
+
+In order to get access to this window into state you would write this markup:
+
+````
+<course-goals>
+  <template #default="slotProps">
+    <h2>{{ slotProps.item }}</h2>
+  </template>
+</course-goals>
+````
+As you can see, yyou would wrap some markup with `template` and then refer to the
+slot and an object that it exposes (this is a behind the scenes merged together
+object that you give a name to). Within that object you will get access to all the
+properties that you declare on the child component, that way the parent can now access
+the state he requires and then declare how said state should be rendered.
+
+**EXTRA:** In case of multiple slots you would want to keep `<template>` so that
+you can point to the correct slot and bind to its properties object. However, in
+the case of only **one slot** you can even change the syntax to resemble something
+like this:
+
+````
+<course-goals #default="slotProps"> 
+  <h2>{{ slotProps.item }}</h2>
+</course-goals>
+````
+This makes writing all this scoped slot syntax even cleaner.
+
+_NOTE:_ Be careful, bigger prop names would have to be kebab case. E.g., `another-prop`
+has to be accessed like: `slotProps['another-prop']`
+
+This is for nieche and advanced features that might not be used for every single use
+case, but when you find something impossible to be built without it. USE IT.
+
+=== Dynamic Components
+
+Moving away from slots, let's change the project a bit. First of all in `App.vue`
+we will get rid of all components but `<the-header>` and then create two new
+components:
+
+- ManageGoals.vue
+- ActiveGoals.vue
+
+And for now as a placeholder we will have:
+
+````
+<template>
+    <h2>Manage Goals</h2>
+</template>
+````
+
+````
+<template>
+    <h2>Active Goals</h2>
+</template>
+````
+
+We can actually already consume the components like this, as we mentioned Vue is
+smart enough to fallback into auto-created objects, properties and so on.
+
+[source, vue]
+----
+<template>
+  <div>
+    <the-header></the-header>
+    <active-goals></active-goals> <.>
+    <manage-goals></manage-goals>
+  </div>
+</template>
+
+<script>
+import TheHeader from './components/TheHeader.vue'
+import ActiveGoals from './components/ActiveGoals.vue';
+import ManageGoals from './components/ManageGoals.vue';
+
+export default {
+  components: {
+    TheHeader,
+    ActiveGoals,
+    ManageGoals
+  },
+  data() {
+    return {
+      activeUser: {
+        name: 'Maximilian Schwarzmüller',
+        description: 'Site owner and admin',
+        role: 'admin',
+      },
+    };
+  },
+};
+</script>
+
+<style>
+html {
+  font-family: sans-serif;
+}
+
+body {
+  margin: 0;
+}
+</style>
+----
+<.> And yes, without a `<script>` section, we can still import the component
+and render it.
+
+**Dynamic Components**
+
+Let's say we are building a component with various tabs (components)
+
+We can be really rudimental and code conditional rendering with some state and
+methods:
+
+````
+<template>
+  <div>
+    <the-header></the-header>
+    <button @click="setSelectedComponent('active-goals')">Active Goals</button>
+    <button @click="setSelectedComponent('manage-goals')">Manage Goals</button>
+    <active-goals v-if="selectedComponent === 'active-goals'"></active-goals>
+    <manage-goals v-if="selectedComponent === 'manage-goals'"></manage-goals>
+  </div>
+</template>
+
+<script>
+import TheHeader from './components/TheHeader.vue'
+import ActiveGoals from './components/ActiveGoals.vue';
+import ManageGoals from './components/ManageGoals.vue';
+
+export default {
+  components: {
+    TheHeader,
+    ActiveGoals,
+    ManageGoals
+  },
+  data() {
+    return {
+      selectedComponent: 'active-goals',
+      activeUser: {
+        name: 'Maximilian Schwarzmüller',
+        description: 'Site owner and admin',
+        role: 'admin',
+      },
+    };
+  },
+  methods: {
+    setSelectedComponent(cmp) {
+      this.selectedComponent = cmp;
+    }
+  }
+};
+</script>
+````
+As you can see, we simply click a button and based on its value, we render a different
+component. This is good for this case _maybe_, however, if we want to expand to more
+components, maintaining and writing this type of code is annoying.
+
+That's why Vue has the alternative:
+
+_Dynamic Components_
+
+There's a special HTML element called `component`
+
+[source, vue]
+----
+<template>
+  <div>
+    <the-header></the-header>
+    <button @click="setSelectedComponent('active-goals')">Active Goals</button>
+    <button @click="setSelectedComponent('manage-goals')">Manage Goals</button>
+    <!-- <active-goals v-if="selectedComponent === 'active-goals'"></active-goals>
+    <manage-goals v-if="selectedComponent === 'manage-goals'"></manage-goals> -->
+    <component :is="selectedComponent"></component> <.>
+  </div>
+</template>
+
+<script>
+import TheHeader from './components/TheHeader.vue'
+import ActiveGoals from './components/ActiveGoals.vue';
+import ManageGoals from './components/ManageGoals.vue';
+
+export default {
+  components: {
+    TheHeader,
+    ActiveGoals,
+    ManageGoals
+  },
+  data() {
+    return {
+      selectedComponent: 'active-goals',
+      activeUser: {
+        name: 'Maximilian Schwarzmüller',
+        description: 'Site owner and admin',
+        role: 'admin',
+      },
+    };
+  },
+  methods: {
+    setSelectedComponent(cmp) {
+      this.selectedComponent = cmp;
+    }
+  }
+};
+</script>
+----
+<.> Basically this `component` tag doesn't render anything, unless you code specifically
+its behavior. You can bind to it a state variable, in our case it's literally a
+string, however that string has the name of the tags of the component. This is a bit
+of just _convention_. The string has to match the proper component tag name. In any
+case, just like this, we will have the same component as before, however in a much
+more dynamic way.
