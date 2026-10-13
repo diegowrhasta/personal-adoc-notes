@@ -5002,3 +5002,90 @@ PV = C1 / r - g = $1 billion / .10 - .04 = $16.667 billion
 Which means you will need to identify at least 2 rates. One being for the rate that
 grows the income, and another for a rate that represents costs that eat away said
 income (each year more and more).
+
+Growing Annuities
+
+**Example 2.6 - Winning Big at the Lottery**
+
+In August 2017, a Massachussets woman invested in a Powerball lottery ticket and
+won a record $758.7 million. The way she was going to get paid was 30 installments.
+The payment in the first year was only $11.42 million. But then increased each year
+by 5%. So that the final payment became $47.00 million. In total it did amount to
+$758.7 million, but the winner had to wait to get it.
+
+If the interest rate was 2.7%, what was the $758.7 prize really worth?
+
+If the first payment occurs at the end of year 1, so that C1 = $11.42 million.
+If the payments then grow at the rate of g = .05 each year, the payment in year
+2 is 11.42 x 1.05, and in year 3 it is 11.42 x 1.05^2. Of course, all 30 cash
+flows at a 2.7% discount rate could be calculated separately, however we can
+take another shortcut and use a formula:
+
+PV of growing annuity = C x 1 / r -g x [1 - (1 + g)^t / (1 + r)^t]
+
+PV = 11.42 x [1 - (1.05)^30 / (1.027)^30] x 1 / .027 - .05 = 11.42 x 41.02 = $468 million
+
+Thus, the present value of a growing stream of payments starting at the end of the
+first year is $468 million. In practice, the news is not quite that bad because
+the lottery winner receives the first payment immediately (in year 0) and the last one
+is received in year 29 rather than in year 30. Therefore we need to increase our
+estimate of present value by 1 + r. So the present value of the prize is 468 x 1.027
+= $481 million.
+
+If the total prize would be paid out immediately, it would be worth $757.8 million.
+Paying out the money over the next 29 years reduces the value of the prize to
+$481 million, much below the well-trumpeted prize but still not a bad day's haul.
+
+For winners with big spending plans, lottery operators generally make arrangements
+so that they may take an equivalent lump sum. In our example, the winner could
+either take the $758.7 million spread over 30 years or receive $481 million up
+front. Both arrangements had the same present value.
+
+Basically the simplified formula is a result of again going through the set up
+of different annuities, so that we calculate the difference between growing perpetuities,
+one starts at year 1 another at year 3. A "three year growing annuity" can literally
+be the difference between these two annuities. And under that premise the math
+can be derived just fine.
+
+**IMPORTANT:** r and g need to NOT be equal, if anything g being less than r is
+ideal. Mathematically things won't work out (which reflects also reality in a way
+but the books makes an awful job of pointing that out with the real world implication
+or translation)
+
+And so, all the formulas we saw are:
+
+1 / r => Perpetuity
+
+1 / r - 1 / r(1 + r)^t => t-period annuity
+
+(1 + r)(1 / r - 1 / r(1 + r)^t) => t-period annuity due
+
+1 / r - g => Growing perpetuity
+
+1 / r - g [1 - (1 + g)^t / (1 + r)^t] => t-period growing annuity
+
+_Note:_ The growing perpetuity formula works only if the discount rate r is greater
+than the growth rate g. The growing annuity formula blows up if r = g. In this case,
+the value of the growing annuity is C x t/(1 + r)
+
+Now, this is all nice and dandy. But **What does it mean?** **What is the usage of
+this?** **Do you actually in real life get these values like that? Where do you
+extrapolate the interest in the lottery example?**
+
+_Opportunity cost might be used to compare money available at different points in
+time_
+
+This is a **valuation conditional on the discount-rate assumption**.
+
+Present value is mathematically objective once you specificy the discount rate.
+However whether that discount rate is appropriate is an **economic judgement**
+
+Trying to get the discount rate will wildly vary depending on the situation and
+what we are trying to prove, compare or analyze.
+
+_The most defensible practical approach is to use observable market rates as a
+reference point, make the risk assumptions explicit, and examine how the result
+changes when the rate changes_
+
+This gives you a meaningful valuation range rather than an apparently precise
+number whose most important input has gone unexplained.
