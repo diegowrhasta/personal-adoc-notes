@@ -5050,3 +5050,159 @@ string, however that string has the name of the tags of the component. This is a
 of just _convention_. The string has to match the proper component tag name. In any
 case, just like this, we will have the same component as before, however in a much
 more dynamic way.
+
+=== Keeping Dynamic Components Alive
+
+One thing when dealing with dynamic components is that the moment we switch the
+view, the previous rendered component is destroyed. **So we lose all state**
+
+````
+<template>
+    <div>
+        <h2>Manage Goals</h2>
+        <input type="text" />
+    </div>
+</template>
+````
+Say, we have a form in a view, and we switch to another section of the form, we
+wouldn't want to lose what we had input in the previous section.
+
+For that we can use a specific component that wraps our `component`
+
+````
+<keep-alive>
+  <component :is="selectedComponent"></component>
+</keep-alive>
+````
+The moment you wrap the dynamic component with `keep-alive` then the components
+will no longer be destroyed, they will remain in the background, and state will
+be kept.
+
+=== Applying What We Know & A Problem
+
+So basically, if we want to say, show an error message we could just use a `dialog()`
+but that's ugly. We can create our own custom error alert and leverage slots plus
+conditional rendering for displaying it:
+
+[source, vue]
+----
+<template>
+    <div>
+        <h2>Manage Goals</h2>
+        <input type="text" ref="goal" />
+        <button @click="setGoal">Set Goal</button>
+        <error-alert v-if="inputIsInvalid"> <.>
+            <h2>Input is invalid</h2>
+            <p>Please enter at least a few characters...</p>
+            <button @click="confirmError">Okay</button> <.>
+        </error-alert>
+    </div>
+</template>
+
+<script>
+import ErrorAlert from './ErrorAlert.vue';
+
+export default {
+    components: {
+        ErrorAlert <.>
+    },
+    data() {
+        return {
+            inputIsInvalid: false
+        };
+    },
+    methods: {
+        setGoal() {
+            const enteredValue = this.$refs.goal.value;
+            if (enteredValue === '') {
+                this.inputIsInvalid = true;
+            }
+        },
+        confirmError() { <.>
+            this.inputIsInvalid = false;
+        },
+    }
+};
+</script>
+----
+<.> As you can see we are conditionally rendering the error alert based on a state
+variable
+<.> And we are sending to the error alert component markup and also binding to
+a method at the parent component level so that the component gets hidden also
+<.> As you can see we are importing locally our `ErrorAlert` component
+
+This is a great use case for the usage of slots, it's a nice pattern, without
+delving into custom events or properties we can easily cook up a clean interaction
+in which a parent component dictates what the child should render and also to keep
+interactions and state centralized. It's a _separation of concerns_. Which is
+a maintainable pattern.
+
+The error alert is pretty simple, it simply is a style container:
+
+````
+<template>
+    <dialog open>
+        <slot></slot>
+    </dialog>
+</template>
+
+<style scoped>
+dialog {
+    margin: 0;
+    position: fixed;
+    top: 20vh;
+    left: 30%;
+    width: 40%;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+    padding: 1rem;
+
+}
+</style>
+````
+`<dialog>` is an HTML native element and requires an `open` attribute so that the
+content is shown so bear that in mind.
+
+=== Teleporting Elements
+
+_An issue_
+
+For accesibility concerns, for avoidance of issues with styling or further
+insidious bugs, the dialog that we are rendering for errors. Should not be deeply
+nested inside our components. We are aiming at somehow having the dialog at the
+root of the whole app.
+
+**This is for semantic and accesibility reasons**
+
+This is easily achievable with **teleport**
+
+This is a built-in Vue component, that you can use to wrap some element:
+
+
+````
+<template>
+    <div>
+        <h2>Manage Goals</h2>
+        <input type="text" ref="goal" />
+        <button @click="setGoal">Set Goal</button>
+        <teleport to="body">
+            <error-alert v-if="inputIsInvalid">
+                <h2>Input is invalid</h2>
+                <p>Please enter at least a few characters...</p>
+                <button @click="confirmError">Okay</button>
+            </error-alert>
+        </teleport>
+    </div>
+</template>
+````
+The `to` value can be literally the `body` tag, or perhaps an element that is
+identified by a css selector id like `#app`.
+
+After we do this, then if we save and reload the app, then render the dialog.
+We will see how `dialog` is at the end of the `body` section, it no longer is
+deeply nested within the app.
+
+It might not be that important in the grand scheme of things, but it's so easily
+implemented that you should use it. It makes your application go beyond just looking
+nice and working fine, and lets the app be also semantically correct under the
+hood.
