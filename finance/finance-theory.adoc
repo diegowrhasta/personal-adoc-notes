@@ -5129,3 +5129,71 @@ r = .12 and m = 2. So the effective annual interest rate was [1 + .12/12]^12 - 1
 = .1268, or 12.68%.
 
 **Continous Compounding**
+
+[IMPORTANT]
+====
+When we talk about _continous payments_, we are pretending that money can be dispensed
+in a continous stream like water out of a faucet. One can never quite do this. For
+example, instead of paying out $1 billion every year to combat malaria, you could
+pay out about $1 million every 8 3/4 hours or $10,000 every 5 1/4 minutes or $10
+every 3 1/6 seconds but you could not pay it out _continously_. Financial managers
+_pretend_ that payments are continous rather than hourly, daily, or weekly because
+(1) it simplifies the calculations and (2) it gives a very close approximation to
+the NPV of frequent payments
+====
+
+Instead of compounding interest monthly or semiannually, the rate could be compounded
+weekly (m = 52) or daily (m = 365). In fact, there is no limit to how frequently
+interest could be paid. One can imagine a situation where the payments are spread
+evenly and continously throughout the year, so the interest rate is continously
+compounded. In this case _m_ is infinite.
+
+It turns out, there are many occasions in finance when continous compounding is
+useful. For example, one important application is in option pricing models, such
+as the Black Scholes model. This is one of continous time models. Most **computer
+programs for calculating option values ask for the continously compounded interest
+rate**.
+
+_It may seem as though tons of calculations would have to take place to find a
+compounded interest rate_ However, going back into high school algebra:
+
+As _m_ approaches infinity [1 + (r / m)]^m approaches (2.718)^r. The figure 2.718
+or _e_ as it is called, is the base for _natural logarithms_. Therefore, $1 invested
+at a continously compounded rate of _r_ will grow to e^r = (2.718)^r by the end
+of the first year. By the end of _t_ years it will grow to e^rt = (2.718)^rt
+
+**Example 1** Suppose you invest $1 at a continously compounded rate of 11% (r = .11)
+for one year (t = 1). The end-year value is e^.11, or $1.116. In other words, investing
+at 11% a year _continously_ compounded is exactly the same as investing at 11.6% a year
+_annually_ compounded.
+
+**Example 2** Suppose you invest $1 at a continously compounded rate of 11% (r = .11)
+for two years (t = 2). The final value of the investment is e^rt = e^.22, or $1.246.
+
+Sometimes, it may be more reasonable to assume that the cash flows from a project
+are spread evenly over the year rather than occuring at the year's end. It is easy
+to adapt our previous formulas to handle this. Example: PV of a perpetuity. If the
+payment is made at the end of the year, we devidide the payment by the _annually_
+compounded rate of _r_:
+
+PV = C / r
+
+If the same total payment is made in an even stream throughout the year, we use
+the same formula but substitute the _continously_ compounded rate.
+
+Suppose the annually compounded rate is 18.5%. The present value of a $100 perpetuity,
+with each cash flow received at the end of the year, is 100/.185 = $540.54. If the
+cash flow is received continously, we must divide $100 by 17%, because %17 continously
+compounded is equivalent to 18.5% annually compounded (e^.17 = 1.185).
+
+_Basically:_ We can make rough calculations to convert between compounded interest
+and annually compounded interest by using the e^r = x equation.
+
+the X side will be equal to (1 + r). Hence the r is the annually compounded rate
+and the power will be continous compounded rate.
+
+The present value of the continous cash flow stream is 100 / .17 = $588.24. Investors
+are prepared to pay more for the continous cash payments because the cash starts to
+flow in immediately.
+
+**Example 3**
