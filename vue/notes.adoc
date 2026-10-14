@@ -5206,3 +5206,105 @@ It might not be that important in the grand scheme of things, but it's so easily
 implemented that you should use it. It makes your application go beyond just looking
 nice and working fine, and lets the app be also semantically correct under the
 hood.
+
+=== Working with Fragments
+
+In components such as `TheHeader` we have a couple of child elements:
+
+````
+<template>
+  <header>
+    <h1>More on Vue Components</h1>
+  </header>
+</template>
+````
+
+And then `ManageGoals`
+
+````
+<template>
+    <div>
+        <h2>Manage Goals</h2>
+        <input type="text" ref="goal" />
+        <button @click="setGoal">Set Goal</button>
+        <teleport to="body">
+            <error-alert v-if="inputIsInvalid">
+                <h2>Input is invalid</h2>
+                <p>Please enter at least a few characters...</p>
+                <button @click="confirmError">Okay</button>
+            </error-alert>
+        </teleport>
+    </div>
+</template>
+````
+With many top level elements as well
+
+**This is good**. In Vue 2 we weren't able to have multiple top level elements,
+you needed to have a parent container and then children inside of it.
+
+In Vue 3, this became possible, so we no longer need a master container on our
+components, this concept that enables multiple top level elements is called **fragments**
+
+=== The Vue Style Guide
+
+Why did we name the components the way we did?
+
+Is there an optimal structure for folders?
+
+There is a Vue style guide:
+
+https://vuejs.org/style-guide/
+
+There are different levels of rules.
+
+This gives you an idea of how you should name things.
+
+- There are base components (BaseButton.vue, BaseCard.vue)
+- If you have a component which is getting used only once in the app, then the
+name should be `Thexxxx`
+
+The course will try to follow the guidelines as close as possible, however there
+will be exceptiosn in which we appeal to our own critical thinking and attempt
+to make code easier to maintain and develop.
+
+**These are recommendations, they are not technical rules**
+
+When you share code amongst a team, everyone works with the same rules in mind,
+or at least **should**, otherwise velocity ends up affected and we incur in
+technical debt.
+
+_The idea is to get a feeling for naming things, for writing code by developing
+more and more_
+
+=== Moving to a Different Folder Structure
+
+**How do you organize your files?**
+
+In bigger projects, a simple structure will reach limits.
+
+Hundreds of components in a project will make management really hard.
+
+_Hence, you might want to start creating subfolders_
+
+- components/UI
+  - BaseBadge.vue
+  - BaseCard.vue
+
+When you refactor and move things around, **make sure to update imports across the
+project as well**
+
+- components/layout
+  - TheHeader.vue
+
+You can then organize components by feature:
+
+- components/cart
+- components/products
+- components/checkout
+
+This should all be based around your domain, the specific problem the application
+is attempting to solve.
+
+=== Module Summary
+
+
