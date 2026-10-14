@@ -5089,3 +5089,43 @@ changes when the rate changes_
 
 This gives you a meaningful valuation range rather than an apparently precise
 number whose most important input has gone unexplained.
+
+**2-4 How Interest Is Paid and Quoted**
+
+In our examples we have assumed that cash flows occur only at the end of each year.
+This is sometimes the case. However, in France and Germany, the government pays
+interest on its bonds annually. In the US and Britain, interest is actually semiannually.
+
+So if the U.S. government bond promises to pay interest of 10% a year, the investor
+in practice receives interest of 5% every six months.
+
+If the first interest payment is made at the end of six months, you can earn additional
+six months' interest on this payment. E.g.,
+
+If you invest $100 in a bond that pays interest of 10% compounded semiannually,
+your wealth will grow to 1.05 x $100 = $105 by the end of six months and to 1.05 x $105
+= $110.25 by the end of the year. In other words, an interest rate of 10% compounded
+semiannually is equivalent to 10.25% compounded annually. The _effective annual
+interest rate_ on the bond is 10.25%.
+
+Let's take another example. Suppose a bank offers you an automobile loan at an
+**annual percentage rate**, or **APR**, of 12% with interest to be paid monthly.
+
+By this the bank means that each month you need to pay one-twelfth of the annual
+rate, that is, 12/12 = 1% a month. Thus the bank is _quoting_ a rate of 12%, but
+the effective annual interest rate on your loan is 1.01^12 - 1 = .1268 or 12.68%.
+
+Our examples illustrate that you need to distinguish between the _quoted_ annual
+interest rate and the _effective_ annual rate. The quoted annual rate is usually
+calculated as the total annual payment divided by the number of payments in the
+year. When interest is paid once a year, the quoted and effective rates are the
+same. When interest is paid more frequently, the effective interest rate is higher
+than the quoted rate.
+
+In general, if you invest $1 at a rate of _r_ per year compounded _m_ times a year,
+your investment at the end of the year will be worth [1 + (r / m)]^m and the
+effective interest rate is [1 + (r / m)]^m - 1. In our automobile loan example
+r = .12 and m = 2. So the effective annual interest rate was [1 + .12/12]^12 - 1
+= .1268, or 12.68%.
+
+**Continous Compounding**
