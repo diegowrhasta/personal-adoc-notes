@@ -5197,3 +5197,53 @@ are prepared to pay more for the continous cash payments because the cash starts
 flow in immediately.
 
 **Example 3**
+
+After you have retired, you plan to spend $200,000 a year for 20 years. The
+annually compounded interest rate is 10%. How much must you save by the time you
+retire to support this spending plan?
+
+Let us first do the calculations assuming that you spend the cash at the end of
+each year. In this case we can use the simple annuity formula that we derived
+earlier:
+
+PV = C(1 / r - 1 / r(1 + r)^t)
+= $200,000(1 / .10 - 1 / .10(1.10)^20) = $200,000 x 8.514 = $1,702,800
+
+Thus, you will need to have saved $1.7 million by the time you retire.
+
+Instead of waiting until the end of each year before you spend any cash, it is
+more reasonable to assume that your expenditure will be spread evenly over the year.
+In this case, instead of using the annually compounded rate of 10%, we must use the
+continously rate of r = 9.53% (e^.0953 = 1.10). Therefore, to cover a steady stream
+of expenditure, you need to set aside the following sum:
+
+PV = C (1 / r - 1 / r x 1 / e^rt)
+
+= $200,000(1 / .0953 - 1 / .0953 x 1 / 6.727) = $200,000 x 8.932 = $1,786,400
+
+To support a steady stream of outgoings, you must save an additional $83,600.
+
+**Important:**
+
+Often in finance you need only a ballpark estimate of present value. An error of
+5% in a present value calculation may be perfectly acceptable. In such cases it
+doesn't usually matter whether you assume that cash flows occur at the end of
+the year or ina continous stream. At other times precision matters, and you need
+to worry about the exact frequency of the cash flows.
+
+To get a present value of an annuity with continous compounding you can get it
+by:
+
+PV = C/r (1 - e^-rt)
+
+Say you have all that money saved up, you can put it up for investment, and each
+year it will generate some form of interest.
+
+Each year, you might withdraw from that account, and the remaining principal will
+generate interest. The lower your balance goes, the lower the interest will generate,
+yet it won't remain static, it will indeed give you extra money as time goes by,
+yet the interest will get lower and lower.
+
+**Useful Spreadsheet Functions**
+
+
