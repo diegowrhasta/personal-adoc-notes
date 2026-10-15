@@ -5305,6 +5305,98 @@ You can then organize components by feature:
 This should all be based around your domain, the specific problem the application
 is attempting to solve.
 
-=== Module Summary
+=== Module Summar
+
+We now know all the core features when it comes to components. We will practice
+all these concepts by building a complete app.
+
+- Component Registration & Styles
+  - Components can be registered **globally or locally: Prefer local** registration
+  - Styles can be **global or scoped** to a component. **Prefer scoped** for most
+  components
+    - Unscoped and global are allowed though
+- Slots
+  - **Slots** can be used to add a "placeholder" for dynamic HTML code
+  - **Multiple, named slots** are possible, **default fallbacks** can be provided,
+  **Scoped slots** allow adv. use-cases
+    - Slots unlock re-usable components
+- Dynamic Components
+  - Components can be **swapped dynamically** via the built-in "component" component
+  - Componen caching can be added via the "keep-alive" component
+- Teleport & Style Guides
+  - **DOM structure can be manipulated** via "teleport" - it **keeps the component
+  hierarchy!**
+  - **Consider following the official style guide** to keep your code clean and
+  understandable
+
+== Section 10: Course Project: The Learning Resources App
+
+=== Module Introduction
+
+We are going to apply all the learned concepts in a course project.
+
+- It's an application in which we can switch between areas
+  - Links take us to new resources
+  - We can get rid of resources
+  - We can add resources
+  - An error dialog shows for error use cases
+
+It's a "Remember me" app. To keep a list of URLs
+
+Even though this project itself doesn't have a lot of features. All its use cases
+already will walk us through all the concepts that we are going to put into practice.
+
+=== Setup & First Steps
+
+Download the project, `pnpm install`, and serve. And yes, it will be blank.
+
+Vue and Vue projects are all about this:
+
+- **You want to build a UI with multiple components**, each component should have
+a clear job, like styling, displaying things in a certain way, or capturing user
+input.
+
+Remember monster slayer?
+
+Step by step we started adding feature by feature
+
+- And when we find that a component is getting too big, that's a signal to split
+part of it into another component.
+
+. Add a components folder
+. Add an `App.vue` file
+
+We will of course start with **dummy resources**. Always start your screens with
+mock data, that way you can model the UI to some data. _Don't shield yourself behind
+an excuse that the backend is not yet ready_
+
+[source, vue]
+.App.vue
+----
+<template>
+    <ul>
+        <li v-for="resource in storedResources"></li> <.>
+    </ul>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            storedResources: [ <.>
+                { id: 'official-guide', title: 'Official Guide', description: 'The official Vue.js documentation', link: 'https://vuejs.org' },
+                { id: 'google', title: 'Google', description: 'Learn to google...', link: 'https://google.com' },
+            ]
+        };
+    },
+}
+</script>
+----
+<.> We will start coding what we want in `App.vue` directly. Again, this is a journey
+to get into the result, refactoring is a **given**. We start probably in the furthest
+place the app will be by the end. But that's part of the process
+<.> And yes, here, directly in `App.vue` we will start with our dummy data
+
+=== First Components & Props
 
 
