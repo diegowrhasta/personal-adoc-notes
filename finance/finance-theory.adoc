@@ -5246,4 +5246,87 @@ yet the interest will get lower and lower.
 
 **Useful Spreadsheet Functions**
 
+Spreadsheet programs such as Excel provide built-in functions to solve discounted
+cash flows (DCF) problems. You can find these functions by pressing `fx` on the
+Excel toolbar. If you then click on the function that you wish to use, Excel asks
+you for the inputs that it needs.
 
+Here is a list of useful functions for DCF problems and some points to remember
+when entering data:
+
+- **FV:** Future value of single investment or annuity
+- **PV:** Present value of single future cash flow or annuity
+- **RATE:** Interest rate (or rate of return) needed to produce given future
+value or annuity
+- **NPER:** Number of periods (e.g., years) that it takes an investment to reach
+a given future value
+- **PMT:** Amount of annuity payment with a given present or future value
+- **NPV:** Calculates the value of a stream of negative and positive cash flows
+(When using this function, note the warning below)
+- **EFFECT:** The effective annual interest rate, given the quoted rate (APR)
+and number of interest payments in a year.
+- **NOMINAL:** The quoted interest rate (APR) given the effective annual interest
+rate
+
+All the inputs in these functions can be entered directly as numbers or as the
+addresses of cells that contain the numbers.
+
+Three warnings:
+
+. PV is the amount that needs to be invested today to produce a given future value.
+It should therefore be entered as a negative number. Entering both PV and FV with
+the same sign when solving for RATE results in an error message
+. Always enter the interest or discount rate as a decimal value (for example, .05
+rather than 5%)
+. Use the NPV function with care. Better still, don't use it at all. It gives the
+value of the cash flows one period _before_ the first cash flow and not the value
+at the date of the first cash flow.
+
+**Spreadsheet Questions**
+
+The following questions provide opportunities to practice each of the Excel functions
+
+1. (FV) In 1880, five aboriginal trackers were each promised the equivalent of 100
+Australain dollars for helping to capture the notorious outlaw Ned Kelly. One hundred
+and thirteen years later, the granddaughters of two of the trackers claimed that
+this reward had not been paid. If the interest rate over this period averaged about
+4.5%, how much would the A$100 have accumulated to?
+
+So, translating the concepts into the conventions Google Sheets uses is a bit wishy-washy.
+
+But in short:
+
+For FV this is the syntax:
+
+FV(rate, number_of_periods, payment_amount, present_value, [end_or_beginning])
+
+````
+=FV(0.045, 113, 0, -100) => $14,459.09
+````
+
+And its breakdown mapped to the problem is:
+
+rate:: Annual interest rate (4.5% or 0.045)
+number_of_periods:: Number of years (113)
+payment_amount:: Additional money deposited each year (0)
+present_value:: Initial amount invested in 1880 (-100)
+[end_or_beginning]:: Whether payments occur at the end or beginning of each period
+
+Depending on whether you input 100 or -100 the result will also change its sign,
+because: **Google Sheets uses the financial conventions that money flowing in and
+money flowing out have opposite signs**
+
+`=FV(4.5%,113,0,100)` Returns a -A$14,459, because it interprets the positive `100`
+as money you pay into the investment, and the future value as the money you receive
+back.
+
+- Negative = Money you pay or invest
+- Positive = Money you receive
+
+Hence when inputting `=FV(4.5%, 113, 0, -100)` we get a **positive value**. Keep
+that in mind.
+
+2. (PV) Your adviser has produced revised figures for your office building. It is
+forecasted to produce a cash flow of $40,000 in year 1, but only $850,000 in year
+2, when you come to sell it. If the cost of capital is 12%, what is the value of
+the building?
