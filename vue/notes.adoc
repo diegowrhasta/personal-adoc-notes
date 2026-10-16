@@ -5399,4 +5399,348 @@ place the app will be by the end. But that's part of the process
 
 === First Components & Props
 
+We will start outputting the list of the resources.
 
+_The course is going to create a separate component for the iterated list of
+resources_
+
+**You don't have to do this**
+
+[NOTE]
+====
+There is no hard rule on when to put markup and code in an existing component or
+putting it in a new component. It's a feeling-taste powered by personal preference
+you develop over time
+====
+
+But you should always question yourself and what you are doing, since if you
+don't abstract in other components you will end up with god files that are huge
+and are hard to maintain later on.
+
+We will create a `ResourceItem.vue` component. Always name something that's
+descriptive enough.
+
+_In the end we will name it `LearningResource`_. A good practice is to keep the
+file and component name the same.
+
+Because we are going to add more components later, we want to start building the
+folder structure by feature.
+
+- components
+  - learning-resources
+    - LearningResource.vue
+
+Don't forget to actually wire the `App.vue` component in the main script:
+
+````
+import { createApp } from 'vue';
+import App from './App.vue';
+
+createApp(App).mount('#app');
+````
+
+And now we will both furnish the main component:
+
+[source, vue]
+----
+<template>
+    <ul>
+        <learning-resource v-for="resource in storedResources" :key="resource.id" :title="resource.title" <.>
+            :description="resource.description" :link="resource.link"></learning-resource>
+    </ul>
+</template>
+
+<script>
+import LearningResource from './components/learning-resources/LearningResource.vue'; <.>
+
+export default {
+    components: {
+        LearningResource
+    },
+    data() {
+        return {
+            storedResources: [
+                { id: 'official-guide', title: 'Official Guide', description: 'The official Vue.js documentation', link: 'https://vuejs.org' },
+                { id: 'google', title: 'Google', description: 'Learn to google...', link: 'https://google.com' },
+            ]
+        };
+    },
+}
+</script>
+----
+<.> So our new component will be iterated with `v-for` and we will of course assign
+a `key` to keep things working as intended, and then bind all the other properties
+of each iteration so that the component displays the data correctly
+<.> And we will import our module from the new path we created it at
+
+And lastly our item component:
+
+[source, vue]
+----
+<template>
+    <li>
+        <div>
+            <header>
+                <h3>{{ title }}</h3>
+                <button>Delete</button>
+            </header>
+        </div>
+        <p>{{ description }}</p>
+        <nav>
+            <a :href="link">View Resource</a> <.>
+        </nav>
+    </li>
+</template>
+
+<script>
+export default {
+    props: ['title', 'description', 'link'] <.>
+}
+</script>
+----
+<.> In order for the ref on the anchor element to work we have to bind `href`
+with the special syntax `:href` that way it will access the property itself and
+not interpret `link` as a simple string
+<.> And all the things our component has to receive will be fed as properties
+
+After all of this is wired up, we should be able to visualize our two resources
+from the list. Really ugly looking, but functionally working.
+
+=== Styling and More Components
+
+We will now make our website look prettier. The course provides three `.css`
+files that we can download and copy-paste. We will add those styles in the
+respective components.
+
+We will have global styles in `App.vue` and another note, the convention of ordering
+the sections in a component as:
+
+````
+<template>
+...
+</template>
+
+<script>
+...
+</script>
+
+<style>
+...
+</style>
+````
+Is another structure that is recommended.
+
+We will leave the `App.vue` styles as global so no `scoped` modifier, however the
+styles on the other components will be treated with `scoped`.
+
+Now, another refactor we are going to execute is abstracting away from `App.vue`
+both the list itself that iterates over the learning resource components. A good
+practice is to keep the `App.vue` as minimal as possible and offload everything else
+to other components.
+
+It helps making styling easier and flexible.
+
+And so we will create a component that takes care of iterating and styling the
+list itself:
+
+````
+<template>
+    <stored-resources :data="storedResources"></stored-resources>
+</template>
+
+<script>
+import StoredResources from './components/learning-resources/StoredResources.vue';
+
+export default {
+    components: {
+        StoredResources
+    },
+    data() {
+        return {
+            storedResources: [
+                { id: 'official-guide', title: 'Official Guide', description: 'The official Vue.js documentation', link: 'https://vuejs.org' },
+                { id: 'google', title: 'Google', description: 'Learn to google...', link: 'https://google.com' },
+            ]
+        };
+    },
+}
+</script>
+````
+
+And the list component will end up looking like this:
+
+[source, vue]
+----
+<template>
+    <ul>
+        <learning-resource v-for="resource in data" :key="resource.id" :title="resource.title" <.>
+            :description="resource.description" :link="resource.link"></learning-resource>
+    </ul>
+</template>
+
+<script>
+import LearningResource from './LearningResource.vue';
+
+export default {
+    components: {
+        LearningResource <.>
+    },
+    props: ['data'] <.>
+}
+</script>
+
+<style scoped> <.>
+
+</style>
+----
+<.> And now inside of here we are iterating over `learning-resource` and referencing
+a property that is an array of all things to iterate and display
+<.> We are exporting locally the learning resource component
+<.> And we are declaring a more general property under `data`
+<.> Lastly, we now gain the ability to style this specific list with whatever we
+want instead of breaking styles for other lists that might exist in the application
+
+_This is one possible approach to do things, it's personal preference in the end_
+
+With that we should still be able to see the items as before, but now under the hood
+we have a much more ordered structure.
+
+=== Header & BaseCard Components
+
+We will now create a new folder `UI` under `components` and we will start saving
+general use components there.
+
+Following Vue's convention for a name we will create a new component that will display
+and style any markup we want, so **slots comes in**
+
+[source, vue]
+.BaseCard
+----
+<template>
+    <div>
+        <slot></slot>
+    </div>
+</template>
+
+<style scoped>
+div {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+    padding: 1rem;
+    margin: 2rem auto;
+    max-width: 40rem;
+}
+</style>
+----
+
+This will then be leveraged in `LearningResource.vue`
+
+````
+<template>
+    <li>
+        <base-card>
+            <header>
+                <h3>{{ title }}</h3>
+                <button>Delete</button>
+            </header>
+            <p>{{ description }}</p>
+            <nav>
+                <a :href="link">View Resource</a>
+            </nav>
+        </base-card>
+    </li>
+</template>
+````
+
+Now, most `Base` components will be used across the whole application, so it makes
+sense to register them globally. And remember, global components are registered
+in `main.js`, so we should head there to register it:
+
+````
+import { createApp } from 'vue';
+
+import App from './App.vue';
+import BaseCard from './components/UI/BaseCard.vue';
+
+const app = createApp(App);
+
+app.component('base-card', BaseCard);
+
+app.mount('#app');
+
+````
+
+We will now create a new folder that will hold all components that have to deal
+with the layout of the website:
+
+- components
+  - layouts
+    - TheHeader.vue
+
+_Another recommendation is to have 2 words at least for a component_ But also
+use `The` for a component that is used once in the app.
+
+[source, vue]
+.TheHeader.vue
+----
+<template>
+    <header>
+        <h1>{{ title }}</h1>
+    </header>
+</template>
+
+<script>
+export default {
+    props: ['title']
+}
+</script>
+
+<style scoped> <.>
+header {
+    width: 100%;
+    height: 5rem;
+    background-color: #640032;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+header h1 {
+    color: white;
+    margin: 0;
+}
+</style>
+----
+<.> Never forget to style components, otherwise styles will bleed across the whole
+app.
+
+
+And `App.vue` will use this component like so:
+
+````
+<template>
+    <the-header :title="title"></the-header>
+    <stored-resources :data="storedResources"></stored-resources>
+</template>
+
+<script>
+import StoredResources from './components/learning-resources/StoredResources.vue';
+import TheHeader from './components/layouts/TheHeader.vue';
+
+export default {
+    components: {
+        StoredResources,
+        TheHeader
+    },
+    data() {
+        return {
+            title: 'Remember Me',
+            storedResources: [
+                { id: 'official-guide', title: 'Official Guide', description: 'The official Vue.js documentation', link: 'https://vuejs.org' },
+                { id: 'google', title: 'Google', description: 'Learn to google...', link: 'https://google.com' },
+            ]
+        };
+    },
+}
+</script>
+````
