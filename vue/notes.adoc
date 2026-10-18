@@ -5744,3 +5744,231 @@ export default {
 }
 </script>
 ````
+
+=== Adding a Base Button
+
+Basically, we will create a reusable button component. With the styles that the
+course provides.
+
+- components
+  - UI
+    - BaseButton.vue
+
+We are also going to make the component configurable. Props are the one feature
+that enable such a requirement.
+
+[source, vue]
+.BaseButton.vue
+----
+<template>
+    <button :type="type" :class="mode">
+        <slot></slot> <.>
+    </button>
+</template>
+
+<script>
+export default {
+    props: ['type', 'mode', 'caption'] <.>
+}
+</script>
+----
+<.> We want to enable the consumers of the component to feed custom markup, not just
+a text for a caption
+<.> But yes you could in theory only expose a `caption` property and use that to
+put the text for the button
+
+And with this new component we can register it globally and then consume it:
+
+````
+<template>
+    <li>
+        <base-card>
+            <header>
+                <h3>{{ title }}</h3>
+                <base-button mode="flat">Delete</base-button>
+            </header>
+            <p>{{ description }}</p>
+            <nav>
+                <a :href="link">View Resource</a>
+            </nav>
+        </base-card>
+    </li>
+</template>
+
+````
+As you can see, we are feeding `mode="flat"` so that we get an alternate look
+for the button. And inside we are simply feeding text, that due to the `slot`
+setup at the component level it renders without issue.
+
+Having this pattern in mind when coding SPAs that are component driven is super
+important, because in teams you generally want to create reusable components that
+people can just render and configure as they see fit based on specific rules already
+laid down and captured at the component level.
+
+We are working with dummy resources so far, so let's now enable a screen to
+add resources dynamically and list them.
+
+=== Dynamic Components & Attribute Fallthrough
+
+As a next step, we will allow the user to add his own user resources.
+
+There will be a title, description inputs and then a button to save the resource.
+
+- learning-resources
+  - AddResource.vue
+  - TheResources.vue = Will be used only once in the application, and it will hold
+  tabs to switch between the list of resources and the section to add a new resource
+
+[source, vue]
+.TheResources.vue
+----
+<template>
+    <base-card>
+        <base-button @click="setSelectedTab('stored-resources')">Stored Resources</base-button>
+        <base-button @click="setSelectedTab('add-resource')">Add Resource</base-button>
+    </base-card>
+    <component :is="selectedTab"></component> <.>
+</template>
+----
+<.> We are adding click event listeners. And this will actually work. Remember
+how we coded `BaseButton`. We don't have any listeners for custom events.
+
+[source, vue]
+.BaseButton.vue
+----
+<template>
+    <button :type="type" :class="mode"> <.>
+        <slot></slot>
+    </button>
+</template>
+
+<script>
+export default {
+    props: ['type', 'mode', 'caption']
+}
+</script>
+----
+<.> Fallthrough is saving us in this instance, if there is no explicit declaration
+of an event for a custom component, it will try to wire and fallthrough to the
+root HTML element, if there's a match there, then the event can be handled normally.
+<.> And now, because we are going to be switching between different views/components,
+we will leverage `component` and take advantage that our state variable captures the
+tag names of the components to seamlessly patch through to the right view to render.
+
+So it's more out of **convention** that even though we haven't coded explicitly
+a click event, because the base HTML element in `BaseButton.vue` is `button`
+the click event fallsthrough all the way there, and the behaviors are kept as
+they would.
+
+We will also now register in `App.vue` the `TheResources.vue` component and inside
+of this one we will register the other components locally so that we can render
+them dynamically
+
+````
+<template>
+    <base-card>
+        <base-button @click="setSelectedTab('stored-resources')">Stored Resources</base-button>
+        <base-button @click="setSelectedTab('add-resource')">Add Resource</base-button>
+    </base-card>
+    <component :is="selectedTab"></component>
+</template>
+
+<script>
+import StoredResources from './StoredResources.vue';
+import AddResource from './AddResource.vue';
+
+export default {    
+    components: {
+        StoredResources,
+        AddResource
+    },
+    data() {
+        return {
+            selectedTab: 'stored-resources'
+        };
+    },
+    methods: {
+        setSelectedTab(tab) {
+            this.selectedTab = tab;
+        }
+    },
+}
+</script>
+````
+
+````
+<template>
+    <the-header :title="title"></the-header>
+    <the-resources :data="storedResources"></the-resources>
+</template>
+
+<script>
+import TheHeader from './components/layouts/TheHeader.vue';
+import TheResources from './components/learning-resources/TheResources.vue';
+
+export default {
+    components: {
+        TheHeader,
+        TheResources,
+    },
+    data() {
+        return {
+            title: 'Remember Me',
+            storedResources: [
+                { id: 'official-guide', title: 'Official Guide', description: 'The official Vue.js documentation', link: 'https://vuejs.org' },
+                { id: 'google', title: 'Google', description: 'Learn to google...', link: 'https://google.com' },
+            ]
+        };
+    },
+}
+</script>
+````
+
+Now, we have run into a bit of an issue though. Because previously we had the `data`
+state at the `App.vue` level, and it was great, info was fed correctly. But now because
+we added layers between that state and the rendering component, we don't have that
+much of an easy access to it. What should we do?
+
+=== Adding & Styling Tabs
+
+First Option: Pass down the property all the way from the parent. We are not
+going to use that. We will use provide-inject.
+
+Basically from the App level we will cull the resources and put them in `TheResources`.
+
+We will provide them (after registering a state property for them under `data()`).
+
+````
+provide() {
+    return {
+        resources: this.storedResources
+    }
+},
+
+inject: ['resources'],
+````
+
+The course also leverages computed properties to style the buttons based on if they
+are selected or not:
+
+````
+<template>
+    <base-card>
+        <base-button @click="setSelectedTab('stored-resources')" :mode="storedResButtonMode">Stored
+            Resources</base-button>
+        <base-button @click="setSelectedTab('add-resource')" :mode="addResButtonMode">Add Resource</base-button>
+    </base-card>
+    <component :is="selectedTab"></component>
+</template>
+
+computed: {
+    storedResButtonMode() {
+        return this.selectedTab === 'stored-resources' ? null : 'flat';
+    },
+    addResButtonMode() {
+        return this.selectedTab === 'add-resource' ? null : 'flat';
+    }
+},
+````
+This can definitely be done in a much concicse way, but yes it's a valid usage of
+computed properties to give the idea of a button being selected or not.
