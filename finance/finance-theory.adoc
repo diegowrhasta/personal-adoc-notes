@@ -5330,3 +5330,22 @@ that in mind.
 forecasted to produce a cash flow of $40,000 in year 1, but only $850,000 in year
 2, when you come to sell it. If the cost of capital is 12%, what is the value of
 the building?
+
+Again, this is just understanding concepts and how to shape the formulas with that
+in mind:
+
+````
+=PV(0.12, 1, , -40000) + PV(0.12, 2, , -850000)
+````
+This equals `$713,329.08`.
+
+The syntax for the formula is:
+
+PV(rate, number_of_periods, payment_amount, [future_value], [end_or_beginning])
+
+`payment_amount` will attempt to interpret this as recurrent payments, but no,
+we are doing the reverse-engineering step. The **FUTURE VALUE** of the cash flows
+will be $40,000 and $850,000. Hence we have to fit it as such parameters, that's
+a one time payment done in the future, an incoming cash flow. From there we are
+discounting into the present, to get its actual PV. Of both cashflows which will
+represent an **asset**.
