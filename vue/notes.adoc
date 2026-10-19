@@ -5972,3 +5972,243 @@ computed: {
 ````
 This can definitely be done in a much concicse way, but yes it's a valid usage of
 computed properties to give the idea of a button being selected or not.
+
+=== Adding a Form
+
+We will work on the `AddResource.vue` component.
+
+[source, vue]
+----
+<template>
+    <base-card> <.>
+        <form> <.>
+            <div class="form-control"> <.>
+                <label for="title">Title</label> <.>
+                <input type="text" id="title" name="title">
+            </div>
+            <div class="form-control">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" rows="3"></textarea>
+            </div>
+            <div class="form-control">
+                <label for="link">Link</label>
+                <input type="url" id="link" name="link">
+            </div>
+            <div>
+                <base-button type="submit">Add Resource</base-button> <.>
+            </div>
+        </form>
+    </base-card>
+</template>
+
+<script>
+export default {
+
+};
+</script>
+----
+<.> Since we already have some extra components that help with styling as well,
+we will make the base component our `base-card` custom component.
+<.> And we will wrap our form which is in charge of capturing user input
+<.> And we will then wrap two elements with a div so that we can style easily through
+a `form-control` css class
+<.> And the pattern for all inputs will be the same, `label` and `input` paired up
+and the correct metadata that helps with accesibility
+<.> And another usage of `base-button` but now on the `form` itself
+
+So far, this is all aesthetics. But our goal now is to capture whatever the user
+writes in the form and then save it as a new resource in the parent's resource array.
+
+=== Fetching User Input
+
+We will basically leverage provide-inject so that we can send the resource add
+all the way to the parent:
+
+[source, vue]
+----
+<template>
+    <base-card>
+        <form @submit.prevent="onSubmit"> <.>
+            <div class="form-control">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" ref="titleInput">
+            </div>
+            <div class="form-control">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" rows="3" ref="descriptionInput"></textarea>
+            </div>
+            <div class="form-control">
+                <label for="link">Link</label>
+                <input type="url" id="link" name="link" ref="linkInput">
+            </div>
+            <div>
+                <base-button type="submit">Add Resource</base-button>
+            </div>
+        </form>
+    </base-card>
+</template>
+
+<script>
+export default {
+    methods: {
+        onSubmit() { <.>
+            const enteredTitle = this.$refs.titleInput.value;
+            const enteredDescription = this.$refs.descriptionInput.value;
+            const enteredLink = this.$refs.linkInput.value;
+
+            this.addResource(enteredTitle, enteredDescription, enteredLink);
+        }
+    },
+    inject: ['addResource'] <.>
+};
+</script>
+----
+<.> The form will capture the submit from the button, and we will prevent browser
+default behavior on top of hooking the callback to our custom method
+<.> The custom method will then extract from the components' values and then send
+over to an injected callback all the data. _Note:_ There is another way of fetching
+the data and that is binding directly the keystrokes/values to state properties,
+however for simplicity we are leveraging `ref` so that we are watching the HTML
+component itself and on callback we fetch its stored value
+<.> And in here we will inject the callback that was provided by the parent.
+
+And in `TheResources.vue` we will both add `keep-alive` so that our components
+don't get destroyed when switched and also the callback and provision of the
+callback to then add a resource to the array of resources
+
+````
+<keep-alive>
+    <component :is="selectedTab"></component>
+</keep-alive>
+
+provide() {
+    return {
+        resources: this.storedResources,
+        addResource: this.addResource,
+    }
+},
+methods: {
+    setSelectedTab(tab) {
+        this.selectedTab = tab;
+    },
+    addResource(title, description, url) {
+        const newResource = {
+            id: new Date().toISOString(),
+            title: title,
+            description: description,
+            link: url,
+        };
+        this.storedResources.unshift(newResource);
+        this.selectedTab = 'stored-resources';
+    }
+},
+````
+
+There is one specific use case that we need to cover also: Validations. We should
+give feedback to the user about invalid values in the form, and all of that through
+a custom component, a nice dialog overlay.
+
+=== Adding a Modal Dialog
+
+How can we ensure the user is not inputting invalid data?
+
+We first need to control the method that grabs form values and see if they are
+valid, and we should then output feedback to the users.
+
+[source, vue]
+.BaseDialog.vue
+----
+<template>
+    <div> <.>
+    </div>
+    <dialog open>
+        <header> <.>
+            <slot name="header">
+                <h2>{{ title }}</h2>
+            </slot>
+        </header>
+        <section>
+            <slot></slot>
+        </section>
+        <menu> <.>
+            <slot name="actions"></slot>
+        </menu>
+    </dialog>
+</template>
+
+<script>
+export default {
+    props: {
+        title: {
+            type: String,
+            required: false
+        }
+    }
+}
+</script>
+----
+<.> You can literally just put a `div` like this and this will be an anchor point
+for styles to make a backdrop
+<.> Seems that you can reuse `header` in other components, it's not just for layout
+<.> And `menu` is a native HTML element, that's really interesting
+
+This is a highly reusable dialog component that can be used anywhere and shape
+it however we would like.
+
+We can go a step further, and we can enable that clicking on the backdrop emits
+a custom event that should be used to close the dialog, we can then also emit on
+a fallback content under actions:
+
+````
+<template>
+    <div @click="$emit('close')">
+    </div>
+    <dialog open>
+        <header>
+            <slot name="header">
+                <h2>{{ title }}</h2>
+            </slot>
+        </header>
+        <section>
+            <slot></slot>
+        </section>
+        <menu>
+            <slot name="actions">
+                <base-button @click="$emit('close')">Close</base-button>
+            </slot>
+        </menu>
+    </dialog>
+</template>
+
+<script>
+export default {
+    props: {
+        title: {
+            type: String,
+            required: false
+        }
+    },
+    emits: ['close']
+}
+</script>
+````
+
+And then on the component consuming this dialog, we can hook into its close event
+so that we control if the dialog shows or not:
+
+````
+<base-dialog v-if="inputIsInvalid" title="Invalid Input" @close="closeDialog">
+    <template #default>
+        <p>Unfortunately, at least one input value is invalid.</p>
+        <p>Please check all inputs and submit again.</p>
+    </template>
+    <template #actions>
+        <base-button @click="closeDialog">Okay</base-button>
+    </template>
+</base-dialog>
+````
+
+And with this, we keep communication and syntadx clean and concise, yet without
+losing an edge on the possibilities we have at our disposal.
+
+
