@@ -5349,3 +5349,14 @@ will be $40,000 and $850,000. Hence we have to fit it as such parameters, that's
 a one time payment done in the future, an incoming cash flow. From there we are
 discounting into the present, to get its actual PV. Of both cashflows which will
 represent an **asset**.
+
+3. (PV) Your company can lease a truck for $10,000 a year (paid at the end of the
+year) for six years, or it can buy the truck today for $50,000. At the end of the
+six years the truck will be worthless. If the interest rate is 6%, what is the present
+value of the lease payments? Is the lease worthwhile?
+
+=PV(0.06, 6, 10000) => $49,173.24
+
+I would say yes it's worthwhile because you are paying less if you bought it today,
+and by the end won't have to deal with getting read of the truck since it's just
+a lease.
