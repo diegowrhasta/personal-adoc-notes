@@ -6211,4 +6211,113 @@ so that we control if the dialog shows or not:
 And with this, we keep communication and syntadx clean and concise, yet without
 losing an edge on the possibilities we have at our disposal.
 
+=== Deleting Items
 
+We are going to now code removing a resource from the list of resources. And
+we will follow the same idea as the `addResource`. So providing a callback,
+injecting it, and executing it.
+
+Only though... that doesn't work. Or well, the view doesn't reflect the deletion
+of a resource. And that is because of `provide-inject`.
+
+The array that we provide in `TheResources.vue`
+
+````
+provide() {
+    return {
+        resources: this.storedResources,
+        addResource: this.addResource,
+        deleteResource: this.removeResource,
+    }
+},
+````
+Will always be referenced on `inject` to a memory address, a specific object. When
+using `push` we will be adding on top of that same object, but if we try to filter
+out with `filter` we will be creating a new array. All other places that are
+consuming this provided array will still reference that old object, which will be
+left in the void.
+
+````
+removeResource(id) {
+    const resIndex = this.storedResources.findIndex(x => x.id === id);
+    this.storedResources.splice(resIndex, 1);
+},
+````
+Hence, we have to work on top of the same object, and with this code we are doing
+just that. **Not creating a new array and reassigning the array**
+
+And with that we can simply inject the callback:
+
+````
+<template>
+    <li>
+        <base-card>
+            <header>
+                <h3>{{ title }}</h3>
+                <base-button mode="flat" @click="deleteResource(id)">Delete</base-button>
+            </header>
+            <p>{{ description }}</p>
+            <nav>
+                <a :href="link">View Resource</a>
+            </nav>
+        </base-card>
+    </li>
+</template>
+
+<script>
+export default {
+    props: ['id', 'title', 'description', 'link'],
+    inject: ['deleteResource']
+}
+</script>
+````
+
+_Extra:_ We weren't passing down the id before, after passing it from upstream
+we enabled the ability to execute the callback with this id so that we correctly
+delete an element.
+
+=== Adding "Teleport"
+
+So, NOW we are going to use teleport to help us move the dialog from the deeply
+nested place in the DOM.
+
+In `BaseDialog.vue` we will wrap the whole content with the `teleport` tag:
+
+````
+<template>
+    <teleport to="body">
+        <div @click="$emit('close')">
+        </div>
+        <dialog open>
+            <header>
+                <slot name="header">
+                    <h2>{{ title }}</h2>
+                </slot>
+            </header>
+            <section>
+                <slot></slot>
+            </section>
+            <menu>
+                <slot name="actions">
+                    <base-button @click="$emit('close')">Close</base-button>
+                </slot>
+            </menu>
+        </dialog>
+    </teleport>
+</template>
+````
+And because we are teleporting the dialog to `body` if we reload the app and
+inspect the DOM, we will see how all our content stands right after `<body>` instead
+of the nested location that it was before.
+
+_So code says one thing, but DOM will say another thing_
+
+== Section 11: Forms
+
+=== Module Introduction
+
+We already dipped our toes in inputs a bit. However, there's more to inputs and
+controls that we should cover so that we have enough of a base. There's radio
+buttons, dropdowns, and much more.
+
+=== v-mode & inputs
