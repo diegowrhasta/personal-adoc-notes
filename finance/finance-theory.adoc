@@ -5360,3 +5360,26 @@ value of the lease payments? Is the lease worthwhile?
 I would say yes it's worthwhile because you are paying less if you bought it today,
 and by the end won't have to deal with getting read of the truck since it's just
 a lease.
+
+4. (RATE) Ford Motor stock was one of the victims of the 2008 credit crisis. In
+June 2007, Ford stock price stood at $9.42. Eighteen months later it was $2.72.
+What was the annual rate of return over this period to an investor in Ford stock?
+
+=RATE(1.5, 0, -9.42, 2.72)
+
+The syntax is:
+
+RATE(number_of_periods, payment_per_period, present_value, [future_value], [end_or_beginning], [rate_guess])
+
+The annual rate means we have to turn eighteen months to years first = 1.5 years.
+
+payment_per_period = 0. Because there are no additional payments or dividends.
+present_value = -9.42. We are marking this as an initial investment. Hence negative.
+future_value = 2.72. This is the value of the stock after 18 months.
+
+We need to have present value and future value to be in opposite directions (one
+positive and one negative). Otherwise Google Sheets itself throws an error.
+
+````
+ErrorIn RATE evaluation, the value array must include positive and negative numbers.
+````
