@@ -5383,3 +5383,30 @@ positive and one negative). Otherwise Google Sheets itself throws an error.
 ````
 ErrorIn RATE evaluation, the value array must include positive and negative numbers.
 ````
+
+5. (NPER) An investment adviser has promised to double your money. If the interest
+rate is 7% a year, how many years will she take to do so?
+
+`=NPER(0.07,0,-1,2)`
+
+While syntax being:
+
+NPER(rate, payment_amount, present_value, [future_value], [end_or_beginning])
+
+`payment_amount` => 0 because indeed, we didn't state any sort of recurring payment.
+And I'm noticing that when using this formulas, just settng things as 0 is a good
+way to sort of "skip-over" or ignore this since the problem in question does not
+give the answer.
+
+`present_value` => -1 => Because we will invest, and we see that as an outgoing
+cashflow (the sign is really important otherwise the formula will break). And I
+also correctly guessed that we should use 1$ as the baseline to abstract the question
+of "doubling what you have".
+
+`future_value` => 2 => Double of the present value (the invested money) and it has
+to be an opposite sign. And in the reality it makes sense because this will be
+an incoming cash flow.
+
+6. (PMT) You need to take out a home mortgage for $200,000. If payments are made
+annually over 30 years and the interest rate is 8%, what is the amount of the
+annual payment?
