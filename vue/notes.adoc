@@ -6321,3 +6321,83 @@ controls that we should cover so that we have enough of a base. There's radio
 buttons, dropdowns, and much more.
 
 === v-mode & inputs
+
+We need to download the project that is attached to the lecture.
+
+After installing packages and running the serve:
+
+- We see a form with different controls
+  - We will learn how to get information out of all the different type of form
+  controls
+  - We will also learn how validate input in the forms
+  - And lastly, we will build our **own** form control
+
+On the `TheForm.vue` component we will add a `@submit` listener to the form, modifying
+with `.prevent`. This is a good pattern, since we centralize the form submission
+from a button here and we hook our custom method.
+
+Now we have to make a choice:
+
+- How do we capture the inputs values?
+
+We can listen to every keystroke and store the input in a state value. This is
+specially useful if we want to validate on every keystroke. We can use two-way
+binding: `v-model` too.
+
+````
+<input id="user-name" name="user-name" type="text" v-model="userName" />
+````
+_Note:_ Don't forget to add the respective data property to bind to.
+
+**This is the base for everything else that will come after**
+
+=== Working with v-model Modifiers and Numbers
+
+We have a second input, that is shielded behind `number`
+
+````
+<input id="age" name="age" type="number" />
+````
+And this will try to only fit numbers inside of it. However when we two-way bind,
+we will immediately get it cast to number. **Any other way of retrieval of the
+value will end up with the value being a `string`, you can easily corroborate this
+by using the `ref` approach instead of the `v-model` approach.
+
+Just with native javascript, and refs, by default the value will always be of
+type string. It's a feature of Vue itself and `v-model` to go the extra mile and
+cast the type to `number`
+
+However you can also add modifiers:
+
+`v-model.number="userAge"`
+
+- `.lazy` => Changes the way Vue updates the property. If it's on every keystroke,
+or a lower frequency
+- `.trim` => Immediately trims the value on capture
+
+So you can leverage modifiers on `v-model`, do not forget.
+
+=== v-model and Dropdowns
+
+Vue already does wiring behind the scenes so simply using the property will be
+enough:
+
+````
+<select id="referrer" name="referrer" v-model="userReference">
+  <option value="google">Google</option>
+  <option value="wom">Word of mouth</option>
+  <option value="newspaper">Newspaper</option>
+</select>
+
+userReference: 'wom'
+
+````
+The way to map values and UI display is as follows:
+
+- The underlying value is some metadata form, it will not be the display string.
+So when initializing the bound value you should reference that underlying literal.
+It's only the display of the dropdown that displays user friendly labels.
+
+=== Using v-model with Checkboxes & Radiobuttons
+
+
