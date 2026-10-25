@@ -6400,4 +6400,280 @@ It's only the display of the dropdown that displays user friendly labels.
 
 === Using v-model with Checkboxes & Radiobuttons
 
+- Checkboxes can have multiple options selected
+- Radiobuttons only have one option able to be selected
+
+If you got multiple checkboxes => This automatically creates a group of checkboxes
+if you bind to a same property.
+
+````
+<div class="form-control">
+  <h2>What are you interested in?</h2>
+  <div>
+    <input id="interest-news" name="interest" type="checkbox" value="news" v-model="interest" />
+    <label for="interest-news">News</label>
+  </div>
+  <div>
+    <input id="interest-tutorials" name="interest" type="checkbox" value="tutorials" v-model="interest" />
+    <label for="interest-tutorials">Tutorials</label>
+  </div>
+  <div>
+    <input id="interest-nothing" name="interest" type="checkbox" value="nothing" v-model="interest" />
+    <label for="interest-nothing">Nothing</label>
+  </div>
+</div>
+
+<div class="form-control">
+  <h2>How do you learn?</h2>
+  <div>
+    <input id="how-video" name="how" type="radio" value="video" v-model="how" />
+    <label for="how-video">Video Courses</label>
+  </div>
+  <div>
+    <input id="how-blogs" name="how" type="radio" value="blogs" v-model="how" />
+    <label for="how-blogs">Blogs</label>
+  </div>
+  <div>
+    <input id="how-other" name="how" type="radio" value="other" v-model="how" />
+    <label for="how-other">Other</label>
+  </div>
+</div>
+
+data() {
+  return {
+    userName: '',
+    userAge: null,
+    userReference: 'wom',
+    interest: [],
+    how: null,
+  };
+},
+````
+Basically when working with checkboxes, you should bind each option to an array
+property `interest: []`, but not just that, be 100% sure that you have a `value`
+for each checkbox input. We need that underlying value to be present, otherwise
+Vue will be confused and behavior will be strange.
+
+As mentioned before, checkboxes can be selected more than one option. The array
+property then will become a "Proxy" property and inside an array of the values that
+are selected will be bound.
+
+When it comes to radio buttons, a single value without arrays is enough, because
+only one option can be checked at the same time, the need of a `value` property
+is still ever-present though.
+
+_What if you added a single-element checkbox?_
+
+````
+<div class="form-control">
+  <input type="checkbox" id="confirm-terms" name="confirm-terms" value="false" v-model="confirm">
+  <label for="confirm-terms">Agree to terms of use?</label>
+</div>
+
+data() {
+  return {
+    userName: '',
+    userAge: null,
+    userReference: 'wom',
+    interest: [],
+    how: null,
+    confirm: false
+  };
+},
+````
+Basically, this becomes binary, you will map to a boolean (`true` or `false`).
+So `value` can start at either, and you will bind that to a boolean initialized
+data property.
+
+And with that checkbox and radio button use cases (at least the basic cases)
+have been covered.
+
+=== Adding Basic Form Validation
+
+Refs are a good alternative. However, we will stick with `v-model` for now.
+
+Validation is now in line, and we already got our feet wet on the previous project.
+
+- We can validate on submit
+- We can validate on each keystroke
+
+- `onBlur` => This is when an input loses focus, you can hook into this event and
+implement validation or whatever you want.
+
+````
+<div class="form-control" :class="{ invalid: userNameValidity === 'invalid' }">
+  <label for="user-name">Your Name</label>
+  <input id="user-name" name="user-name" type="text" v-model.trim="userName" @blur="validateInput" />
+  <p v-if="userNameValidity === 'invalid'">Please enter a valid name!</p>
+</div>
+
+data() {
+  return {
+    userName: '',
+    userAge: null,
+    userReference: 'wom',
+    interest: [],
+    how: null,
+    confirm: false,
+    userNameValidity: 'pending'
+  };
+}
+
+validateInput() {
+  if (this.userName === '') {
+    this.userNameValidity = 'invalid';
+  } else {
+    this.userNameValidity = 'valid';
+  }
+}
+````
+Adding a custom class to a control that styles with red to feedback of the error
+on an input is a really common pattern.
+
+Another good idea to keep in mind is that you can trim your content before trying
+to run the validation method, hence we did `v-model.trim="userName"`. Through a
+data property we can keep a flag value that changes based on validation that
+runs.
+
+This is a base pattern for validation, there are thousands of ways to implement it,
+others being more dynamic and more concise than others. Yet, in the end, it will
+be reduced to looking at a control's state, whether it is onBlur or on a submit,
+or some other lifecycle event. And then running checks against the captured value
+
+=== Building a Custom Control Component
+
+Basically, we want a reusable component that will behave as a form control
+
+````
+<template>
+    <ul>
+        <li><button type="button">Poor</button></li>
+        <li><button type="button">Average</button></li>
+        <li><button type="button">Great</button></li>
+    </ul>
+</template>
+
+<script>
+export default {
+
+};</script>
+````
+Because this component is supposed to be use as a form control, **we have to make
+sure the type is not the default `submit` otherwise we will attempt to submit
+the form**
+
+And then, we can easily use it by importing it in `TheForm.vue`.
+
+With a tag of `<rating-control>` we can just slide it into our views without
+much issue.
+
+After this we should be seeing our button with some basic styling. On top of
+that we want to code the behavior of highlighting the button after a click:
+
+````
+<template>
+    <ul>
+        <li :class="{ active: activeOption === 'poor' }"><button type="button" @click="activate('poor')">Poor</button>
+        </li>
+        <li :class="{ active: activeOption === 'average' }"><button type="button"
+                @click="activate('average')">Average</button></li>
+        <li :class="{ active: activeOption === 'great' }"><button type="button"
+                @click="activate('great')">Great</button></li>
+    </ul>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            activeOption: null
+        };
+    },
+    methods: {
+        activate(option) {
+            this.activeOption = option
+        }
+    }
+};</script>
+````
+We basically are keeping track of the button that was clicked by setting a flag
+value. And through class binding we are enabling a class that will highlight
+the pressed button.
+
+=== Using v-model on Custom Components
+
+Basically, our custom components can use the same syntax as native HTML components
+
+````
+<rating-control v-model="rating"></rating-control>
+````
+With `v-model` Vue will by convention listen, emit, bind to a specific property.
+
+````
+props: ['modelValue'],
+emits: ['update:ModelValue'],
+````
+
+Under the hood, Vue does this for custom components
+
+`:model-value="" @update:modelValue=""`
+
+And now, if we were to modify the bound value from a parent, or outside in general,
+we have to keep something in mind:
+
+[source, vue]
+----
+<template>
+    <ul>
+        <li :class="{ active: activeOption === 'poor' }"><button type="button" @click="activate('poor')">Poor</button> <.>
+        </li>
+        <li :class="{ active: activeOption === 'average' }"><button type="button"
+                @click="activate('average')">Average</button></li>
+        <li :class="{ active: activeOption === 'great' }"><button type="button"
+                @click="activate('great')">Great</button></li>
+    </ul>
+</template>
+
+<script>
+export default {
+    props: ['modelValue'],
+    emits: ['update:ModelValue'],
+    // data() {
+    //     return {
+    //         activeOption: this.modelValue,
+    //     };
+    // },
+    computed: {
+        activeOption() { <.>
+            return this.modelValue;
+        }
+    },
+    methods: {
+        activate(option) {
+            this.$emit('update:modelValue', option);
+        }
+    }
+};
+</script>
+----
+<.> We had a property `activeOption` before, a state property. But when resetting a
+value outside of the component, this approach won't update the component. We will
+run into a desync for it.
+<.> If we want to keep things in sync visually and on memory, the solution is to
+use computed properties. Or even better directly bind all the checks and state
+to `modelValue`. The property that Vue directly furbishes for us, the moment we
+hook to `v-model` some property upstreams.
+
+=== Module Summary
+
+The module basically focused on how we can capture user input through different
+form controls, how to make a custom control and leveraging `v-model` and so on.
+
+_The idea is that with this you have a toolbox that will help you build all the
+user experiencies you want for your websites_
+
+== Sending Http Requests
+
+=== Module Introduction
+
 
