@@ -5410,3 +5410,15 @@ an incoming cash flow.
 6. (PMT) You need to take out a home mortgage for $200,000. If payments are made
 annually over 30 years and the interest rate is 8%, what is the amount of the
 annual payment?
+
+=PMT(0.08, 30, 200000)
+
+PMT(rate, number_of_periods, present_value, [future_value], [end_or_beginning])
+
+We are taking a mortgage for cash `NOW`. Because we have to pay that amount to
+get the house.
+
+Hence, yes, right now it is 200,000 but this will grow with interest so that
+in the future we are paying more. And annually to pay that the result is:
+
+-$17,765.49
