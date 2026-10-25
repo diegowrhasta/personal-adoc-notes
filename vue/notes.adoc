@@ -6676,4 +6676,51 @@ user experiencies you want for your websites_
 
 === Module Introduction
 
+Everything ran locally so far. However in the real world, we usually have to connect
+to a server, a backend.
 
+This module is about sending HTTP requests with Vue so that we connect to a backend.
+
+- What is a "Backend"?
+- Sending Http Requests
+
+=== Starting App & Why we need a Backend
+
+Basically this is an app that helps making a survey about a course's opinions.
+
+It's fully functional. However we have "one problem". And that is, if we reload
+the page. All the data that was stored is lost. That's the nature of the apps.
+
+It should just not be saved in memory, in the local browser of a user.
+
+You should store the data in a server you own. So it's quite common to have a
+server to hold data, and then the client applications (Vue) should connect to
+the service to fetch data, and also to send data.
+
+The idea is that you would have a server (as a developer) and you would hold
+in there a service and a database. Your Vue app should interface with the
+service that then works with the database to manage the data. They should be
+decoupled (good practice).
+
+_Extra Note:_ The survey application has two parts: A form and a dashboard of
+sorts that displays. One pattern might tell you that these should be two different
+Vue apps. Because only an admin should be able to see such a dashboard of all
+the surveys.
+
+=== Adding a Backend
+
+Creating a backend can be done in an entire course. Writing server-side code
+has its own programming languages, tech stacks. So we will take a shortcut
+and leverage Firebase.
+
+- Firebase is a whole backend platform (not just a database). And Free, hence
+we are using it.
+
+We will simply create a vue-http-demo project. No analytics. And we will use
+a Firebase service in a way that is standard so that we can communicate with
+any other type of platform or service (RESTful).
+
+After the project is setup, we will simply create a Realtime Database **in test
+mode**.
+
+And with that out the way, we can go into interfacing with this database.
