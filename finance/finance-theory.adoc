@@ -5422,3 +5422,18 @@ Hence, yes, right now it is 200,000 but this will grow with interest so that
 in the future we are paying more. And annually to pay that the result is:
 
 -$17,765.49
+
+7. (EFFECT) First National Bank pays 6.2% interest compounded annually. Second
+National Bank pays 6% interest compounded monthly. Which bank offers the higher
+effective annual interest rate?
+
+EFFECT(nominal_rate, periods_per_year)
+
+=EFFECT(0.06, 12) vs =EFFECT(0.062, 1)
+
+=EFFECT(0.06, 12) vs =EFFECT(0.062, 1)
+
+0.0617 vs 0.062
+
+Annually beats monthly in this instance. Although you might be lead to believe that
+monthly would beat it.
