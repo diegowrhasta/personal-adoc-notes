@@ -5437,3 +5437,30 @@ EFFECT(nominal_rate, periods_per_year)
 
 Annually beats monthly in this instance. Although you might be lead to believe that
 monthly would beat it.
+
+8. (NOMINAL) What monthly compounded interest rate would Second National Bank need
+to pay on savings deposits to provide an effective rate of 6.2%?
+
+=NOMINAL(0.062, 12) = 0.0603
+
+NOMINAL(effective_rate, periods_per_year)
+
+So basically, the actual rate of 6.2% a year would be achieved if each month an
+interest of 0.0603 is paid?
+
+CORRECTION
+
+6.03% nominal annual interest, compounded monthly.
+
+But we would still be missing one piece of the puzzle, what interest rate is actually
+applied each month?
+
+**Divide the nominal annual rate by 12:**
+
+0.0603 / 12 = 0.005025 or 0.5025% **PER MONTH**
+
+**Effective annual rate:** 6.2% - what you actually earn over a year.
+**Nominal annual rate:** 6.023% - quoted annual rate before accounting for compounding
+**Monthly rate:** 0.502% - the rate applied each month
+
+
