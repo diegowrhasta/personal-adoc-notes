@@ -6724,3 +6724,112 @@ After the project is setup, we will simply create a Realtime Database **in test
 mode**.
 
 And with that out the way, we can go into interfacing with this database.
+
+=== How to (Not) Send Http Requests
+
+In our form, when doing submissions, the default behavior actually does an
+HTTP request.
+
+So if you were to remove the `prevent` then a form submission would send an HTTP
+request to our backend. (But this wouldn't hit our Firebase backend).
+
+The submit will try to hit the local server, but since the local server has
+no way to act to this request, we get nothing, the app reloads and we also
+lose state.
+
+We want to submit data with Javascript to the firebase backend.
+
+- Don't forget to validate data before though
+
+After we create our Realtime Database, we get a URL, an HTTP address that we can
+hit with our Vue app. It will look as if we are talking directly to a database,
+but we aren't, in the background a Restful API is furbished automatically.
+
+- How can we hit Rest services?
+- Use `axios`, a really popular package
+  - However browsers have native built-in functions `fetch` we will be using this
+
+Whether you use `axios` or `fetch` the result should be the same. And the implementation
+principle the same. We are not using browser default behaviors, we are using JS
+to hit our Firebase endpoint and start managing data.
+
+=== Sending a POST request to Store Data
+
+How does fetch work?
+
+- First argument is a URL, with an extra addition: `/surveys.json`, this is just
+a Firebase specific requirement. A different backend will not require this.
+
+A node will be created in the database automatically after using the endpoint.
+
+[source, js]
+----
+async submitSurvey() { <.>
+    if (this.enteredName === '' || !this.chosenRating) {
+      this.invalidInput = true;
+      return;
+    }
+    this.invalidInput = false;
+
+    // this.$emit('survey-submit', {
+    //   userName: this.enteredName,
+    //   rating: this.chosenRating,
+    // });
+
+    await fetch( <.>
+      '<FirebaseUrl>/surveys.json',
+      {
+        method: 'POST', <.>
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ <.>
+          name: this.enteredName,
+          rating: this.chosenRating,
+        })
+      })
+
+    this.enteredName = '';
+    this.chosenRating = null;
+  },
+},
+----
+<.> I did this based on my knowledge, but to keep things executing 'sequentially'
+I made the method `async` and it seems to work just fine
+<.> And then `fetch` which is a promise can be awaited inside of an `async` method
+<.> The method is a literal, a bit too insecure
+<.> And don't forget to stringify the payload, otherwise the request won't work
+at all
+
+After we add this `POST` to the backend, we can clean up a bit of the code across
+the application since the state will no longer be managed in memory, but through the
+Firebase backend, so we can comment, and delete all of the properties and events
+that were managing the state of the surveys on the application.
+
+=== Http Requests & Http Methods (Verbs)
+
+There are tons of verbs, but the main for are `GET`, `POST`, `PUT`, `DELETE`. They
+have a convention in REST to capture **intent**. We will be leveraging them since
+it's a standard by this point.
+
+=== Using Axios instead of "fetch()"
+
+Here is the same fetch but with axios:
+
+````
+import axios from 'axios'; // at the start of your <script> tag, before you "export default ..."
+...
+axios.post('https://vue-http-demo-85e9e.firebaseio.com/surveys.json', {
+  name: this.enteredName,
+  rating: this.chosenRating,
+});
+````
+It works the same, it returns a `Promise` so we can await, or configure callbacks
+with `then()`, `catch()`.
+
+In the end, if you choose Axios you are ultimately increasing the size of the web
+app you're shipping.
+
+=== Getting Data (GET Request) & Transforming Response Data
+
+
