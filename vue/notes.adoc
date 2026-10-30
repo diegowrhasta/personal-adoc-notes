@@ -6832,4 +6832,99 @@ app you're shipping.
 
 === Getting Data (GET Request) & Transforming Response Data
 
+Basically, we leverage `fetch` but with a `GET` instead of a `POST`
 
+````
+const result = await fetch(
+    'https://vue-http-demo-7d9a8-default-rtdb.asia-southeast1.firebasedatabase.app/surveys.json',
+    {
+      method: 'GET',
+    });
+
+  this.results = result;
+````
+As mentioned before `fetch` returns a Promise, which is the mechanism for async
+logic to run "in the background", and us reacting to it, there's the `then()`
+pattern as well, but the async-await method helps visually a lot. Because it seems
+it's synchronous (it's not though, don't forget).
+
+[source, js]
+----
+methods: {
+  async loadExperiences() {
+    const result = await fetch( <.>
+      'https://-----.-..app/surveys.json',
+      {
+        method: 'GET',
+      });
+
+    if (result.ok) {
+      this.results = await result.json(); <.>
+    }
+  },
+}
+----
+<.> Look how we await the `fetch`
+<.> The result will hold HTTP information on top of the returned body. With the
+`json` method we will deserialize json (that's the default format for HTTP requests),
+and turn it into a javascript object (load into memory). And because it's also
+asynchronous, we have to await it, and then the result can easily be assigned
+to the `results` data property.
+
+_Note:_ The course does the `then()` route, and yeah, it's so verbose, I don't like
+it, it also iterates over `data` on the second `then()` of the `json()` method,
+I don't know why? Strange to me. Yeah, overall await makes it so much cleaner. And
+yeah, we run into the method's `this` issue as well, arrow functions are the solution,
+but still, so many details and nuances that make things more complicated.
+
+But remember => Arrow functions can have the `this` context passed down to them,
+a `function` will not.
+
+=== Loading Data When a Component Mounts
+
+Sending and getting data works, but there's more that we can add. _We can load all
+submitted experiences with a button click, and it's now persistent_
+
+- But a good UX is to load all the experiences the moment we load the page, not
+forcing the user to load them manually.
+
+That is **loading when the component mounts**
+
+That is pretty easy, we need to go back to the lifecycle hooks concept, we can
+then choose to load state after `mounted`
+
+````
+mounted() {
+  this.loadExperiences();
+}
+````
+
+=== Showing a "Loading..." Message
+
+Sometimes, internet might be slow, or the users might have a slow computer.
+So it might be good to add a `Loading` message whereas we are waiting to fetch
+the data.
+
+We can just have a `isLoading` property that is a boolean and with it we can
+show `Loading` or data:
+
+````
+<template>
+  <section>
+    <base-card>
+      <h2>Submitted Experiences</h2>
+      <div>
+        <base-button @click="loadExperiences">Load Submitted Experiences</base-button>
+      </div>
+      <p v-if="isLoading">Loading...</p>
+      <ul v-if="!isLoading">
+        <survey-result v-for="result in results" :key="result.id" :name="result.name"
+          :rating="result.rating"></survey-result>
+      </ul>
+    </base-card>
+  </section>
+</template>
+````
+
+And on our loading method we can turn it `on` and after we receive the data down
+the chain, we can turn it `off`. And yeah, with that, it's more than enough for us.
