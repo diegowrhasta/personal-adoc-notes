@@ -5463,4 +5463,50 @@ applied each month?
 **Nominal annual rate:** 6.023% - quoted annual rate before accounting for compounding
 **Monthly rate:** 0.502% - the rate applied each month
 
+=== Summary
 
+Firms can best help their shareholders by accepting all projects that are worth
+more than they cost. In other words, they need to seek out projects with positive
+net present values. To find net present value we first calculate present value.
+Just discount future cash flows by an appropriate rate _r_, usually called the
+_discount rate, hurdle rate, or opportunity cost of capital_.
+
+Present value (PV) = C1 / (1 + r) + C2 / (1 + r)^2 + C3 / (1 + r)^3 + ...
+
+Net present value is present value plus any immediate cash flow:
+
+Net present value (NPV) = C0 + PV
+
+C0 is negative if the immediate cash flow is an investment, that is, if it is a
+cash outflow. The discount rate _r_ is determined by rates of return prevailing
+in financial markets. If the future cash flow is absolutely safe, then the discount
+rate is the interest rate on safe securities such as U.S. government debt. If the
+future cash flow is uncertain, then the expected cash flow should be discounted
+at the expected rate of return offered by equivalent-risk securities.
+
+Cash flows are discounted for two simple reasons: because (1) a dollar today is
+worth more than a dollar tomorrow and (2) a safe dollar is worth more than a
+risky one. Formulas for PV and NPV are numerical expressions of these ideas.
+
+Financial markets, including the bond and stock markets, are the markets where safe
+and risky future cash flows are traded and valued. That is why we look to rates
+of return prevailing in the financial markets to determine how much to discount
+for time and risk. By calculating the present value of an asset, we are estimating
+how much people will pay for it if they have the alternative of investing in the
+financial markets.
+
+You can always work out any present value using the basic formula, but shortcut
+formulas can reduce the tedium. We showedf how to value an investment that makes
+a level stream of cash flows forever (a perpetuity) and one that produces a level
+stream for a limited period (an _annuity_). We also showed how to value investments
+that produce growing streams of cash flows.
+
+When someone offers to lend you a dollar at a quoted interest rate, you should
+always check how frequently the interest is to be paid. For example, suppose that
+a $100 loan requires six monthly payments of $3. The total yearly interest payment
+is $6 and the interest will be quoted as a rate of 6% compounded semiannually. The
+equivalent _annually compounded rate_ is (1.03)^2 - 1 = .06 or 6.1%. Sometimes
+it is convenient to assume that interest is paid over the year so that interest
+is quoted as a continously compounded rate.
+
+== Chapter 3
