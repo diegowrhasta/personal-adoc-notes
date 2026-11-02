@@ -7051,4 +7051,41 @@ feedback to the user about this other edge case.
 
 === Module Summary
 
+We basically learned how HTTP requests work to send and get data. How to extract
+data, how to handle errors, and edge cases. On top of `loading`.
 
+We should also have a semblance on when to get a backend, and how to leverage it.
+
+== Section 13: Routing: Building "Multi-Page" Single Page Applications
+
+=== Module Introduction
+
+- What & Why?
+- Setting Up the Router & Routes
+- Navigating & Route Config
+
+=== What & Why?
+
+We have another project we can download, and run.
+
+We have two "pages" to switch between views. However there's one detail with
+the current application. The URL doesn't change. In order to add that we have
+to introduce "routing".
+
+A single page application, which is what we are making, has as a basic concept
+that we load a website once, and it has linked to it all the necessary javascript
+code to run all sorts of interactions. And whilst staying within that constraint,
+routing enables us to still navigate between different views, **plus** changing
+the URL of the page. (No default behaviors though).
+
+_We want ONE HTML file, and the JS code controlling what we see on the screen_
+
+- URLs are useful for enabling sharing specific pages or views to people. The
+current implementation will always land us on the "start page". This works, however
+you would want applications powered by the JS code which still interact with the
+URL. _The URL would represent where in the website you are, and that enables
+sharing things around_
+
+- And routing also helps us not loading unnecessary code. When using routing (which
+is an extra package), only based on the URL then the code will be downloaded for
+necessary behavior.
