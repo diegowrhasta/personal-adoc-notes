@@ -6928,3 +6928,127 @@ show `Loading` or data:
 
 And on our loading method we can turn it `on` and after we receive the data down
 the chain, we can turn it `off`. And yeah, with that, it's more than enough for us.
+
+=== Handling the "No Data" State
+
+We should code code that handles **errors** and edge cases. Such as in our specific
+example, what if there's no data? So we get an empty response. Let's code defensive
+code that accounts for these scenarios.
+
+````
+<p v-if="isLoading">Loading...</p>
+<p v-else-if="!isLoading && (!results || results.length === 0)">No data</p>
+<ul v-else-if="!isLoading && results.length > 0">
+  <survey-result v-for="result in results" :key="result.id" :name="result.name"
+    :rating="result.rating"></survey-result>
+</ul>
+````
+It's **key** that we put the `v-else-if` in the middle, otherwise the `Loading...`
+will win all the time.
+
+=== Handling Technical / Browser-side Errors
+
+We will make a request that is wrong (bad URL), so that we simulate an error coming
+back. So we will remove the `.json` section. With that the request will fail
+immediately. We will show a message:
+
+````
+<p v-if="isError">There was an issue contacting the server.</p>
+````
+
+And now when it comes to actual code, we have to cover our request with a `try-catch`,
+that way we don't return early because of an exception.
+
+````
+async loadExperiences() {
+  this.isLoading = true;
+
+  try {
+    const result = await fetch(
+      'https://vue-http-demo-7d9a8-default-rtdb.asia-southeast1.firebasedatabase.app/surveys.json',
+      {
+        method: 'GET',
+      });
+
+    if (result.ok) {
+      const results = await result.json();
+      for (const item of Object.values(results)) {
+        this.results.push({ name: item.name, rating: item.rating })
+      }
+    }
+  } catch (ex) {
+    this.isError = true;
+  }
+
+  this.isLoading = false;
+},
+````
+The course adds an error message state variable. And it checks that if the message
+exists, we show the error text. It's key that by the end we turn off `isLoading`,
+otherwise the `Loading...` message will always win and we won't get our other
+messages.
+
+**IMPORTANT:** Don't really know what happened. But after adding the other cases
+this stopped working. But in short, we get an object back from the backend. We
+have to navigate our way around the data structure. Since it's an object, and inside
+each key is an "ID" and the value is the actual item (in object form), with a
+simple `Object.values(results)` we are flattening the whole response, and we
+can iterate it as a simple array.
+
+=== Handling Error Responses
+
+Because the course leverages `then()` and I did `async-await` there's a lot of
+explanation with the former syntax and how to handle errors of different kinds.
+
+I'm pretty sure with `async-await` we will handle every single type of error,
+so we don't have to add extra methods. (So again, this syntax wins so much)
+
+Then, what if the server returns an error response? (so, when saving a response for
+the survey, we malform the request body or something). Then we need to account for
+those responses that are indeed server-side errors, not exceptions:
+
+````
+async submitSurvey() {
+  if (this.enteredName === '' || !this.chosenRating) {
+    this.invalidInput = true;
+    return;
+  }
+  this.invalidInput = false;
+  this.errorMessage = null;
+
+  // this.$emit('survey-submit', {
+  //   userName: this.enteredName,
+  //   rating: this.chosenRating,
+  // });
+
+  const result = await fetch(
+    'https://vue-http-demo-7d9a8-default-rtdb.asia-southeast1.firebasedatabase.app/surveys.json',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      // body: JSON.stringify({
+      //   name: this.enteredName,
+      //   rating: this.chosenRating,
+      // })
+      body: {
+        name: this.enteredName,
+        rating: this.chosenRating,
+      }
+    });
+
+  if (!result.ok) {
+    this.errorMessage = 'Could not save the response';
+  }
+
+  this.enteredName = '';
+  this.chosenRating = null;
+},
+````
+See how `!result.ok` is our savior. And we simply use a generic message to give
+feedback to the user about this other edge case.
+
+=== Module Summary
+
+
