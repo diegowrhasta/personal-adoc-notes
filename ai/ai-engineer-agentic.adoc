@@ -1,0 +1,449 @@
+= Notes
+
+Notes taken from https://www.udemy.com/course/the-complete-agentic-ai-engineering-course/
+
+== Week 1
+
+=== Day 1: Build Your First Autonomous AI Agent with n8n (No-Code Demo)
+
+We will build agents through code. But n8n is a great drag and drop way to showcase
+the possibilities. It's an automation platform.
+
+`n8n.io` => Course uses the cloud option.
+
+[IMPORTANT]
+====
+The idea of agentic AI is that it's about finding ways to glue together different
+calls to LLMs. Like different messages to Chat-GPT one after the another. In order
+to achieve a goal.
+====
+
+AI Agent => It's a loop, that calls an LLM with tools to achieve a goal.
+
+**We will lay a workflow for an agent that does stuff for us**
+
+The idea is to introduce many concepts that we will later refine, but through an
+interactive session. So the n8n demo showcases a really simple workflow.
+
+- When we receive a chat message => An AI Agent reacts.
+
+An AI Agent requires three things:
+
+- Chat Model: You need an LLM, the vendors right now are many. Like OpenAI, Google
+(Gemini), OpenRouter. Google has cheap models, and apparently OpenRouter has even
+free models. OpenAI => Requires an account, it will come with a key. And you can use
+your account. (Example of one version: GPT-5.4-mini)
+- Memory: Simple Memory => Now we have a chat with an agent with an LLM, with simple
+memory
+- Tool
+
+Within n8n you can chat, and then the AI Agent can react to your chat messages.
+You will see within the diagram the different components lighting up (in green).
+
+[NOTE]
+====
+After this small setup you might go ahead and say: **Okay, but this is just like
+chatting with ChatGPT**. Which is true. There's nothing Agentic about that.
+====
+
+==== Making this Agentic
+
+**Tools:** What does it mean to give your AI a tool?
+
+There are tons of tools that can integrate with tons of different platforms that
+allow the AI Agents to make a lot of things.
+
+**MarketStack** => There's a MarketStack tool. This is a tool that allows to retrieve
+stock market prices. And it's free for 100 usages a month (-ish). (You need to get
+an API key from there though)
+
+You can setup the tool with different parameters (that will vary depending on the tool
+of course), and after you are satisfied with the configuration you can add the tool.
+
+**We can still talk to the AI Agent, but because of the tool that we added, we can
+now interact with stock prices within the prompts that we might give the Agent**
+
+And thanks to n8n, you should be able to see the Tool component lighting up in green,
+because the Agent used the Stocks tool to retrieve information.
+
+[NOTE]
+====
+But this still. **DOES STILL FEEL LIKE AN LLM WITH A SIMPLE EXTRA INTERFACE**
+====
+
+"Autonomous" => This is the glittery idea that people get. That's what also makes
+an Agent truly Agentic. In order to reach that, we should add more tools to the
+Agent.
+
+What if...
+
+- We add a Google Sheets tool (you can connect with your Google Account)
+	- We can configure one sheets tool to be able to read Sheets
+	- We can configure another sheets tool to be able to write Sheets
+
+And yeah, this is a great selling lesson. With the tools in place, it's now up
+to you to prompt the LLM correctly. But in short the demo did this:
+
+- It simulated in a google sheet a shares portfolio. Of 2 tickers. It asked the
+LLM what's the value of the portfolio
+	- It used Stock Exchange's tool to get the info and then run calculations
+	against what the google sheet stated
+- And then after, the instructor prompted the model again, to suggest what stock
+should we buy, and put that suggestions in the sheet
+	- By again, using its LLM knowledge and Stock Exchange, it wrote into the
+	Google Sheet a ticker and the number of shares
+	- It also asked if you wanted something more defensive, and again wrote another
+	ticker with its number of shares
+
+In short, this is autonomous, the AI can make decisions, and through its configured
+tools it can then take action.
+
+_Thought:_ I'm basically seeing that you will indeed have to integrate with tons
+of platforms, API keys, subscriptions. And that will indeed add costs to you.
+But I see it like this: You are paying for "ease", you are paying for some form
+of expertise, and tools for that expert to work with. Now, **it will always be
+something that you have to take with a grain of salt**. Agents are not people,
+and they are not really "intelligent". It's all predictions. **Never lose track
+of that**.
+
+Again, it can make wonder what's the real thing though. Experts WITH AI being a
+sustainable model, or complete meat proxies. It really depends, on many factors,
+and the business in question.
+
+=== Course Roadmap: 6 Weeks, 8 Projects in Agentic AI Engineering
+
+This is about making agents with **code**
+
+- Theory
+- Frameworks
+- Projects
+
+Week 1: Foundations
+
+Make an Agentic Workflow, Agents and Agentic Patterns, Orchestrating LLMs, Autonomy
+and Tools, Project 1: Your personal career agent
+
+Week 2: OpenAI Agents SDK
+
+Understand OpenAI Agents SDK concepts, Project 2: An SDR, Tools vs Agents Guardrails,
+Project 3: Deep Research, Project 3: Deep Research app
+
+Week 3: Crew AI
+
+Understand Crew AI Concepts, Build a Crew Agent, Project 4: Stock Picker, Project
+5: Developer Agent, Project 5: Engineering Team
+
+Week 4: LangGraph
+
+Understand LangGraph concepts, Build a LangGraph Agent, Tools, memory, web searches,
+Project 6: Sidekick, Project 6: Sidekick improvements
+
+Week 5: Agent Frameworks
+
+Google ADK and A2A, AWS Strands Agents, Other Python Frameworks, JS/TS Frameworks,
+Project 7: Agent Loop
+
+Week 6: MCP
+
+Agentic Architecture an MCP, Building an MCP Server and Client, Multiple Local and
+Remote MCP servers, Project 8: AI Equity Traders, Project 8: AI Equity Traders in
+Action
+
+_The instructor - This guy seems to be really high profile and he has tons of courses
+with different angles on AI usage, all the courses are complementary. And... I don't
+think I'll take all of them, probably AI Coder is the next one, I already bought this,
+so I might as well do it_
+
+AI Coder => Is about using **Coding Agents** to generate Products. The course in
+question, is about **Building those Agents**
+
+Python coder, AI Engineer => ENJOY (I'm not. But it's okay.)
+
+=== Your Path to Becoming a Proficient AI Engineer
+
+AI Builder => Creating about agents and voice agents (drag and drop). _Deliver agents
+for yourself and your clients_
+AI Coder => Claude Code, Copilot, Codex, Antigravity. _Rapidly deliver Software
+with Coding Agents_
+AI Leader => AI Delivery, AI Transformation, Start an AI business. _Deliver commercial
+impact with AI_
+AI Engineer Core Track => LLMs, Open-Source, RAG, LangChain, Fine-tune. _Select,
+Apply and Optimize LLMs_
+AI Engineer Agentic Track => Agent loops, OpenAI Agents SDK, CrewAI, LangGraph, MCP.
+_Build Autonomous Agents_
+AI Engineer Production Track => Vercel, AWS, Bedrock, GCP, Azure, LangFuse. _Deploy
+LLMs and Agents at scale_
+
+Apparently if you finish all 6 courses, you should be an AI Engineer. (Solving
+real world problems with AI)
+
+=== Environment Setup Overview: UV, API Keys, Costs and GitHub Repo
+
+This can be madness. But other times it doesn't.
+
+UV => Super fast, and it should make things fast and easy.
+
+**API Costs**
+
+We have to call models that are running in the cloud. They cost, however there
+are free, cheap, local models.
+
+_The course however will be using OpenAI to keep things consistent_
+
+An Agentic Engineer => Wears Software Engineer and Data Scientist Engineer.
+
+You need to be willing to experiment, refine and iterate with AI Engineering.
+Because things sometimes are unpredictable, things are a bit janky. And it's
+part of the process.
+
+Here's a repository:
+
+https://github.com/ed-donner/agents/blob/main/guides/09_ai_apis_and_ollama.ipynb
+
+These are the course resources.
+
+And there are other links:
+
+https://edwarddonner.com/2025/04/21/the-complete-agentic-ai-engineering-course/
+
+The guides are useful for beginners.
+
+=== Steps
+
+- Get the IDE (Like Cursor)
+- Install Git
+- Clone the Repo
+- Run UV
+- Setup Key 
+
+=== Setup: Install Cursor, Git, Clone the Repo and Run UV
+
+Cursor is a bit janky. But you can fallback to VSCode, that should be more than
+enough.
+
+Basically you can download, and then log-into Cursor.
+
+_Fine, I'll make an OpenAI account_
+
+- Have git
+
+On the editor - We need to install the Python extension and Jupyter.
+
+And you need to have installed `uv`
+
+Whilst being on the repository folder. You can just do:
+
+- uv sync
+
+And it will immediately look at the current folder, figure out the right python
+version to work with the repo, and download all the necessary dependencies so
+that you can just bring it up.
+
+_Note:_ uv is cool, it's super fast, and it makes all the hard work for you so
+yeah, cool tool. Also, **it installs all the virtual env that will run the project
+under `.venv`.
+
+=== Set Up Your OpenAI API Key and .env File for the First Lab
+
+A ChatGPT account is not the same as an OpenAI account. So, do not confuse them,
+you need **an OpenAI Account**.
+
+- Generate for a Default project
+- Apparently if you want to use OpenAI you need a minimum of balance has to be
+bought. But I don't see that limitation, I'm just going to create the API key.
+- Disable Auto-reload
+
+After you add 5$, generate the API Key. (I set it to expire in 200 days)
+
+You have to create at the root of the repo a `.env` and add the key like this:
+
+`OPENAI_API_KEY=<KEY-VALUE>`
+
+And any other provider (Gemini, OpenRouter), will have their own name.
+
+We need to paste the key we got from the OpenAI website.
+
+_NOTE:_ You can always make another key. Don't worry if you lose it.
+
+**.env** This filename is really important, because Cursor and many conventions
+assume this file should not be read or even try to work with. So this key that
+is actually really important and sensitive is not subject to leaks. (And then someone
+grabbing it and using it instead)
+
+==== Lab
+
+We will be working with the Jupyter notebooks. Which allow to combine text and then
+execution of units of code.
+
+The notebooks have tons of instructions and tips to help you if things don't work
+as expected.
+
+The notebooks need to know the `kernel`. That is what python version has to be used
+to run the python code in the Jupyter notebooks.
+
+**Note:** It's IN the notebook instructions in case you don't have python 3.12.12
+option, you need to add manually the `.venv` path into the IDE. After that we
+can select the `kernel` and run some of the cells with code.
+
+_Lots of notes and recommendations for beginners, so it's okay to not pay too much
+attention there_
+
+_Running the first cells is enough, they check that the OpenAI API Key works_
+
+=== Your First OpenAI API Call and Chaining LLM Calls in Python
+
+````
+messages = [{"role": "user", "content": "Tell me a fun fact"}]
+````
+Be aware of the data type of the message to send to OpenAI. It's an array, with
+a dictionary as a first element.
+
+````
+response = openai.chat.completions.create(model="gpt-5.4-nano", messages=messages)
+print(response.choices[0].message.content)
+````
+
+Notice the API that we are leveraging. How we should create an instance that will
+call to GPT with a model and our message. And then getting the response that is
+nested inside some properties.
+
+- Chaining together LLM calls, so that we get a response from the LLM, and then
+get a response to that output from the same LLM
+
+````
+question = "Please propose a hard, challenging question to assess someone's IQ. Respond only with the question."
+messages = [{"role": "user", "content": question}]
+````
+
+We can then send that to ChatGPT:
+
+````
+response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages)
+question = response.choices[0].message.content
+print(question)
+````
+Notice how we are using `-mini` instead of `nano`
+
+And now we will grab that response and send it over so that the LLM answers:
+
+````
+messages = [{"role": "user", "content": question}]
+messages
+````
+
+And now, we will send and get the answer:
+
+````
+response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages)
+answer = response.choices[0].message.content
+print(answer)
+````
+
+The response actually comes in markdown, and it's a bit hard to read on the output
+console of the Cell so we can format it better and display it in a human readable
+way:
+
+````
+from IPython.display import Markdown, display
+
+display(Markdown(answer))
+````
+
+Now, we don't know if the question is correct, but we can also chain to another
+LLM model to verify if this is correct:
+
+````
+message = f"""
+Here is a question:
+{question}
+
+And here is a possible answer that might be correct or incorrect:
+{answer}
+
+Please evaluate if the answer is correct or incorrect.
+"""
+
+print(message)
+````
+
+And after making the message, we shall feed it:
+
+````
+messages = [{"role": "user", "content": message}]
+response = openai.chat.completions.create(model="gpt-5.4", messages=messages)
+print(response.choices[0].message.content)
+````
+
+Notice how we are asking to a much "smarter" LLM: `gpt-5.4`. In the course's case,
+the answer was actually wrong. And so we got a big response that is not really
+readable.
+
+````
+from IPython.display import Markdown, display
+
+display(Markdown(response.choices[0].message.content))
+````
+With this, (reusing what the course showed us), we actually get to visualize the
+response.
+
+And that's it. Cool, honestly.
+
+- We made multiple calls to an LLM.
+- And we did series of calls to LLM. We were chaining multiple LLM calls to reach
+a goal (a solution)
+
+And now a bit of an exercise:
+
+-First ask the LLM to pick a business area that might be worth exploring for an Agentic AI opportunity.<br/>
+-Then ask the LLM to present a pain-point in that industry - something challenging that might be ripe for an Agentic solution.<br/>
+-Finally have 3 third LLM call propose the Agentic AI solution. <br/>
+-We will cover this at up-coming labs, so don't worry if you're unsure.. just give it a try!
+
+[source, python]
+----
+# First create the messages:
+
+messages = [{"role": "user", "content": "Pick a business area that might be worth exploring for an Agentic AI opportunity"}]
+
+# Then make the first call:
+
+response = openai.chat.completions.create(model="gpt-5.4", messages=messages)
+print(response.choices[0].message.content)
+
+# Then read the business idea:
+
+business_area = response.choices[0].message.content
+
+message = f"Tell me a pain-point within this business area: {business_area}"
+messages = [{"role": "user", "content": message}]
+
+# Then make the second call
+
+response = openai.chat.completions.create(model="gpt-5.4", messages=messages)
+pain_point = response.choices[0].message.content
+
+## Then make the third call
+
+message = f"Propose an Agentic AI solution for this pain-point: {pain_point} within the business area of : {business_area}"
+messages = [{"role": "user", "content": message}]
+
+response = openai.chat.completions.create(model="gpt-5.4", messages=messages)
+idea = response.choices[0].message.content
+ 
+print(idea)
+----
+
+And yeah the idea was kinda cool (although complex):
+
+````
+An AI agent that detects payment disputes hidden in customer communications,
+identifies the root cause, gathers evidence, routes the issue to the right internal
+owner, and drives resolution until payment is unblocked.
+````
+
+_Note:_ It took a long time to get a response back (which I guess speaks about
+the degree of complexity the agent went into to publish a response)
+
+=== Day 2 - What Is an AI Agent? Definitions, Workflows vs Agents Explained
+
+
