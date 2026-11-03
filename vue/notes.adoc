@@ -7089,3 +7089,127 @@ sharing things around_
 - And routing also helps us not loading unnecessary code. When using routing (which
 is an extra package), only based on the URL then the code will be downloaded for
 necessary behavior.
+
+=== Routing setup
+
+We should install the router package:
+
+````
+pnpm install vue-router@next
+````
+
+It's then in `main.js` that we can import from the newly installed package, and
+also declare all the routes we want.
+
+[source, js]
+----
+import { createApp } from 'vue';
+import { createRouter, createWebHistory } from 'vue-router'; <.>
+
+import App from './App.vue';
+
+const router = createRouter({
+    history: createWebHistory(), <.>
+    routes: [
+        ''
+    ],
+});
+
+const app = createApp(App)
+
+app.mount('#app');
+
+----
+<.> We then get access to different objects and functions that we shall use to then
+setup routing
+<.> Javascript wasn't able to really interact with the browser history in the past,
+but now in modern times with this simple function we wire right into it. We don't
+have to emulate the browser history anymore
+
+=== Registering & Rendering Routes
+
+To register routes we need to pass object entries:
+
+````
+import { createApp } from 'vue';
+import { createRouter, createWebHistory } from 'vue-router';
+
+import App from './App.vue';
+import TeamsList from './components/teams/TeamsList.vue';
+import UsersList from './components/users/UsersList.vue';
+
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/teams', component: TeamsList }, // our-domain.com/teams => ...
+        { path: '/user-list', component: UsersList } // our-domain.com/user-list => ...
+    ],
+});
+
+const app = createApp(App)
+
+app.use(router);
+app.mount('#app');
+
+````
+We need to make our Vue app aware of the router with the routes, hence we first
+create the router object and to interface with external packages `app.use` is the
+way to go.
+
+Again, we want a shareable link and extra optimization features, hence we are recurring
+to routing.
+
+And so, we need a now a placeholder component, somewhere to which the router can
+send the views to render. Luckily, thanks to the fact that we are now interfacing
+with the router, we get access to the `router-view` component:
+
+````
+<template>
+  <the-navigation @set-page="setActivePage"></the-navigation>
+  <main>
+    <router-view></router-view>
+  </main>
+</template>
+````
+
+With this, once we reload the page, we can navigate by changing the URL, and
+we will see the respective rendered components
+
+[IMPORTANT]
+====
+The course is old. At the time of writing Vue is already around version 4. So
+if we run the command `pnpm install vue-router@next` we will actually get a super
+new version that is no longer compatible with the project. Specially if the command
+leaves us with the `^` symbol. Thanks to ChatGPT I found a version that is still
+compatible with the project's 3.0.0 => `"vue-router": "4.0.13"`
+====
+
+We got now shareable link, the navigation is broken though. We should still navigate
+inside the page, we don't want to enter URLs manually _no one uses pages like that_
+
+=== Navigating with router-link
+
+Basically, we will use a new built-in component that immediately emits to the router
+so that we render the respective page:
+
+````
+<template>
+  <header>
+    <nav>
+      <ul>
+        <li>
+          <router-link to="teams">Teams</router-link>
+        </li>
+        <li>
+          <router-link to="users">Users</router-link>
+        </li>
+      </ul>
+    </nav>
+  </header>
+</template>
+````
+The `to` is the most important property, otherwise the app will crash.
+
+`router-link` holds an anchor element under the hood `<a>` so if we want to style
+it, we have to style an `a` element. _Tip:_ To get rid of the bad styles, we can
+use `text-decoration: none` as well.
