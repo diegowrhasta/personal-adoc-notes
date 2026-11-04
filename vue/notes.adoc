@@ -7213,3 +7213,148 @@ The `to` is the most important property, otherwise the app will crash.
 `router-link` holds an anchor element under the hood `<a>` so if we want to style
 it, we have to style an `a` element. _Tip:_ To get rid of the bad styles, we can
 use `text-decoration: none` as well.
+
+=== Styling Active Links
+
+If you analyze a bit of the css classes that are added to the `router-link`
+component, you will notice that depending on what was clicked and what was
+active you'll have these:
+
+- `router-link-active`
+- `router-link-exact-active`
+
+With that in mind we can style them even further, so that we fix one bug in the
+behavior, because we want to be able to tell visually to the user, which link
+was clicked:
+
+````
+a:hover,
+a:active,
+a.router-link-active {
+  color: #f1a80a;
+  border-color: #f1a80a;
+  background-color: #1a037e;
+}
+````
+So, by styling the anchor tag, on the `router-link-active` class. We can replicate
+the same style as when it's being hovered and it was clicked.
+
+Now, bear in in mind that the `router-link-exactg-active` is a class used for
+granularity.
+
+If we had a url such as `/teams/1/list`. Then the parent, will just get `router-link
+-active`. This deals with nested routes, something we'll see later.
+
+By the way, you can configure the router so that the class name that is applied
+is a custom one:
+
+````
+
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/teams', component: TeamsList }, // our-domain.com/teams => ...
+        { path: '/users', component: UsersList } // our-domain.com/user-list => ...
+    ],
+    linkActiveClass: 'active'
+});
+````
+That way, the active link will have `active` as a css class instead of its default
+value.
+
+=== Programmatic Navigation
+
+Currently, we are using components to trigger navigation. However, there are use
+cases in which you need to navigate programmatically. Say, you press a button,
+or you do something else, and you need to run code that triggers a navigation.
+
+So, sometimes you want to run some code, and by the end navigate away. That away
+navigation has to be called in a specific way, something that triggers navigation
+inside of javascript code.
+
+It's quite easy, thanks to the fact that the application, the Vue application has
+the router interfaced (connected), we can access a special property:
+
+````
+methods: {
+  confirmInput() {
+    this.$router.push('/teams');
+    this.$router.back();
+    this.$router.forward();
+  }
+}
+````
+To navigate you'd always rely on `push` and then send over the route you want to
+navigate to. After that there are many other methods you can use, the docs are
+your friend to get to know about them. But for example you can navigate a move
+back or move forward easily with `back()` and `forward()`
+
+=== Passing Data with Route Params (Dynamic Segments)
+
+`TeamMembers.vue` => We have a component that we are not using. The idea is that
+we want to use it to render the list of members of a team.
+
+[IMPORTANT]
+====
+You should have only one route per path.
+====
+
+We want to add a dynamic segment for a route:
+
+````
+{ path: '/teams/:teamId', component: TeamMembers },
+// { path: '/teams/new', component: TeamsList },
+````
+By prefixing with colon: `:teamId` we are basically telling the router that anything
+that comes after the `teams` segment will be interpreted as a route parameter.
+
+So if we had another similar looking path, `/new` then the first rule would absorb
+the routing. **You should put the other route first to avoid this unintended behavior**.
+
+Now, after we add this new route, we can write `/teams/1` or `/teams/anything`
+and we would still **go to the same component**.
+
+The reason we add this marker with `:teamId` is because on the routed component,
+we can retrieve that route parameter and then run some logic based on this input.
+
+So, when the component is mounted, we would like to get the route param, and also
+the injected state with teams and members
+
+[source, vue]
+----
+<script>
+import UserItem from '../users/UserItem.vue';
+
+export default {
+  inject: ['users', 'teams'], <.>
+  components: {
+    UserItem
+  },
+  data() {
+    return {
+      members: [],
+      teamName: '',
+    };
+  },
+  created() { <.>
+    const teamId = this.$route.params.teamId; <.>
+    const team = this.teams.find(t => t.id === teamId);
+    const members = this.users.filter(u => team.members.includes(u.id)); <.>
+
+    this.members = members;
+    this.teamName = team.name;
+  }
+};
+</script>
+----
+<.> At the `App.vue` level we get a `provide()` that is providing a list of teams
+and a list of users, so any child component can inject that state.
+<.> The best lifecycle hook to get access to route params and injected values is
+`created`
+<.> And then to access the provided dynamic segment value you can leverage `$route.
+params.<parameter-name>`
+<.> And lastly, based on the injected state, we are filtering to the team with
+the provided `teamId` and then only the members that are marked as part of that
+team.
+
+=== Navigation & Dynamic Paths
