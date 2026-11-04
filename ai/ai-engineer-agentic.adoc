@@ -446,4 +446,279 @@ the degree of complexity the agent went into to publish a response)
 
 === Day 2 - What Is an AI Agent? Definitions, Workflows vs Agents Explained
 
+_Theory_
+
+Is there a well understood and definition of Agent?
+
+No.
+
+AI Agent could be anything that you wanted it to be. But there are a few sensible
+definitions
+
+- Sam Altman - "AI systems that can do work for you independently". This is gooey,
+GPT Agent. Operator. The idea is to give a task, and then that agent goes and
+takes actions. Something goes off, and does work for you.
+- Early 2025 consensus - AI systems where an LLM controls the workflow
+	- Rather than coding, you prompt an LLM, and tell him "what can I do? A, B
+	or C?" - The LLM chooses
+	- The idea is to interpret the output and define the workflow
+	- **An LLM is just a type of data science model, all it can do is take input,
+	which breaks into tokens, and it outputs the most likely tokens that follow
+	that sequence**
+		- We can write code that interprets the output and react to it. The LLM
+		generates tokens, and we are controlling the workflow. **WE CONTROL**
+			- The agent is our code, that interprets the output tokens of an LLM
+- Current prevailing view - An LLM with Tools in a Loop to achieve a goal
+	- This is the definition everyone has signed up for
+	- n8n => An LLM with tools, in a loop, to achieve a goal. The best demo ever
+	to demonstrate the definition
+		- We wrap the output, we interpret it, and our code, our Agent, turns the
+		vanilla LLM into an Agentic tool.
+
+**Agentic Systems**
+
+- Anthropic posted an article that lays out a lot of the terminology in the area.
+
+There are two types of Agentic Systems:
+
+- Workflows
+- Agents
+
+_Terminology is loose_. It's one way to think about it.
+
+**Workflows:** Are systems where LLMs and tools are orchestrated through predefined
+code paths. (It's not fully open. It doesn't mean one LLM doesn't decide where
+the execution goes. But there's a relatively specific path, and you know how to
+test all those variations within the path).
+
+Think of the "Deep" feature. How ChatGPT asks, and takes series of steps in a
+pre-defined code-path. That can be a workflow.
+
+**Agents:** Are dynamic systems where LLMs direct their own processes and tool
+usage, maintaining control over how they accomplish tasks.
+
+Think of an agent that works independently on its own, "brings up programs, browsers,
+and does its own things".
+
+Coding Agents => Feel super dynamic, and that do everything on their own.
+
+[IMPORTANT]
+====
+There can be gray areas within these definitions. Sometimes, you can add guardrails
+to an agent, and make a strict pigeonhole. Anthropic => Calls all of these systems
+**Agentic Systems**
+====
+
+Real, production systems => **People lean into workflows**. You want something to
+be repeatable, testable, and with a pre-defined code-path. Yes, the LLM can take
+some decisions here and there, but in the end, you want robustness.
+
+=== Agentic AI Design Patterns: Chaining, Routing, Orchestrator
+
+"Building effective Agentic Agents"
+
+This article introduced some patterns when building agentic systems. Now, these 3
+patterns are meant to be thought provoking, to give you base ideas that you can
+start with and go off when solving problems. They are not set in stone, and should
+not be taken as gospel.
+
+- Software Engineering background => Is more mature, and there are design patterns
+that are more "set in stone". However, the patterns in this Agentic space are more
+loose. These are not rigid patterns.
+
+They are just ideas for interesting approaches for actual production systems.
+
+==== Prompt Chaining
+
+Decompose into fixed sub-tasks
+
+. There's input
+. LLM1 call
+. Gate (this represents a decision in code)
+. LLM2 call
+. LLM3 call
+. Out
+
+This is the first pattern. Prompt chaining often forms a building block of a
+bigger pattern.
+
+==== Routing
+
+Direct an input into a specialized sub-task, ensuring separation of concerns
+
+. Input
+. LLM Router
+. LLM1
+. LLM2
+. LLM3
+. Out
+
+This is another prompt that is sent to an LLM that is best prepared for a specific
+type of question. **Separation of concerns**, so that you send LLM calls to specialized
+LLM models (which gives the best performance)
+
+_How do I know I need to breakdown a problem?_ => Wait a bit.
+
+==== Parallelization
+
+Breaking down tasks and running multiple subtasks concurrently.
+
+. IN
+. Coordinator
+. LLM1
+. LLM2
+. LLM3
+. Aggregator
+. Out
+
+==== Orchestrator-Worker
+
+Complex tasks are broken down dynamically and combined
+
+. IN
+. Orchestrator
+. LLM1
+. LLM2
+. LLM3
+. Synthesizer
+. OUT
+
+The difference is that the orchestrator and Synthesizer are LLMs themselves, they
+choose how to breakdown the input into other pieces (that other LLMs respond),
+and then the last LLM decides how to put together all the outputs.
+
+These patterns are very common. And seen in many shapes and forms across multiple
+agentic systems. The idea is to treat some form of input, pass it down to another
+LLM, and keep chaining things.
+
+**Pre-defined code-path**
+
+==== Evaluator-Optimizer
+
+LLM output is validated by another
+
+. IN
+. LLM Generator - Solution or Rejected with feedback
+. LLM Evaluator - Accepted
+. OUT
+
+The idea is to stay in a loop until an LLM accepts the result of another LLM and
+then outputs a solution.
+
+**By contrast agents:**
+
+. Open-ended
+. Feedback loops
+. No fixed path
+
+HUMAN => LLM Call - Action/Feedback (On Environment) - Stop
+
+As you can see, an agent is just an LLM call that runs on a loop, and keeps going
+until it decides it's reached its goal.
+
+_Don't get hung-up on the names, the idea is to understand the main idea_
+
+=== Agentic AI Risks, Guardrails, Evals and Traps to Avoid
+
+- One of the great benefits of Agentic AI is for fluent and flexible solutions that
+solve things in different ways
+	- But that's its weakness as well - **Unpredictable path**, **Unpredictable output**,
+	**Unpredictable costs**
+
+But you can mitigate this unpredictability.
+
+- Monitor => (Observability, Evals). You need to have the right kind of information,
+traces that shows you what is happening with your agent calls.
+
+Eval => End commercial goal. How many new customers, leads do I get?
+Eval => How many revenue do I get based on sales made by my agent?
+
+This is how you truly evaluate if your agentic framework is actually worth it.
+
+**Use an LLM whether an output is good or not** => _Evaluator-Optimizer pattern_.
+You can use that `LLM as a judge` to evaluate your business itself.
+
+- Guardrails => Ensures your agents behave safely, consistently, and within your
+intended boundaries
+	- It's just tests that you add, the LLM generates an output, you can check it,
+	make sure you are happy with that test. This is another way to mitigate Agentic
+	Solutions
+
+==== Traps
+
+**The First Agent Trap**
+
+"I need an Agent for my business" - "Ok - and what business problem is that solving"
+- "I want an Strategy Agent to give me advice for my org" - "OK, right, and... what...
+_business problem_ is that solving"
+
+**Always bring back to the commercial problem that is to be solved**
+
+- Maybe this involves LLM Agents, **maybe not**
+
+Only if you have a problem to be solved, only then you can measure if you solved
+said problem with the LLM Agent. **Don't be solution-oriented, start from the
+business problem**
+
+_Sometimes you have to change the conversation to a business problem_
+
+**LLMs are good at generating content** => They are trained to generate content that
+is believable. But to check if that output is actually good, to measure the business
+outcome, and iterating until the business problem is solved. **You need to know how
+to measure that a problem is solved**
+
+An Agent in a loop is constantly driven to improve the metric of solving the problem.
+
+**The Second Agent Trap**
+
+Anthropomorphizing
+
+- A common red flag: "Agent Architectures" that assign human-like responsibilities
+to Agents
+
+Trading Manager Agent - Market Research Agent - Trader Agent - Risk Manager Agent
+
+So you draw boxes and give names to agents with roles as if they were humans.
+
+**This is bad**. Agents are not people, they are token generation models.
+
+_The right approach:_
+
+**Start simple**
+
+Start with **One LLM**. One prompt, one objective. And then **you measure performance
+against a business objective**
+
+Add Agents because it improves performance => Do the scaling in a measurable way.
+As part of the experiments growing the architecture intentionally is what should
+drive you to make it bigger.
+
+**Do not think as humans would do something**. Measure outputs, and start simple
+_always_.
+
+==== Takeaways
+
+- Build Agent systems to solve problems in a measurable way
+	- Pushback, challenge, and get to a business problem.
+- Decide your Agent Architecture based on performance
+- LLMs generate plausible outputs, not necessarily accurate outputs
+	- Aligning the outputs with business results? That's your job
+	- The AI Engineers align the token output with business expectations
+
+**Hallucination** => This is not a move available for AI Engineers. That is an
+excuse for AI users. The idea to take the output of an LLM, and validate it,
+test it. **THAT'S YOUR JOB**
+
+==== What is an Agentic Engineer?
+
+- Someone who uses Agents to Engineer
+- Someone who engineers Agents
+
+_Be sure explicit:_
+
+If you've taken AI Coder course, you are: An engineer skilled at using Coding Agents
+
+After this course, you will be: An AI engineer skilled at building Agents
+
+== Day 3 - LLM Providers Compared: OpenAI, Claude, Gemini, Ollama, Groq
 
