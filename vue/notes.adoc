@@ -7358,3 +7358,190 @@ the provided `teamId` and then only the members that are marked as part of that
 team.
 
 === Navigation & Dynamic Paths
+
+[IMPORTANT]
+====
+Be really careful when you are setting up the links for navigation on the `router-link`
+components, they have to be absolute paths, otherwise navigation ends up weird
+====
+
+````
+<template>
+  <header>
+    <nav>
+      <ul>
+        <li>
+          <router-link to="/teams">Teams</router-link>
+        </li>
+        <li>
+          <router-link to="/users">Users</router-link>
+        </li>
+      </ul>
+    </nav>
+  </header>
+</template>
+````
+Absolute meaning, have a `/` prefix.
+
+And now we want to go by pressing UI buttons to the screen that breaksdown the
+team members:
+
+[source, vue]
+----
+<template>
+  <li>
+    <h3>{{ name }}</h3>
+    <div class="team-members">{{ memberCount }} Members</div>
+    <router-link :to="'/teams/' + id">View Members</router-link> <.>
+  </li>
+</template>
+
+<script>
+export default {
+  props: ['id', 'name', 'memberCount'], <.>
+};
+</script>
+----
+<.> We have to dynamically recreate the link to the team that is being rendered,
+and with the shorthand `:` we basically enable the property to become javascript
+aware, and we can chain a string like this.
+<.> Don't forget that we have to send to the child the `id` otherwise it will never
+be aware of what team this should redirect to.
+
+To make things even better, you can put the link behind a computed property:
+
+````
+<template>
+  <li>
+    <h3>{{ name }}</h3>
+    <div class="team-members">{{ memberCount }} Members</div>
+    <router-link :to="teamMembersLink">View Members</router-link>
+  </li>
+</template>
+
+<script>
+export default {
+  props: ['id', 'name', 'memberCount'],
+  computed: {
+    teamMembersLink() {
+      return `/teams/${this.id}`;
+    }
+  }
+};
+</script>
+````
+
+=== Updating Params Data with Watchers
+
+Route parameters are useful, but they can be a bit tricky.
+
+**First Got'cha**
+
+The vue router, tries to optimize, to be efficient. So when navigating away, it
+won't immediately go and try to destroy and recreate a component, it will try to
+re-use it. So what if you are inside a view, and it has a link to the same view
+just a different route parameter maybe?
+
+.TeamMembers.vue
+````
+<template>
+  <section>
+    <h2>{{ teamName }}</h2>
+    <ul>
+      <user-item v-for="member in members" :key="member.id" :name="member.fullName" :role="member.role"></user-item>
+    </ul>
+    <router-link to="/teams/t2">Go to Team 2</router-link>
+  </section>
+</template>
+````
+Say we are at `/teams/t1` and we press the `Go to Team 2` link, the URL will indeed
+change to `/teams/t2` but the content will not. And that's because we chose the
+`mounted()` hook to load the data, because we are not mounting it again if we
+are already standing there, it will stick to the same state. We can however extend
+the component to catch this other possible workflow and render the right content:
+
+.TeamMembers.vue
+````
+created() {
+  this.loadData(this.$route);
+},
+watch: {
+  $route(newRoute) {
+    this.loadData(newRoute);
+  }
+},
+methods: {
+  loadData(route) {
+    const teamId = route.params.teamId;
+    const team = this.teams.find(t => t.id === teamId);
+    const members = this.users.filter(u => team.members.includes(u.id));
+
+    this.members = members;
+    this.teamName = team.name;
+  }
+}
+````
+To avoid code duplicity we can extract the data loading into its own method, and
+we can call it from both `created()` and then a watcher that we can put on the
+`$route` property. The one that we would inherit with the routing package.
+
+And so, we will be sending the `$route` object, when loading the component, and
+when its state changes, and from there, on the common method we simply run our
+data loading logic. _This is quite clever and definitely a use case that you
+can run into and should know how to handle_
+
+_There is another way to fix this, and actually we still have an issue_
+
+=== Passing Params as Props
+
+`TeamMembers` can only be loadable through routing. And that is because we just
+coupled it with `$route`. So if you embed the component into another template,
+without routing, this would not work anymore.
+
+_NOTE:_ Okay this is insane. Actually a switch on the `main.js` file and, voila.
+
+````
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/teams', component: TeamsList }, // our-domain.com/teams => ...
+        { path: '/users', component: UsersList }, // our-domain.com/user-list => ...
+        { path: '/teams/:teamId', component: TeamMembers, props: true },
+        // { path: '/teams/new', component: TeamsList },
+    ],
+    linkActiveClass: 'active'
+});
+````
+When you add `props: true` to an entry. The route params actually get replicated
+as properties too on the routed component.
+
+````
+props: ['teamId'],
+created() {
+  this.loadData(this.teamId);
+},
+watch: {
+  $route() {
+    this.loadData(this.teamId);
+  }
+},
+methods: {
+  loadData(teamId) {
+    const team = this.teams.find(t => t.id === teamId);
+    const members = this.users.filter(u => team.members.includes(u.id));
+
+    this.members = members;
+    this.teamName = team.name;
+  }
+}
+````
+And so in here, when switching to trying to consume the props `this.teamId` whether
+this is routed, or not, we would feed a `teamId` to it and the component would still
+work. This is so elegant, _it's awesome_.
+
+**This makes the component highly reusable and also guarded against misuse, without
+making it overly verbose**
+
+=== Redirecting & "Catch All" Routes
+
+
