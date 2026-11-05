@@ -722,3 +722,255 @@ After this course, you will be: An AI engineer skilled at building Agents
 
 == Day 3 - LLM Providers Compared: OpenAI, Claude, Gemini, Ollama, Groq
 
+We are going to make tons of LLM calls.
+
+We will be calling Paid APIs and open-source models in the cloud and locally
+throughout this course.
+
+You have complete flexibility to pick which you use, and can spend $0.
+
+Free models are not as strong, you have to hone/refine prompts, iterate and so on.
+That's part of them. Paid models require less. (You pay a premium)
+
+- How do you select the right LLM?
+- How do you prepare?
+
+There's another course that answers those questions _AI Engineering Core Track_
+
+We are going to use a slew of models.
+
+- New models come out every week. (Use whatever you want)
+
+OpenAI: GPT nano, GPT mini, GPT
+
+nano => Cheapest, smallest, fastest
+mini => Middle point
+GPT => Biggest, strongest
+
+Anthropic: Claude Haiku, Claude Sonnet, Claude Opus => Smallest to Largest
+
+Google: Gemini Flash Lite, Gemini Flash, Gemini Pro => Smallest to Largest
+
+There are a bunch more of providers:
+
+DeepSeek AI: DeepSeek V4 => Startup, with a really large model that is open-source.
+
+There are companies that offer "inference providing", so they run models for you
+on the cloud.
+
+Groq: open-source LLMs => Fast inference provider. It runs fast and quickly on
+the cloud.
+
+Ollama: Piece of software that runs on your PC, and it runs inference on SMALL
+open source models. (Platform to run open source models locally)
+
+OpenReuter.ai => It sits in the middle, you can have one API key and then your
+requests are routed to other LLMs. OpenAI, Gemini, Groq, Grok, etc. (5.5% extra
+charge)
+
+**Artificial Analysis** gives a comparison of the intelligence, sp.
+
+_Benchmarks:_ Are not the best, take them with a pinch of salt. But it's a good
+place to start on seeing how good the models are.
+
+**Advice**
+
+- Use the resources!
+- Stay patient! => The real learning happens when you bash your head against a
+problem. And also, AI is unpredictable => Embrace the experiments, that's what it
+takes to get really reliable/agentic solutions.
+
+=== Set Up Multiple LLM API Keys and Generate a Question to Ask
+
+Being an AI Engineer => Is a lot of being a Data Scientist which is **do lots of
+experimenting**
+
+We are going to do a bit of hybrid patterns and so on.
+
+**The course went to setup accounts with multiple LLMs**
+
+OpenRouter => Good one to pick, alongside OpenAI, because we can use multiple
+providers and so on.
+
+_NOTE:_ Don't forget to put your API keys in the `.env` file.
+
+The course basically has code that will try to read the whole `.env` file, detect
+which API keys have been loaded, detect them and use them later.
+
+**We are going to ask an LLM to give us a question to evaluate another LLMs answer:
+
+````
+request = """
+Please come up with a challenging, nuanced question with a succinct answer,
+that I can ask a number of LLMs to evaluate their intelligence.
+Not a mathematical puzzle, but more of a thought-provoking question that requires intelligent insight.
+Include in your question that the answer must be short.
+"""
+request += "Answer only with the question, no explanation."
+messages = [{"role": "user", "content": request}]
+````
+
+And then we will call `gpt-5.4-mini` or `gpt-5.5`, to respond to that prompt:
+
+````
+openai = OpenAI()
+
+response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages)
+question = response.choices[0].message.content
+display(Markdown(question))
+````
+
+For science:
+
+````
+You are given a black-box system that sometimes says “I am confident” when it is
+right and sometimes when it is wrong, and “I am unsure” under the opposite pattern.
+What single strategy would you use to decide whether its self-reports are
+trustworthy, and why? Answer in one sentence only.
+````
+
+=== Call 8 LLMs with the OpenAI-Compatible API: GPT, Claude, Gemini
+
+You should get a different question as the course, because this is **all about
+experimentation**
+
+[IMPORTANT]
+====
+Seems that most providers of APIs have decided to follow a standard when making
+calls to them. So if you call any of their APIs, by using the same OpenAI library
+you should be able to interface with them without issue
+====
+
+````
+# OpenAI Compatible URLs
+
+ANTHROPIC_BASE_URL = "https://api.anthropic.com/v1/"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROK_BASE_URL = "https://api.x.ai/v1"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+OLLAMA_BASE_URL = "http://localhost:11434/v1"
+````
+
+````
+# OpenAI client libraries with the right base_url and key
+# If this surprises you, please see Guide 9 in the Guides folder!
+
+anthropic = OpenAI(api_key=anthropic_api_key, base_url=ANTHROPIC_BASE_URL)
+deepseek = OpenAI(api_key=deepseek_api_key, base_url=DEEPSEEK_BASE_URL)
+gemini = OpenAI(api_key=google_api_key, base_url=GEMINI_BASE_URL)
+groq = OpenAI(api_key=groq_api_key, base_url=GROQ_BASE_URL)
+grok = OpenAI(api_key=grok_api_key, base_url=GROK_BASE_URL)
+openrouter = OpenAI(api_key=openrouter_api_key, base_url=OPENROUTER_BASE_URL)
+ollama = OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
+````
+
+And then you can start calling different model names:
+
+````
+# The API we know well
+# Reasoning effort can be none, low, medium, high, or xhigh
+
+model_name = "gpt-5.4-nano"
+
+response = openai.chat.completions.create(model=model_name, messages=messages, reasoning_effort="none")
+answer = response.choices[0].message.content
+
+record(model_name, answer)
+````
+The usage of the `OpenAI()` constructor is a bit magical I'd say. Because each call,
+is "composing" the whole open ai API with different APIs and different keys that
+based on the `model` name, it will then attempt to route to the correct API and
+get an answer.
+
+moonshotai/kimi-k2.6 => The BIGGEST, BADDEST, COOLEST OPEN SOURCE MODEL IN THE PLANET
+RIGHT NOW.
+
+=== Install Ollama and Run Local LLMs: Llama, GPT-OSS and Gemma
+
+ollama.com => You can go here to download the platform.
+
+Once you install the program, itself, you can go and browse the different models
+that ollama can run, you can probably start with `llama3.2`.
+
+**For most computers => Less than 3 GB should be used**. Avoid large models unless
+you know what you are doing.
+
+We are going to call the ollama client directly, we won't integrate "with programs"
+as the website says.
+
+qwen => For 1.0GB and 2.7GB.
+
+The biggest one: gpt-oss.
+
+There are `-cloud` models in ollama, that doesn't run locally, it runs in the cloud.
+
+You can list all the models you installed:
+
+- `ollama ls`
+- `ollama serve` => This starts the server to which we can route our requests.
+
+In Jupyter books, if you do `!....`, it will run the whole statement in the terminal.
+
+````
+import requests
+models = requests.get('http://localhost:11434/v1/models').json()
+for model in models.get("data"):
+    print(model.get("id"))
+````
+
+And then by using the same OpenAI interface we will talk to the local model:
+
+````
+model_name = "llama3.2:1b"
+
+response = ollama.chat.completions.create(model=model_name, messages=messages)
+answer = response.choices[0].message.content
+
+record(model_name, answer)
+````
+
+- Basically the course is then adding to the big memory of all the different LLM
+responses. Based on clouds, and then local models. We will then gather all the
+information, sort it out in an ordered manner, and lastly we can send that to a
+judge LLM (the course picks `Grok`)
+
+And lastly the `Grok` judge, picks the best answer from all the different LLMs.
+
+The lingo used here is `competitors`, `judge`.
+
+[IMPORTANT]
+====
+These kinds of patterns - to send a task to multiple models, and evaluate results,
+are common where you need to improve the quality of your LLM response. This approach
+can be universally applied to business projects where accuracy is critical.
+====
+
+=== LLM as a Judge: Rank Multiple LLMs with an Orchestration Flow
+
+`zip()` it's a useful function in Python, so that you can iterate multiple lists
+at once.
+
+`enumerate()` is a way to step through something to get the index and the item
+
+**Since we are not going to judge the winner of the competition**, we will get
+an LLM to judge the results. We anonymize the competitors with responses, and then
+send that whole stack of responses and have the LLM rank the responses.
+
+_The idea behind Agentic is that, to let LLMs make decisions and infer things_
+
+[IMPORTANT]
+====
+We are just asking to generate tokens. It's a clever trick to put code in the
+way we call an LLM, to then make a decision.
+====
+
+_In the course, moonshotai/kimi-k2.6 => Won. The open source model_
+
+Grok => Has a bias to be radically honest. So that might affect his judgement.
+
+We used Orchestrator-Worker and Evaluator as patterns? I guess?
+
+=== Day 4 - The Agent Ladscape: Frameworks, Runtimes, Tools and Builders
+
