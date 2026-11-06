@@ -974,3 +974,530 @@ We used Orchestrator-Worker and Evaluator as patterns? I guess?
 
 === Day 4 - The Agent Ladscape: Frameworks, Runtimes, Tools and Builders
 
+We discovered how to orchestrate LLMs, how to put them together. It's really simple,
+make a call to an LLM, take the output and send it over to another one or make
+some processing.
+
+**The Agent Landscape**
+
+Agentic AI => Over-hyped and immature industry.
+
+There are 4 different types of offerings:
+
+- Builders => Business People, Technical and Non-Technical can drop solutions.
+	- n8n
+	- ElevenLabs
+	- OpenAI Agent Builder
+	- CrewAI Studio
+Most of these products are Drag & Drop.
+
+- Products => Non-technical people can **use** AI Agents
+	- Claude Code
+	- Cowork = Powerpoints, Word, Excel
+	- OpenClaw
+	- Claude Design = Agent version of Figma
+
+- Runtimes => Technical people can **execute** AI Agents
+	- AWS Lambda
+	- AWS Bedrock AgentCore
+	- Claude Managed Agents
+	- Vertex AI Agent Engine
+
+You can deploy agents, that then operate in the wild, and work amongst themselves.
+
+- Frameworks => Technical peopple can **develop** AI Agents
+	- OpenAI Agents SDK
+	- CrewAI
+	- LangGraph / LangChain
+	- Google ADK
+
+These are libraries that allow you to build agents quickly.
+
+The four types align with the courses of the instructor:
+
+- Builders => AI Builder
+- Products => AI Coder
+- Runtimes => AI Engineer Production Track
+- Frameworks => AI Engineer Agentic Track
+
+==== Agent Frameworks
+
+Helper code that makes it easier to create Agents based on LLM calls. ("Abstraction
+Layers"). We can write multiple calls to LLMs and pass inputs. They are supposed to
+simplify and abstract operations that are pretty repetitive.
+
+**Orchestration:** Chaining together LLM calls
+**Tool calling:** Equipping an LLM with abilities, including with MCP (It's janky
+doing this manually)
+
+_MCP:_ It's a simple interface to use someone else's tools
+
+**Constructing LLM inputs and interpreting outputs** - including a technique called
+"Structured Outputs" -> The idea is to simple trick a bit the LLM, that way he
+outputs things as JSON, and that gets fed down the pipeline, a python object springs
+up from this output. (The frameworks have easy ways of doing this)
+
+**All of this allows you to easily code an 'Agent Loop' - an LLM in a loop with
+tools to achieve a goal**
+
+. OpenAI Agents SDK = Lightweight framework. You have as much control as possible
+over the code.
+. Google ADK = Very similar to OpenAI (lightweight)
+. AWS Strands Agents = Lightweight and nice (new)
+. CrewAI = Opinionated, they have a prescribed way of working with it. So embrace. And you
+can build really quickly, and build powerful systems if you follow the way of doing
+things. But there are cases in which you will be battling the framework. CrewAI
+is **super powerful**.
+. LangGraph / LangChain = Very powerful frameworks, and popular because it's used
+in enterprise. It's bulletproof.
+
+**No framework:** Frameworks are utilities. They are there to help you. But you
+don't need them if you want. In Anthropic's blogspot: They recommend to start simple,
+to learn how things work FIRST. **We will build and hook up things ourselves, without
+Agent frameworks**
+
+_Understand clearly what is an LLM in a loop, with tools, to reach a goal_
+
+- So this will be janky. But it's a **rite of passage**
+
+_NOTE:_ There are many other agent frameworks, and each one is better for specific
+problems. But it's not that important, _the choice doesn't make a huge amount of
+difference_, don't overfixate on these details.
+
+=== How Tool Calling Works: The Truth Behind AI Agent Autonomy
+
+**Tools:** Are the essential idea behind Agentic AI. Tools give LLMs abilities.
+We wanna give the LLMs the token machines new abilities:
+
+- The power to carry out actions like **query a database** or **look up stock prices**
+
+Tool calling is also called `function calling`. You can tell an LLM => Hey, run
+this function.
+
+_Sounds `spooky` right?_ OpenAI can reach into my computer? A large language
+model generates tokens - what makes it suddenly decide to run code on my computer?
+
+LLMs only generates text. It's just a bunch of matrix calculations, how can these
+matrix calculations connect and run things?
+
+The reality is a bit **mundane**.
+
+A lot of things when it comes to LLMs are reduced to this:
+
+- Clever prompting
+- Useful prompts
+- Querying
+- If statements
+
+Tool Calling - in theory
+
+An LLM Equipped with a tool seems magical
+
+User -> Software -> LLM -> Tools (Search the internet, Query a database, Edit a Google Sheet, Look up stock prices)
+
+Software -> Tools (THEY CALL THE TOOLS)
+
+The idea is that the software talks to the LLM, and asks it: "User wants to do this,
+what do you want to do?" The LLM tells the software, okay don't reply to the user,
+use "THIS TOOL", and make a SQL Query. Software calls the LLM again, says what the
+user said, and what the tool generated. **Our code calls the LLM and the tools**
+
+LLMs due to their token nature, they are so good at interpreting intent, at
+interpreting a tool's purpose, and how a prompt is related to that pre-existing
+tool context. So that once an input comes in, based on a tool or context, the
+LLM can respond in a specific fashion.
+
+You can create a tool by simply prompting specific instructions to ChatGPT
+
+````
+You are a customer support assistant for an airline.
+You answer user's questions.
+You have a special ability to lookup ticket prices. Respond like:
+GET_TICKET_PRICE: London
+To get the price for a ticket to London.
+With that, here is the question from the user:
+
+User: How much does it cost to go to Paris?
+````
+
+And the response is:
+
+GET_TICKET_PRICE: Paris
+
+The LLM is so good at interpreting "Cost, Paris - London", all of that. That ability
+to take free form and natural language from a user, and turn that into a specific
+tool call, that's amazing. And it was an unsolvable problem years ago.
+
+````
+You are exploring a room. You can move in 4 directions by responding: MOVE NORTH,
+MOVE EAST, MOVE SOUTH or MOVE WEST to learn more about what's there. Respond with
+your choice.
+````
+
+- MOVE NORTH
+
+This is actual **autonomy**. The LLM **chose** to MOVE NORTH for whatever reason,
+and we can then interpret this output and signal to something more like a robot
+or whatever.
+
+````
+there's nothing there. Next move?
+````
+
+- MOVE EAST
+
+That's Autonomy. It's boring. It's just tokens in, tokens out.
+
+[NOTE]
+====
+Agent Loop: The reality is that the Software that in a loop calls an LLM, and based
+on the response we call some functions. And then feed back into the LLM, and then
+more tokens out, with more tokens in.
+====
+
+=== Start the Digital Twin: Read a PDF and Master System Prompts
+
+We are making our own Agent Loop from scratch.
+
+Basically we need some preparation:
+
+- A pdf: `linkedin.pdf` => That should be under a `twin` folder.
+
+We will deploy things into a Linux box, and since Linux boxes are case sensitive, there 
+are sneaky problems with the name of files.
+
+Inside of `twin` another `summary.txt` file also has to be there.
+
+Apparently a Carreer Twin: Is a **resume of the future**. Basically an LLM that
+can answer questions about yourself, your career and so on. (Digital Twin)
+
+`gradio` => Great package for user interfaces.
+`pypdf` => Package that reads PDF files
+
+How do you go about setting up a new project and choosing the packages:
+
+- You have to put in the work
+
+==== Running instructions
+
+Basically we will load different packages, then we will load the OpenAI() model.
+And we will read both the pdf and the txt files.
+
+**LLMs => Are fantastic at handling unstructured data, and interpreting.**
+
+Now, let's dig a bit deeper into how LLMs can be fed, and how we can add extra
+context for it:
+
+````
+messages = [
+    {"role": "system", "content": "You are a helpful assistant"},
+    {"role": "user", "content": "Hi, my name is Ed"}
+]
+````
+There's something called the `system prompt`. This gives a context, it gives extra
+framing for the LLM. You can sort of organize the prompt you are going to feed
+the LLM.
+
+So far we've been selling a `user` message, but you can pile up a `user` message,
+what the assistant said back (GPT), and then another `user`, and then again the
+assistant response. So you are making a series of messages (that's the conversation
+history)
+
+**The illusion of memory:** GPT doesn't have memory, when you give an input sequence,
+you always put the full conversation. Otherwise he won't have the enough context.
+**The LLM needs to check the whole conversation so far**, that's why you can refer
+back to what you said. _But this is a trick, it's not true_. The whole contents
+are sent to GPT.
+
+_This is kind of unfair, we are sending so many tokens_. But well, yeah, so that
+the output is intelligent, you want to do the calculations. A weird conversation
+is gonna take place if you don't keep the history.
+
+- The input sequence would need to have as much information as possible
+	- This gives the full illusion of memory
+
+````
+messages = [
+    {"role": "system", "content": "You are a snarky, witty assistant"},
+    {"role": "user", "content": "Hi, my name is Ed"}
+]
+````
+
+````
+messages = [
+    {"role": "system", "content": "You are a snarky, witty assistant"},
+    {"role": "user", "content": "What's my name?"}
+]
+````
+
+````
+messages = [
+    {"role": "system", "content": "You are a snarky, witty assistant"},
+    {"role": "user", "content": "Hi, my name is Ed"},
+    {"role": "assistant", "content": "Well hi there, Ed. It's nice to meet you."},
+    {"role": "user", "content": "What's my name?"}
+]
+````
+
+````
+response = openai.chat.completions.create(model="gpt-5.4-nano", messages=messages)
+print(response.choices[0].message.content)
+````
+
+> Your name is Ed—so, congrats, you *are* paying attention.
+
+Notice the `assistant` prompt, this highlights that the same LLM responded already,
+(so this is an already had conversation)
+
+=== Build a Chat UI with Gradio and Define Your First Agent Tool
+
+````
+system_prompt = f"""
+
+# Your role
+
+You are a digital twin running on a website, chatting with visitors of the website.
+You represent the person who's website you are on.
+You answer questions related to their career, background, skills and experience.
+
+Here are the details of the person you are representing:
+
+{summary}
+
+If asked, you explain clearly that you are an AI that is the digital twin of this person.
+
+# Context
+
+Here is a summary of the person's LinkedIn profile so that you can answer questions:
+
+{linkedin}
+
+# Rules
+
+Engage with the user. Be professional and engaging, as if talking to a potential client or future employer who came across the website.
+Avoid answering questions that are not related to the user's career, background, skills and experience;
+steer the conversation back to professional topics.
+
+Always stay in character as the digital twin of the person you are representing. Represent the person.
+
+IMPORTANT: If you don't know the answer, say so. Never make up an answer.
+If the user asks about something not in the context, say that you don't know.
+"""
+````
+Notice how we are using markdown to sort of organize the whole context. This is
+good both for human readability, but also for even better inference on the LLM
+side.
+
+````
+messages = [
+    {"role": "system", "content": system_prompt},
+    {"role": "user", "content": "Hi - please tell me about yourself"},
+]
+
+response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages)
+display(Markdown(response.choices[0].message.content))
+````
+Basically we are adding all the information about this person as a system prompt.
+And we then are asking questions to the agent based on that pre-existing context.
+
+````
+def chat(message, history):
+    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": message}]
+    response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages)
+    return response.choices[0].message.content
+
+chat("Please summarize who you are", [])
+````
+We are now, defining a utility function in Python that we can use to chat with the
+Digital Twin.
+
+**Notice how we are simply sending a user prompt, but we have the whole context
+in the background through a `system prompt`.
+
+But we will not just stick to this console output and code, we will actually bring
+a chat:
+
+````
+gr.ChatInterface(chat).launch(inbrowser=True)
+````
+With this a chat interface will be opened, to which any returned value of the function
+will then be displayed in a chat interface. We are cleverly hooking through the
+UI the user input and then displaying back the response of the model.
+
+_NOTE:_ This is actually insane, how can you with one line bring up a whole chat
+interface and that be already interfaced with an LLM? GOD DAMN DUDE.
+
+You require experimentation => If you want to strictly stop your Digital Twin,
+you have to iterate and make that a reality.
+
+_Tool calling, is a bit of a hack, it's about a system prompt, and if a statement._
+
+**This is clunky, and this is because an LLM just generates tokens, and the tool
+calling is the plumbing, the scaffolding to give the appearance that an LLM can
+use tools, it's all prompts, jsons and ifs**
+
+We need to be able to describe the LLM that we have a tool. And you describe with
+a JSON. And that is because in the training data for LLMs, the tools that were fed
+to it, were fed with JSON.
+
+````
+def record_email_tool(email):
+    print(f"Tool called to record an email: {email}")
+    with open("emails.txt", "a", encoding="utf-8") as f:
+        f.write(email + "\n")
+    return "Email received"
+
+record_email_tool("test@testy.com")
+````
+This is a small function that records an email into a file.
+
+This is how you can describe a tool:
+
+````
+record_email_tool_json = {
+    "name": "record_email_tool",
+    "description": "Use this tool to record that a user provided their email address",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "email": {"type": "string", "description": "The email address of this user"}
+        },
+        "required": ["email"],
+        "additionalProperties": False
+    }
+}
+
+````
+You can be concise or a bit more detailed. But because models have been so well
+trained, people tend to write less and the models can still use the tools really
+well.
+
+This is how we sort of describe a tool that the LLM can call/use:
+
+````
+tools = [{"type": "function", "function": record_email_tool_json}]
+````
+It's but a block of JSON.
+
+The point of frameworks, is that you can show a function to them, and they generate
+the JSON for us. In the future you don't have to use or cook this up from scratch.
+The idea of the Frameworks is to autogenerate this.
+
+=== Build the Agent Loop from Scratch: Tool Calling with a While Loop
+
+This is where the CLANKERS START.
+
+- In the future, Agent Frameworks take care of the hacky staff, they abstract. But
+it's good to know how it works.
+
+[source, python]
+----
+def chat(message, history):
+    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": message}] <.>
+    response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages, tools=tools) <.>
+         
+    if response.choices[0].finish_reason=="tool_calls": <.>
+            message = response.choices[0].message
+            tool_call = message.tool_calls[0] <.>
+            email = json.loads(tool_call.function.arguments).get("email") <.>
+            record_email_tool(email) <.>
+            messages.append(message) <.>
+            messages.append({"role": "tool", "content": "Email recorded", "tool_call_id": tool_call.id}) <.>
+            response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages, tools=tools) <.>
+            
+    return response.choices[0].message.content <.>
+----
+<.> Basically turning into a list of dictionaries to send to the LLM
+<.> Same function we saw before, but we are now passing to the LLM the `tools`,
+we are telling the model that there's this thing at your disposal
+<.> If the response of the LLM is `tool_calls`, which means the LLM decided he
+will call a tool
+<.> In here we are going to retrieve the tool from the same object that the LLM
+computed. This is a bit hacky, we assume only **one tool exists**, we will fix
+this later.
+<.> We are assuming that `email` comes back somehow, as the argument for the tool
+<.> We are feeding our function this parameter call
+<.> We are then adding the message that is about the tool call
+<.> And we are then
+<.> Lastly we are going to populate `response` with our loaded history with the
+tool call that was actually responded. And we are calling our function also (based
+on an `if`)
+<.> By the very end we are returning the response.
+
+We can lunch again the chat, and ask to record an email. With a prompt such as
+`I'd like to get in touch. I'm at a@test.com`. And we see a response.
+
+We should double check that in `email.txt` we indeed have saved the email that
+we prompted.
+
+However, we can easily break the LLM: `Please record my 3 email addresses: b@test.com, c@test.com, d@test.com`
+
+GPT tried to call 3 tool calls, and we don't support that. To avoid breaking the
+program, we should just introduce **A loop**
+
+[source, python]
+----
+def chat(message, history):
+    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": message}]
+    response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages, tools=tools)
+         
+    while response.choices[0].finish_reason=="tool_calls": <.>
+            message = response.choices[0].message
+            messages.append(message)
+            for tool_call in message.tool_calls: <.>
+                email = json.loads(tool_call.function.arguments).get("email")
+                record_email_tool(email)
+                messages.append({"role": "tool", "content": "Email recorded", "tool_call_id": tool_call.id})
+            response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages, tools=tools)
+            
+    return response.choices[0].message.content
+----
+<.> Instead of `if` we will keep calling the tool again and again, until the LLM
+decides to not call tools, we are controlling behind `tool_calls` as the flag value.
+<.> This is another technicality, but basically we are iterating on the tool calls
+and on each of them we are running the tool execution ourselves, on top of then
+continuing feeding the LLM
+
+**We are iterating, again and again against the LLM, and executing as a side effect
+the actual tools**.
+
+In the end by prompting:
+
+> Please record my 3 email addresses: b@test.com, c@test.com, d@test.com
+
+Then our Agent will finally be able to save more than one email into our `emails.txt`
+
+**We achieved a goal, by using loops**
+
+The course adds two exercises:
+
+- One to guard off questions that are outside of the scope of the Digital Twin.
+This is easily solvable just add more to the `# Rules` section stating the LLM
+to deny questions out side of the scope of carreer and info on the Digital Twin.
+- The other exercise is about spinning up another LLM and evaluating the input
+prompt to deem this related to the actual domain and not go outside of it
+- And another exercise about implementing in your business a **Digital Twin**
+
+==== Summary
+
+Agentic AI involves building a harness around LLMs, crafting the inputs and
+interpreting the outputs, in a loop, so that they can 'use tools' and 'be autonomous'.
+
+**Agent Frameworks** are **helper code** that make it faster to implement these
+techniques, but they're not required.
+
+By the end of this course, you will be able to deliver significant commercial
+value by building **autonomous AI Agents**.
+
+The idea is to use the tricks and techniques to apply to commercials products.
+That way you build autonomous AI Agents.
+
+Behind the scenes:
+
+- Janky Json
+- Loops
+- Ifs
+
+=== Day 5 - Context Engineering for AI Agents: Memory, Tools and RAG
+
+
