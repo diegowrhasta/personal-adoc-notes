@@ -1500,4 +1500,376 @@ Behind the scenes:
 
 === Day 5 - Context Engineering for AI Agents: Memory, Tools and RAG
 
+Let's do a brief recap:
 
+There's a different AI Agents (different products) out there:
+
+- Agent Builders
+- Products
+- Runtimes
+- Frameworks
+
+Frameworks are abstraction logic that helps connect tools to LLMs.
+
+Crew AI, LangGraph/LangChain, OpenAI Agent SDK, Google ADK, AWS Strand Agents,
+No framework.
+
+At the heart of Agentic AI: **Tools** So that you equip LLMs with functionality,
+it gives you a sense of _autonomy_. It feels "magical".
+
+But you write software, you call an LLM, based on the response, you choose what
+to do. LLM gets tokens, output tokens. **It's up to us to interpret the tokens
+and run tools**
+
+- If the LLM wants to call a tool, then call the tool. Otherwise, we exit out.
+This is all a loop, always iteration.
+
+==== Context Engineering
+
+Prompt Engineering: Used to be a career and some specific skill that was in demand.
+It has fizzled out though.
+
+The idea: What it really matters in Agentic AI = You should figure out all the information
+that you need to put into the context. The tools you put, how you interpret the
+output.
+
+There's different information that you might pack into a prompt.
+
+- The framing, system prompt, user prompt.
+
+Available Tools => In the context we include a description of all the tools that
+can be called. _Structured output:_ This is when we tell the LLM to respond based
+on a specific JSON spec. The code turns the JSON into python objects.
+
+**RAG:** Perhaps we can have some logic that queries for useful extra information
+from knowledge base of data. More often than not, we just call that through tools,
+we don't do a _one time retrieval that gets shoved into the LLM_. We now expose
+tools that should provide context to the agent.
+
+**Short Term Memory:** Conversation history. User - Assistant interaction.
+
+**Long-Term Memory:** Refers to any other information that's been stored from
+prior conversations. Tools can help retrieve saved information from the past,
+and sometimes through RAG retrieval. Catch-all to talk about any information
+retrieved through old conversations. _Fancy term, for extra information that pretains
+**this** conversation_.
+
+There's ambiguity, there's no clear definition and categorization for all the
+concepts that are within **Context Engineering**
+
+- Often you are iterating, working on the context, and getting the best result.
+
+_There isn't one way of doing things, specially in Agentic AI_. You should have
+a test set, and evaluate the responses.
+
+**Experiment**. Use different techniques, different ideas. That whole experimentation
+process is **Context Engineering**
+
+_These are all general ideas, it's not a formula_
+
+=== Add Tools to Your Digital Twin Agent with Pushover Notifications
+
+The course wants to use `pushover.net` which is a service to send push notifications
+to your cellphone.
+
+It's free and then paid, you need to then get two keys to interface with the service
+
+`PUSHOVER_USER=`
+`PUSHOVER_TOKEN=`
+
+These should be saved in the `.env` file.
+
+_Won't do this_
+
+The course basically retrieves the settings that are in the `.env`.
+
+And then calls the API of pushover so that after you setup your phone, a push
+notification is sent directly to your phone.
+
+The tool descriptions can be concise, or more extended, it's in your ability to
+provide enough context and information for an LLM to know how to use a `tool`
+
+**always** => A keyword that LLMs will take to not be hesitant to use the tool.
+
+- And yeah, part of the process will be to iterate, and see if an LLM used a tool
+correctly. Or Not. And then fix.
+
+**It's on US to architect the tools, the description so that the LLM behaves within
+the expected parameters**
+
+=== Handle Multiple Tool Calls in Python with the globals Trick
+
+```
+# This function can take a list of tool calls, and run them. This is the IF statement!!
+
+def handle_tool_calls_with_manual_if(tool_calls):
+    results = []
+    for tool_call in tool_calls:
+        tool_name = tool_call.function.name
+        arguments = json.loads(tool_call.function.arguments)
+        print(f"Tool called: {tool_name}", flush=True)
+
+        # THE BIG IF STATEMENT!!!
+
+        if tool_name == "record_user_details":
+            result = record_user_details(**arguments)
+        elif tool_name == "record_unknown_question":
+            result = record_unknown_question(**arguments)
+
+        results.append({"role": "tool","content": json.dumps(result),"tool_call_id": tool_call.id})
+    return results
+```
+This function basically states that we will iterate of the tool calls of the
+LLM. Right now we are literally doing if-else statements all over the place to
+check what we should call. However, we can make it more elegant and smart with `globals`
+
+```
+globals()["record_unknown_question"]("this is a really hard question")
+```
+This literally will receive a string, and try to match it to something the context
+has, and then attempt to execute it with some string parameter.
+
+```
+# This gives us a more elegant way that avoids the IF statement.
+
+def handle_tool_calls(tool_calls):
+    results = []
+    for tool_call in tool_calls:
+        tool_name = tool_call.function.name
+        arguments = json.loads(tool_call.function.arguments)
+        print(f"Tool called: {tool_name}", flush=True)
+        tool = globals().get(tool_name)
+        result = tool(**arguments) if tool else "No tool found"
+        results.append({"role": "tool","content": json.dumps(result),"tool_call_id": tool_call.id})
+    return results
+```
+Without clunky if statements, but with a dictionary lookup (more elegant code).
+
+**This is not at all safe**, because we are trusting the LLM will make a tool call
+between the ones that are tools. `globals` gives access to the whole LLM to the
+whole system functions.
+
+**Not secure, so when deploying, we will move onto a more secure yet still elegant
+way of calling the respective**
+
+=== Build the Digital Twin Agent Loop and Test It Live in Gradio
+
+We will use the Context Engineering Hat => Think of all the contexts, be thoughtful
+of what we are crafting. And we will write in `.md` format all the necessary frame
+that the LLM would need for our goal of making a Digital Twin.
+
+_Don't go too into negatives, when prompting an LLM tell it WHAT to do, not much
+of what NOT TO DO_
+
+This is the code for our loop:
+
+[source, python]
+----
+def chat(message, history):
+    messages = [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": message}]
+    response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages, tools=tools)
+    while response.choices[0].finish_reason=="tool_calls": <.>
+        message = response.choices[0].message
+        tool_calls = message.tool_calls
+        results = handle_tool_calls(tool_calls)
+        messages.append(message)
+        messages.extend(results)
+        response = openai.chat.completions.create(model="gpt-5.4-mini", messages=messages, tools=tools) <.>
+    return response.choices[0].message.content
+----
+<.> The most important piece of code here, the loop, as long as the LLM wants to
+call tools, let's keep going, getting responses, and feeding info back into the
+LLM
+<.> By the end the response is then assigned so that our loop goes into the next
+iteration
+
+Basically, the code is a chat, that can then push notifications telling you
+what someone did with your digital Twin, and perhaps record, or save something
+however you see fit.
+
+=== Refactor the Digital Twin Agente into Python Modules and Run It
+
+We will move away from a Notebook into actual Python modules. Most software engineers
+would like to start with modules, but Notebooks as a construct help you get into
+that Data Scientist mindset, of changing a bit, experimenting, and doing it pretty
+fast and easy. Once you've done your iterations, you can then productize => Notebooks
+are good to start and test, and iterate.
+
+We will take the whole code, and just put that into **one file**
+
+_However a nice way to do it, is to organize the code in different modules to separate
+concerns_
+
+Everything is in the `twin` folder:
+
+- context.py = Basically only holding what we will put into the system prompt
+- app.py
+- tools.py = All the functions that will be used by our software, and the JSON
+blobs that go hand-in-hand with the actual functions, and a function that connects
+to the functions so that we receive an LLM response saying he wants to call a function
+in a certain way and we then map that into the actual call and execute it, then feed
+the result to the LLM and keep going:
+
+[source, python]
+----
+tool_map = { <.>
+    "record_user_details": record_user_details,
+    "record_unknown_question": record_unknown_question,
+}
+
+
+def handle_tool_calls(tool_calls):
+    results = []
+    for tool_call in tool_calls:
+        tool_name = tool_call.function.name
+        arguments = json.loads(tool_call.function.arguments)
+        print(f"Tool called: {tool_name}", flush=True)
+        tool = tool_map.get(tool_name) <.>
+        result = tool(**arguments) if tool else "Unknown tool: " + tool_name
+        results.append(
+            {"role": "tool", "content": json.dumps(result), "tool_call_id": tool_call.id}
+        )
+    return results
+----
+<.> We are replacing `globals` with a dictionary, so that based on a string key it
+will return a function
+<.>And lastly we will map from the LLM response to our dictionary so that we call
+the respective function.
+
+- styles.py => A style that was autogenerated with Claude Code. It tried to be really
+unique, and everything is then used. The gradio app gets styled through this module.
+It's `css`
+- app.py => We could've made one big module, however it's a good practice and more
+elegant to separate things like this. **Also, another good practice is to write UTs
+for all the modules**
+
+This is a typical practice: Do Context Engineering in Notebooks. And once we are
+satisfied => We move to python modules, we tidy up. And then run further tests.
+
+.app.py
+----
+from openai import OpenAI
+from context import TWIN_SYSTEM_PROMPT
+from tools import tools, handle_tool_calls
+from styles import CSS, JS, EXAMPLES
+from dotenv import load_dotenv
+import gradio as gr
+
+load_dotenv(override=True)
+
+MODEL_NAME = "gpt-5.4-mini"
+
+openai = OpenAI()
+
+system = [{"role": "system", "content": TWIN_SYSTEM_PROMPT}]
+
+
+def chat(message, history):
+    messages = system + history + [{"role": "user", "content": message}]
+    response = openai.chat.completions.create(model=MODEL_NAME, messages=messages, tools=tools)
+    while response.choices[0].finish_reason == "tool_calls":
+        message = response.choices[0].message
+        tool_calls = message.tool_calls
+        results = handle_tool_calls(tool_calls)
+        messages.append(message)
+        messages.extend(results)
+        response = openai.chat.completions.create(model=MODEL_NAME, messages=messages, tools=tools)
+    return response.choices[0].message.content
+
+
+if __name__ == "__main__":
+    gr.ChatInterface(
+        chat,
+        examples=EXAMPLES,
+        title="Digital Twin",
+        description="Talk to my AI twin about my career",
+        chatbot=gr.Chatbot(show_label=False),
+    ).launch(css=CSS, js=JS, theme=gr.themes.Base())
+
+----
+Look how we export global modules, and then how we are calling things. Everything
+is within a folder and should work normally. With `uv run app.py` the whole application
+should be launched and we should be ready to chat with our Agent, with ALL the
+tools.
+
+A prompt such as `I'd like to get in touch. I'm at a@b.com`. Will both save the
+email, and a push notification is sent about this.
+
+=== Deploy Your Digital Twin AI Agent to Hugging Face Spaces
+
+This course tries to use HuggingFace Spaces to deploy for free the Digital Twin,
+but after an incident in security, it became paid. However there's `Render` another
+alternative for deployment, and apparently there is a guide on how to deploy with
+that one.
+
+_Seems that you could embed your HuggingFace space to your page actually_
+
+Okay, did a quick run with Render. It's pretty straightforward, you connect with
+a Google Account. You can connect your Github account to it, and then expose
+some repo that Render can clone and maybe deploy.
+
+We create a free space, and then select our repository to which we upload the
+necessary python files. And then we add as env variables our Open API key and
+some extra env variables so that Gradio works correctly.
+
+After Render finishes deploying, we can access to an URL, and in there we
+have a chat, and we can see in the Render side all logs of the executions that
+were run.
+
+[IMPORTANT]
+====
+Do not upload your `.env` file. Those are public files, and if someone takes hold
+of your key, he can use it for himself and use up **all your credit** BROTHER.
+====
+
+You can definitely use a CLI that interfaces with the website itself, you can run
+something like `uv run gradio deploy`, and it will then deploy your application
+to the respective space in Render.
+
+The Exercise has really interesting ideas:
+
+- Deploy yourself (DONE)
+- Improve the resources, maybe leverage RAG and add a knowledge base about you
+- Add more tools. Maybe a SQL database with common Q&A that the LLM could read
+and write from?
+- Bring in an Evaluator from the exercise in Day 4, and add other Agentic patterns
+- Some students have added Telegram integrations so that you chat live with people
+on your site, along with the twin!
+
+**Guardrails:** Around how your model is responding.
+
+**Agentic RAG:** The model gets a tool to look for background information about
+yourself.
+
+[NOTE]
+====
+**Commercial Implications** - Aside from the obvious (your resume of the future)
+this has implications on how you can get an agent up and running and how it interacts
+with the real world.
+====
+
+=== Build a Visible Agent Loop with Checklist Tools Like Claude Code
+
+TUI - Terminal UI. This is an experience.
+
+- When you use Claude Code. It plans out a bunch of stuff to do. It shows you
+a checklist, and then the Agent checks every item one by one. It definitely provides
+a nice feedback to the user of this "loop" that is iterating and finishing tasks.
+
+**We are going to use a terminal UI** and we are going to give tools so that the
+LLM brings that feedback experience towards the user.
+
+Basically we have tons of utility functions and then two lists (arrays) so that
+we keep a checklist, and then a respective list that will mark if a checklist
+has been completed (marked) or not.
+
+And then we keep using the same loop idea of the Agent, and we give them the
+tools to create the list, and to check each item of the checklist.
+
+The only tools are for the checklist creation and checking. After that it's all
+LLM and its outputs, so that by the end we render the checklist status, step
+by step, and the final answer after the model has finished reasoning.
+
+== Week 2
+
+=== Day 1 - OpenAI Agents SDK Intro and Async Python (asyncio) Explained
