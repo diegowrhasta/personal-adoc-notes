@@ -7722,3 +7722,147 @@ _Note:_ To the `$router.push()` method you can provide the exact same type of ob
 we used for the members link computed property.
 
 === Using Query Params
+
+Query params, are not just a simple value in a route. You can add further metadata
+that allows for even further possibilities.
+
+_A query parameter can be used to pass extra information_
+
+`?sort=asc`
+
+In case of the route object, you can pass a `query` object:
+
+`{ name: 'team-members', params: { teamId: this.id }, query: { sort: 'asc' } }`
+
+**Query Params are optional by nature**
+
+Once you navigate to the specific route, you will see how the URL has the query
+params string and then how you can retrieve the values:
+
+`this.$route.query`
+
+And on the component that is rendered for the respective route, you would then
+code around the case in which the query param is present and when it's not.
+
+=== Rendering Multiple Routes with Named Router Views
+
+We already add multiple route views, although they are in different components.
+
+However you can have at the same level (same component), multiple router levels.
+
+.App.vue
+```
+<template>
+  <the-navigation></the-navigation>
+  <main>
+    <router-view></router-view>
+  </main>
+  <footer>
+    <router-view></router-view>
+  </footer>
+</template>
+```
+This as is, won't be really useful, it will just render the route content twice.
+
+Imagine we have different footers for different pages:
+
+- TeamsFooter.vue
+- UsersFooter.vue
+
+And on `App.vue` we would render them based on the route. The router object needs
+some extra metadata:
+
+````
+
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', redirect: '/teams' },
+        {
+            name: 'teams',
+            path: '/teams', components: { default: TeamsList, footer: TeamsFooter }, children: [
+                { name: 'team-members', path: ':teamId', component: TeamMembers, props: true },
+            ]
+        }, // our-domain.com/teams => ...
+        { path: '/users', components: { default: UsersList, footer: UsersFooter } }, // our-domain.com/user-list => ...
+        // { path: '/teams/new', component: TeamsList },
+        { path: '/:notFound(.*)', redirect: '/' }
+    ],
+    linkActiveClass: 'active'
+});
+````
+Instead of `component`, we would leverage the `components` property, and the value
+will be an object, at which you would tie property names to an identifier for the
+router view, and the value will be the component to be rendered.
+
+.App.vue
+````
+<template>
+  <the-navigation></the-navigation>
+  <main>
+    <router-view></router-view>
+  </main>
+  <footer>
+    <router-view name="footer"></router-view>
+  </footer>
+</template>
+````
+Just like `slots`, you are allowed to have one unnamed router-view that will become
+`default. And just like that. If you navigate, you should be able to see the
+different footers corresponding to the respective route.
+
+This is another feature, that is indeed inside the **complex UI** realm, but it's
+good to know it's a thing. It exists and that you can leverage it whenever the
+need for it arises.
+
+=== Controlling Scroll Behavior
+
+In general => Whenever we switch to a route, we should scroll up, so that the user
+can see the beginning of the new page.
+
+Let's add this behavior.
+
+On the router setup you can leverage `scrollBehavior`:
+
+````
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', redirect: '/teams' },
+        {
+            name: 'teams',
+            path: '/teams', components: { default: TeamsList, footer: TeamsFooter }, children: [
+                { name: 'team-members', path: ':teamId', component: TeamMembers, props: true },
+            ]
+        }, // our-domain.com/teams => ...
+        { path: '/users', components: { default: UsersList, footer: UsersFooter } }, // our-domain.com/user-list => ...
+        // { path: '/teams/new', component: TeamsList },
+        { path: '/:notFound(.*)', redirect: '/' }
+    ],
+    linkActiveClass: 'active',
+    scrollBehavior(to, from, savedPosition) {
+        console.log(to, from, savedPosition);
+    },
+});
+````
+`to` and `from` will be route objects. `savedPosition` is an object with x, y.
+About the last position before the route changed.
+
+`scrollBehavior` is supposed to return something `return { left: 0, top: 0 }`.
+With this the new page will be positioned at the beginning.
+
+_What if we go back though?_ It would be nice if we throw the user to the exact
+position they were at.
+
+```
+scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+        return savedPosition;
+    }
+    return { left: 0, top: 0 };
+},
+```
+This is sort of magical, because we can use the browser's back, which in my head,
+would mean we reload the page, yet, if indeed we do that, we will be scrolled to
+the exact position at which we left the page. This is such a small but nice UX
+tweak.
