@@ -7544,4 +7544,181 @@ making it overly verbose**
 
 === Redirecting & "Catch All" Routes
 
+Currently we have something that can be improved on.
 
+And that is because, most users would go to your website, and they would want to
+see a "home" page. Or a default page, not blank.
+
+This depends on the kind of app you are building, maybe you have a component you
+want to show specifically, because that's the face of the app, or for convenience
+a specific page.
+
+We can basically add the specific root path to redirect to our intended page:
+
+````
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', component: TeamsList },
+        { path: '/teams', component: TeamsList }, // our-domain.com/teams => ...
+        { path: '/users', component: UsersList }, // our-domain.com/user-list => ...
+        { path: '/teams/:teamId', component: TeamMembers, props: true },
+        // { path: '/teams/new', component: TeamsList },
+    ],
+    linkActiveClass: 'active'
+});
+````
+
+However, if we want to keep the URL specific to the rendered component, we can leverage another
+property for the route:
+
+`{ path: '/', redirect: '/teams' },`. This will basically capture the route that
+was resolved, and then send back to another route (that should be configured also).
+
+Being able to redirect is a nice feature that might be really common.
+
+You can also set: `{ path: '/teams', component: TeamsList, alias: '/' },`. However
+this won't have the URL at the specific route. Again, it will all depend on your
+requirements and personal preference.
+
+**We are also not handling the use case in which _any route_ that doesn't exist
+we react gracefully**
+
+There's a `Catch All` way to declare a route, so that we react on not found routes:
+
+[source, js]
+----
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', redirect: '/teams' },
+        { path: '/teams', component: TeamsList }, // our-domain.com/teams => ...
+        { path: '/users', component: UsersList }, // our-domain.com/user-list => ...
+        { path: '/teams/:teamId', component: TeamMembers, props: true },
+        // { path: '/teams/new', component: TeamsList },
+        { path: '/:notFound(.*)', redirect: '/' } <.>
+    ],
+    linkActiveClass: 'active'
+});
+----
+<.> Basically we add a dynamic component and a regular expression to catch whatever
+comes after. **This has to be the last path, otherwise everything will resolve to
+the catch all route**. And in here you are free to decide if you redirect somewhere
+or you render a specific component (a 404 page type of thing perhaps)
+
+=== Using Nested Routes
+
+There's the nice feature of nested routes. So that in some applications you might
+want to setup a router inside another router.
+
+[source, js]
+----
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', redirect: '/teams' },
+        {
+            path: '/teams', component: TeamsList, children: [ <.>
+                { path: ':teamId', component: TeamMembers, props: true }, <.>
+            ]
+        }, // our-domain.com/teams => ...
+        { path: '/users', component: UsersList }, // our-domain.com/user-list => ...
+        // { path: '/teams/new', component: TeamsList },
+        { path: '/:notFound(.*)', redirect: '/' }
+    ],
+    linkActiveClass: 'active'
+});
+----
+<.> And on each route, you can use a `children` property to then feed into it an
+array with other routes.
+<.> This route used to be a **root route**, but now it became a children (a nested)
+route for the `/teams` route.
+
+Navigation won't work with just this though, the `App.vue`'s `router-view` component
+only takes care of tracking and rendering root routes, so if we are going to introduce
+nesting, we need to add that very same component inside the components that are being
+declared to have children:
+
+````
+<template>
+  <router-view></router-view>
+  <ul>
+    <teams-item v-for="team in teams" :id="team.id" :key="team.id" :name="team.name"
+      :member-count="team.members.length"></teams-item>
+  </ul>
+</template>
+````
+It's just after this that we will see the nested route component rendered.
+
+The `exact` route class will be added to the link of the exact path. So if we
+are in the nested route, our nav bar's `Teams` nav link won't have said class.
+
+**Nested routes are the gateway into really complex user interfaces so it's good
+to always keep them in mind**
+
+=== More Fun with Named Routes & Location Objects
+
+Imagine bigger Vue applications. So there are 100 plus routes, and there's lots
+of nesting.
+
+With such an app, constructing links as we are doing right now will quickly turn
+cumbersome and repetitive:
+
+.TeamsItem.vue
+````
+<script>
+export default {
+  props: ['id', 'name', 'memberCount'],
+  computed: {
+    teamMembersLink() {
+      return `/teams/${this.id}`;
+    }
+  }
+};
+</script>
+````
+Because of that, the Vue router offers two useful features which makes building
+such links. **More Convenient**
+
+The `:to` prop does not just take a string. You can pass it an object:
+
+````
+computed: {
+  teamMembersLink() {
+    // return `/teams/${this.id}`;
+    // return { path: `/teams/${this.id}` };
+    return { name: 'team-members', params: { teamId: this.id } };
+  }
+}
+
+// And in app.js
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', redirect: '/teams' },
+        {
+            name: 'teams',
+            path: '/teams', component: TeamsList, children: [
+                { name: 'team-members', path: ':teamId', component: TeamMembers, props: true },
+            ]
+        }, // our-domain.com/teams => ...
+        { path: '/users', component: UsersList }, // our-domain.com/user-list => ...
+        // { path: '/teams/new', component: TeamsList },
+        { path: '/:notFound(.*)', redirect: '/' }
+    ],
+    linkActiveClass: 'active'
+});
+````
+Like this, we can leverage route names, and we can also feed parameters to it.
+
+To the routes, you can add a `name` property, to tag it with a some sort of ID,
+an identifier name. That you can reference on your components and any sort of
+router-related endeavor. That way you reference the route name itself, and that
+gives you an advantage when refactoring, so that if the path changes, you won't
+have to change all the other components referencing it, the name will keep things
+bound together, and the change will be almost painless.
+
+_Note:_ To the `$router.push()` method you can provide the exact same type of object
+we used for the members link computed property.
+
+=== Using Query Params
