@@ -7866,3 +7866,101 @@ This is sort of magical, because we can use the browser's back, which in my head
 would mean we reload the page, yet, if indeed we do that, we will be scrolled to
 the exact position at which we left the page. This is such a small but nice UX
 tweak.
+
+=== Introducing Navigation Guards
+
+This is the last feature we will see about routing. Guards are really helpful
+when looking at them from authentication, and also to control unsaved changes on
+a page.
+
+Guards are functions which are called automatically by Vue router when a page
+changes. Or "a navigation action started"
+
+Before we mount the main app:
+
+```
+router.beforeEach((to, from, next) => {
+
+});
+```
+With this, we provide a function that will run on each route navigation. The
+parameters that the function receives are extremely useful to make decisions
+about the previous route, the route we are navigating to, and a utility function that
+we should use to let navigation go through.
+
+_Note:_ If you want to skip over parameters in a function you can do something
+like this:
+
+`function(_, _2, savedPosition)`
+
+If we want to cancel navigation we can pass `false` to `next`: `next(false)`
+
+This feature is pivotal because it will help us check whether a user is authenticated
+or not.
+
+We can even pass a route object with specific settings:
+
+
+```
+if (to.name === 'team-members') {
+  next();
+} else {
+  next({ name: 'team-members', params: { teamId: 't2' }})
+}
+```
+Otherwise, if we were to try to go to `team-members` we would run into an infinite
+loop. _This is an example, in this project this type of navigation makes no sense_
+
+Guards help prevent access to users. That is a typical scenario.
+
+=== Diving Deeper Into Navigation Guards
+
+`beforeEach` is a global guard. But there are use cases in which only specific
+routes should be guarded.
+
+```
+{
+    path: '/users', components: { default: UsersList, footer: UsersFooter }, beforeEnter(to, from, next) {
+        console.log('users beforeEnter');
+        next();
+    }
+}, // our-domain.com/user-list => ...
+```
+Basically, at the route object, you would add a `beforeEnter(to, from, next)`
+method property.
+
+If you don't want to add the guard at this level, you could literally go inside
+the component of the route itself and leverage lifecycle hooks.
+
+```
+beforeRouteEnter(to, from, next) {
+  console.log('UsersList Cmp beforeRouteEnter');
+  next();
+}
+```
+
+Navigation Guards execute like this:
+
+- Global Guards
+- Route Guard
+- Component routing hook
+
+There's another routing guard called:
+
+`beforeRouteUpdate(to, from, next)` => This method is called whenever this component is about
+to be re-used with new data. (Because a route switched yet the same component will
+be used). _This is an alternative to watching `teamId` in the `TeamMembers.vue`
+component.
+
+=== The Global "afterEach" Guard
+
+```
+router.afterEach((to, from) => {
+    console.log('Global afterEach', to, from);
+})
+```
+This is a global guard that only runs after navigation took place. **But there is
+no `next`**. It's too late. This is a great guard to record things, so analytics,
+(telemetry).
+
+=== Beyond Entering: Route Leave Guards
