@@ -105,4 +105,67 @@ In short, it has XAML hot reload, and .NET hot reload as well, so that the devel
 experience is super productive. Both XAML and Code Behind can be updated and
 hot-reloaded (goated?), hopefully wireless gets this same developer experience.
 
+== My Tasks App
 
+Always remember that it takes a long while until you build the Mobile App and then
+get it on your phone. It's kinda 面倒くさい. Anyway, remember that the way to connect
+is by going to `Developer Options > Wirless Debugging > Scan QR`
+
+**Hot Reload**
+
+With the native MAUI template, hot reload is seamless, you start editing XML and
+it _just werks_. But with the Blazor template on Rider and Arch, it seems things
+are a bit "different" I.e., it doesn't work. Maybe because I'm using Rider's
+own scaffolder?
+
+So you can actually install with dotnet a `workload` that has MAUI:
+
+- `dotnet workload install maui-android`
+
+After that is installed, the moment you hit something like: `dotnet new maui-blazor`
+then a whole project scaffold will be created at the current path. (So a good
+word of advice is to simply create a folder, go inside and run the `new` there)
+
+Apparently Rider's scaffolder is a bit _funky_ sometimes. So it might generate
+metadata that is not 100% right.
+
+So, better to just rely on the official .NET scaffolding. At least for the initial
+project setup.
+
+[IMPORTANT]
+====
+The `new` command creates a scaffold for a PROJECT. So this doesn't have a solution,
+nor anything related to that type of structure, so be aware and careful as to how
+you use the command, and **where**
+====
+
+_Rule of thumb_ The initial dropping of the application to the Paired Device
+takes **ages**. But subsequent runs seem to run way more smoothly.
+
+Also, after doing some setup with tools such as `dotnetup` or something like that,
+be 100% sure that Rider and your terminal's dotnet CLI are aligned, specially
+if you installed "globally" at first. And then `dotnetup` did its magic and used
+a different path for the dotnet CLI.
+
+The commands you can run to find differences are:
+
+- which dotnet
+- readlink -f "$(which dotnet)"
+- dotnet workload list
+- echo $PATH
+
+And then looking inside Rider's:
+
+Settings > Toolset and Build > .NET CLI executable path
+
+After you align the paths, then doing again a Build and stuffs, it might again take
+years to compile. Which also is a sign that maybe indeed we were using some different
+for compilation, and running. Still, it's weird.
+
+But let's test it out.
+
+https://youtrack.jetbrains.com/issue/RIDER-107252
+
+Brah, why u do dis JetBrains.
+
+Okay, let's just use native MAUI. I GUESS.

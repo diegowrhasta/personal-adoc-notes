@@ -1873,3 +1873,808 @@ by step, and the final answer after the model has finished reasoning.
 == Week 2
 
 === Day 1 - OpenAI Agents SDK Intro and Async Python (asyncio) Explained
+
+We will start with OpenAI Agents SDK.
+
+Even though this SDK has been put together by OpenAI. THIS WORKS WITH ALL LLMS,
+not just ChatGPT. Source code is available for everyone.
+
+We will use the Python version => It's the most powerful.
+
+The intention of OpenAI is to have as few abstractions as possible. Make Agentic
+Engineering easy. It evolved from Swarm to OpenAI Agents SDK.
+
+`asyncio` => Async code in Python
+
+**All the Agent frameworks use asynchronous Python**. It's possible to get by,
+by ignoring. Just follow a couple of rules, and let it rip. _But it will bother
+you slightly_
+
+- Bite the bullet! Spend 30 minutes on the guide - _that will work_
+
+==== The Short Version
+
+If you work with async Python.
+
+- All methods and functions start `async`. Everything runs at the same time.
+Everything starts with the `async` and you have to use `await` before calling
+a function.
+
+```
+async def do_some_processing():
+	# Do some work
+	return "done!"
+
+result = await do_some_processing()
+```
+
+==== The Longer Version
+
+It's common in computing to do several things in parallel. And it's particularly
+true for AI Agents. And that is because you are waiting for an LLM to respond,
+that LLM is running in another person's computer.
+
+So instead of waiting there, you should parallelize -> Multi Threading, Multi
+Processing. That is a better usage of resources.
+
+But this incurs in some issues => Concurrency. You should write code that operates
+on multiple threads, without harming itself or state.
+
+`asyncio` provides a lightweight alternative to threading or multiprocessing.
+
+You are explicitly explaining how the code should cooperate.
+
+Functions defined with `async def` are called `coroutines` - they're special functions
+that can be paused and resumed.
+
+If you define a coroutine, and then you call it, that doesn't run anything. Nothing
+gets called, it returns a `coroutine` object that represents that task that will
+run the function.
+
+**How does the coroutine runs?** - The `await` prefix has to be applied. This will
+schedule the `coroutine`. **Event loop:** This is like a small agent, that runs
+all the courutines that have been added for running. It's a like an agent that
+runs in a queue tasks that are going to be run.
+
+`await` => I want to schedule this coroutine to write in the future.
+
+While a coroutine is waiting (e.g., for I/O), the `event loop` can run other courutines.
+
+It's not like multi threading or multi processing. You are explicitly programming
+what's gonna happen. Only one coroutine runs at a time.
+
+_It's a brute force approach_
+
+- This is called **Cooperative Multi Tasking**
+- Pre-emptive multitasking => That's multithreading and so on.
+
+[source, python]
+----
+async def do_some_processing() -> str:
+	# Do some work
+	return "done!"
+
+# running the function returns a coroutine
+my_coroutine = do_some_processing()
+
+my_result = await my_coroutine
+----
+However, if you think that simply creating multiple objects and then try to await
+them all at once, this won't parallelize execution. **It will run serialized**.
+
+That's why we need another construct that can parallelize the coroutine execution:
+
+```
+results = await asyncio.gather(
+	do_some_processing(),
+	do_other_processing(),
+	do_yet_more_processing()
+)
+```
+These will all run _apparently concurrently_, however it will still run in sequences.
+But because we are sending to LLMs, we will at the very least win some time and
+processing by blocking our threads through I/O from the processing on the LLMs'
+servers.
+
+You are I/O bound => Waiting for the network, so that you chop-up your sessions.
+Threads are not a limiting factor here.
+If you are CPU bound => Rarely happens when working with LLMs. But in there you
+will have to parallelize with concurrency in mind. The threads of your computer
+can also be a limiting factor.
+
+_Only one thing is running at a time_, no concurrent issues. So don't worry.
+
+=== OpenAI Agents SDK Core Concepts: Agent, Trace and Runner.run
+
+OpenAI Agents SDK
+
+- Lightweight and flexible
+- Stays out of the way => Less Framework Voodoo => A bit of mysterious and with
+extra overhead to learn
+- Makes common activities easy => The janky JSON is thrown out the window
+
+**SIDENOTE:** There are some more opinionated features (Handoffs & Guardrails avoided,
+in that you can implement them yourself)
+
+Recent extensions (Sandboxes and Hosted MCP) feel more heavyweight
+
+_There's a case to be made that you wouldn't want the frameworks to write prompts
+for you, you want to be in control of the prompts and things you are doing_
+
+**Many of the lightweight frameworks share the concepts of OpenAI Agents SDK**
+
+Agents => Class that represents a particular LLM with system prompt and tools.
+One or many. We shouldn't call each of these ones Agents. The whole should be the
+Agent. But in practice, all the frameworks, call one case of the LLM with system
+prompt and tools an **Agent**.
+
+But conceptually, we might think of a group of agents, as one whole AI Agent.
+
+[IMPORTANT]
+====
+Begin as simple as possible. Start with one Agent, and make more agents when you
+see such an option will BETTER YOUR SYSTEM.
+====
+
+Agents as Tools and Handoffs for collaboration. These are the two methods of agent
+collaboration. This is simple prompting between two LLMs.
+
+Agents as Tools => Less Framework Voodoo
+Handoffs => Has baked in things.
+
+Guardrails => Open AI Agents SDK's answer to put controls around inputs and outputs
+of an Agent app, to mitigate unpredictability. (You can write a guardrail yourself
+though)
+
+==== Three Steps
+
+. Create an instance of **Agent**
+. Use `with trace()` to track the agent (That way you see all of the agent activity)
+. Call `Runner.run()` to run one "Application Level Turn". The runner keeps looping
+until it reaches a stopping point.
+
+Until the task is done, then the app runs.
+
+_Memory is also layered into the framework_.
+
+[NOTE]
+====
+To get to your solution faster. Frameworks are there. But, yes, you can do everything
+yourself.
+====
+
+- Coding Agents
+
+The Cursor Agent is the great source to explain things. And do things for you.
+If you are using Cursor or Claude Code: **use it the right way**
+
+**Be the person in the driving seat, don't let the Agent do everything.**
+
+- Invest in your prompts: Be precise, ensure current APIs, Demand conciseness - no slop!
+
+_No defensive programming, be concise_
+
+- Start SIMPLE = Give the agent a small piece to work on, and then move onto another
+- Work incrementally; test constantly; validate success criteria
+- Don't get lazy - challenge & demand evidence
+- Handle frustration with style
+
+Above all: Your objective is to learn; it's great to use Coding Agents to help,
+but there's no point in letting them build everything. **You should be accountable
+for your work**. The coding agent should just be your assistant.
+
+=== Build Your First Agent with OpenAI Agents SDK: Runner and Tracing
+
+Basically, we will work with Notebooks in `2_openai` the folder in the repository.
+
+The package for the OpenAI SDK is `openai-agents` you can install it like so:
+
+- `pip install openai-agents`
+- `uv add openai-agents`
+
+`pip install agents` => DON'T INSTALL THIS
+
+This is a sample of how to use it:
+
+[source, python]
+----
+agent = Agent(name="Jokester", instructions="You are a joke teller", model="gpt-5.4-mini") <.>
+
+result = await Runner.run(agent, "Tell a joke about Autonomous AI Agents") <.>
+
+print(result.final_output) <.>
+
+result.to_input_list() <.>
+----
+<.> The `Agent` object comes from `openai-agents`. Basically, `instructions` is
+the system prompt, and then the model will interface through strings with OpenAI
+models.
+<.> We tell the runner to run the agent and the user prompt (task). Without `await`
+we would get a coroutine object.
+<.> And finally, we can retrieve the response from the LLM
+<.> And there are properties such as `to_input_list()` so that we get a more verbose
+output from what happened and was fed to the LLM.
+
+_See how simple, easy-peezy_
+
+**Observability**
+
+```
+with trace("Telling a joke"):
+    result = await Runner.run(agent, "Tell a joke about Autonomous AI Agents")
+print(result.final_output)
+```
+The SDK has Observability baked-in. It's part of the free open source package. This
+isn't related to the GPT-4 agent. It's a free service, whether you are using OpenAI
+or another model. **Everything will get traced**.
+
+Even without `with trace` traces will still show up in the OpenAI page. However,
+it's better to state that explicitly that way it's easier to understand what's
+happening.
+
+In the OpenAI platform, we will see the traces, the time it takes for things to run.
+
+The OpenAI Agents SDK documentation is really good, so always keep in mind you
+can refer to that as a resource. **You can turn tracing to off**. Through code
+or env variables, you can turn things off.
+
+There's even information on how to integrate with other observability platforms
+and frameworks. You can even write your **own custom tracer**. That way you see
+your traces within your own platform.
+
+```
+# Streaming
+
+result = Runner.run_streamed(agent, input="Please tell me 5 jokes about AI Agents.")
+async for event in result.stream_events():
+    if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+        print(event.data.delta, end="", flush=True)
+```
+
+**Streaming:** This is when you call an LLM, and instead of waiting, you let the
+LLM flow the results back into you. That's really easily with OpenAI Agents SDK,
+`Runner.run_streamed()` does the framework voodoo.
+
+The official way for streaming is with `isinstance`, however it's a bit ugly.
+
+=== Add Tools to an Agent with Sessions and SQLiteSession
+
+We take a previously coded push function so that a phone gets a push notification.
+We can expand it:
+
+```
+# Now this:
+
+@function_tool
+def push_tool(message: str) -> str:
+    """ Send the given message to the user as a push notification """
+    payload = {"user": pushover_user, "token": pushover_token, "message": message}
+    result = requests.post(pushover_url, data=payload).status_code
+    return f"Push sent with API status code {result}"
+```
+Instead of janky JSON, we will rewrite the function into something newer. The
+docstring comment: `"""COMMENT"""`, and then a return that's a message.
+
+- Then is that we add type hints => `message: str) -> str:`. This is optional, but
+highly recommended
+- And a decorator `@function_tool`. Which essentially, is a marker that you can
+add to a function you wrote, and then outside code can go into the marked function
+and change its nature, expand it and interface with it with a much richer API.
+
+Actually, after decorating a function, the resulting type is no longer a simple
+function. (It's an object that wraps the function). The wrapper will hold details
+about the function in JSON. The janky JSON that the LLM will use later.
+
+_So the decoration helps auto-generating all of the generated code to interface
+with an LLM_
+
+`push_tool.description` => This is available, thanks to the `docstring`. So it's
+really important to add docstrings to the functions you want to later turn into
+tools.
+
+```
+notifier = Agent(name="Notifier", model="gpt-5.4-mini", instructions="You notify the user upon request", tools=[push_tool])
+```
+See how we leverage the same `Agent` object, however we feed to it a new parameter:
+`tools=[push_tool]`
+
+Again, we are passing the function "as-is", but behind the scenes it's now an object
+with extra meta-data that's LLM friendly, which will be used without issues.
+
+_Because I didn't subscribe to that push service, it results in an `400` and the
+agent says `I tried to send the notification, but the push service returned an error.`_
+Which is so cool, so interesting. We didn't write much code, but the LLM managed
+to reason just enough so he can display a specific message based on responses of
+the tools.
+
+In tracing, you will see multiple calls actually, not just the main software run,
+we will also see the push notification logic and it's
+
+- Don't anthrophomozise the LLMs, again. It's mundane at its core
+
+=== Adding Memory to Agents with Sessions and SQLiteSession
+
+We have looked at streaming, traces, and how to leverage OpenAI Agents SDK's API.
+
+The final topic is: **Memory**
+
+```
+agent = Agent(name="Assistant", model="gpt-5.4-mini")
+response = await Runner.run(agent, "Hi there. My name is Ed.")
+print(response.final_output)
+response = await Runner.run(agent, "What's my name?")
+print(response.final_output)
+```
+Within a Runner.run there can me multiple LLM calls, it can even bounce between
+different agents. **But**, you start from scratch. It's stateless. However there
+are techniques to **maintain states**
+
+==== Memory approach 1 - Brute Force to pass a list of dictionaries in OpenAI format
+with the entire conversation history
+
+```
+response = await Runner.run(agent, "Hi there. My name is Ed.")
+print(response.final_output)
+
+response.to_input_list()
+
+next_input = response.to_input_list() + [{"role": "user", "content": "What's my name?"}]
+next_input
+
+response = await Runner.run(agent, next_input)
+print(response.final_output)
+```
+So you are shoving after each response the response, so you keep the whole conversation
+history.
+
+We can store the conversation **wherever we want**. Saving the state, is always
+referred as "memory" or "short-term memory".
+
+==== SQLLite session
+
+```
+# This is created in-memory
+# For an on-disk memory, use SQLiteSession("12345", "memory.db")
+
+session = SQLiteSession("12346")
+response = await Runner.run(agent, "Hi there. My name is Ed.", session=session)
+print(response.final_output)
+
+response = await Runner.run(agent, "What's my name?", session=session)
+print(response.final_output)
+```
+
+This basically tags an ID, that helps you pinpoint a conversation. This becomes
+an `in-memory database`. And you can store into a file by passing a **second parameter**
+to the `SQLiteSession` function/constructor.
+
+If we pass the session to the `Runner.run`, then the memory will be saved into
+the previously created SQLite session.
+
+[IMPORTANT]
+====
+We can use fancy terms such as `memory`. And things are made to sound really voodooish,
+really complex. But once you look at the base concepts. Then things are pretty
+simplistic.
+
+It's just a giant repeated conversation, it all comes down to prompts. It's just
+a matter of keeping track of the conversations **somewhere**. _Store the conversation
+history_
+====
+
+You can't have an unlimited conversation however, there's a finite amount of tokens
+that an LLM can ingest.
+
+**Context Window:** It's very unlikely to fill-up the context window in typical
+conversations. Claude Code and long discussions can then become a problem, because
+you read tons of files, and keep many things within memory.
+
+_Compacting:_ It's a technique to summarize a conversation. Really useful when
+working with Coding Agents.
+
+_But normal conversations shouldn't pose any sort of problem_. Also make sure that
+OpenAI Agents SDK is well known before jumping into other Frameworks, and that is
+because they all are based around it. So it's a great starting point.
+
+[source, python]
+----
+agent = Agent(name="Assistant", instructions="You need to always format your responses with markdown", model="gpt-5.4-nano") <.>
+
+# response = await Runner.run(agent, "Tell me a fun fact")
+# print(response.final_output)
+
+question = "Please propose a hard, challenging question to assess someone's IQ. Respond only with the question."
+response = await Runner.run(agent, question)
+print(response.final_output)
+
+
+response = await Runner.run(agent, response.final_output)
+print(response.final_output)
+
+from IPython.display import Markdown, display
+
+display(Markdown(response.final_output))
+----
+<.> Notice the instructions, this system prompt helps us attempt to guarantee that
+by the end our Markdown function will indeed render something that's human readable.
+
+=== Day 2 - Build a Multi-Agent Sales Team and Orchestrate Agents Three Ways
+
+We are building a specific Business Function. We are building multipple SDRs.
+
+SDR => Sales Development Reps. Pick the best and send it.
+
+We will use framework constructs. Which are a bit fancy. But at its core, it's all
+about messages, sending messages, interpreting, and sending again. This is all
+about **good prompting**
+
+- Orchestrating Agents with Code => This is the most predictable and bullet-proof
+way of doing this type of work
+- Orchestrating Agents with LLMs - Tools
+- Orchestrating Agents with LLMs - Handoffs
+
+We need to divide our Agents into multiple Agents. That's the experimentation principle
+kicking in, because **we should start simple, not separated**.
+
+LLMs are great at generating plausible content => The way to make sure that it's
+accurate you need to be able to evaluate the output. **Against a commerical metric**.
+
+We are going to play with Orchestration for now, but keep in mind that testing and
+quantitatively asserting the output is **key**
+
+=== Set Up Email Sending Tools for Your AI Sales Agents
+
+Right now, we shouldn't focus on the Email setup. We are trying to make agents
+Orchestrate. It's a hassle with things such as SendGrid or Resend. However
+we will do it in a more lightweight way => To send through your own inbox.
+
+I'm not even getting into the Push notification service. So I will change the code
+so that we don't even try to make an HTTP Request to said service, I will just
+print a mock message and keep things running.
+
+But in short, things to learn from the whole setup:
+
+- You would add your email under `.env`, you would even add the SMTP server IP
+and password for your email under the very same `.env`
+
+The code is a bit defensive in the course, but it's nice it checks if we have set
+the respective values in the `.env` and reacts based on what it finds and what
+it does not.
+
+=== Agent Orchestration by Code vs by LLM in the OpenAI Agents SDK
+
+There's orchestrating by code, and orchestrating by LLM
+
+**Code:** Basically when you make multiple calls to send a prompt to an LLM. And
+based on the response you construct the next response to the LLM. (It's really similar
+to when we crafted the loop ourselves in the first week). This is the most reliable,
+the simpler and bullet-proof way. _This is more deterministic, more predictable_
+
+**LLM:** You equip an agent with some tools, and the tools makes calls to other Agents.
+So an LLM sends messages to other LLMs. It gives the LLM more freedom to collaborate
+with other agents. He orchestrates the workflow.
+
+There's an article that OpenAI wrote about Agent Orchestration (It's just the
+docs of OpenAI)
+
+**Structured Outputs:** The LLM should not respond just with text, it should respond
+with a JSON, that should conform to some sort of spec that you craft. And with that
+output, you determine what happens next. It's a much more organized way for you to
+write code that looks at the structured output and take decisions.
+
+_By experience, the instructor says that in production, you prefer code orchestration,
+so that's more usage in the industry_
+
+Coding Agent => Claude Code, he is an LLM orchestrator. He has autonomy, he plans
+his own work.
+
+Orchestration with LLM => The really high-level products are the ones that involve
+orchestration by an LLM. In here, autonomy is at the center of the added value.
+
+=== Orchestrate Multiple Sales Agents by Code with asyncio.gather
+
+```
+intro = """
+You are a sales agent working for ComplAI, 
+a company that provides a SaaS tool for ensuring SOC2 compliance and preparing for audits, powered by AI.
+You write emails.
+"""
+
+instructions1 = intro + "Your email style is professional, serious, with gravitas and credibility."
+instructions2 = intro + "Your email style is witty, engaging, and humorous."
+instructions3 = intro + "Your email style is concise, to the point, in the style of a busy senior executive."
+```
+This first part basically adds a shared system prompt for all the agents. And then
+we add different instructions, different system prompts that will inevitably spin
+up a different LLM in nature. So you introduce this idea of looking at a problem
+or at an agent as different points of view that process the input.
+
+Let's first try one email writing from one agent (out of three we will setup):
+
+```
+sales_agent1 = Agent(name="Professional Sales Agent", instructions=instructions1, model=MODEL_NAME)
+sales_agent2 = Agent(name="Humorous Sales Agent", instructions=instructions2, model=MODEL_NAME)
+sales_agent3 = Agent(name="Executive Sales Agent", instructions=instructions3, model=MODEL_NAME)
+
+result = Runner.run_streamed(sales_agent1, input="Write a cold sales email")
+async for event in result.stream_events():
+    if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
+        print(event.data.delta, end="", flush=True)
+```
+
+This will write but **one email from the first sales agent**.
+
+Let's now parallelize all three sales agents, so each of them write their own
+version of email we prompted to write:
+
+```
+message = "Write a cold sales email"
+
+with trace("Parallel cold emails"):
+    results = await asyncio.gather(
+        Runner.run(sales_agent1, message),
+        Runner.run(sales_agent2, message),
+        Runner.run(sales_agent3, message),
+    )
+
+outputs = [result.final_output for result in results]
+
+for output in outputs:
+    print(output + "\n\n")
+
+```
+
+Lastly, out of the three emails that were written by the three previous sales
+agents, let's spin up a sales picker agent to select the best email:
+
+```
+decision = """
+You pick the best cold sales email from the given options.
+Imagine you are a customer and pick the one you are most likely to respond to.
+Do not give an explanation; reply with the selected email only.
+"""
+
+sales_picker = Agent(name="Sales_picker", instructions=decision, model=MODEL_NAME)
+
+```
+
+And now, let's run the generation of three emails, and then iterate over them
+and pick the best one according to the picker:
+
+```
+message = "Write a cold sales email"
+
+with trace("Sales selection workflow"):
+    results = await asyncio.gather(
+        Runner.run(sales_agent1, message),
+        Runner.run(sales_agent2, message),
+        Runner.run(sales_agent3, message),
+    )
+    outputs = [result.final_output for result in results]
+
+    emails = "Cold sales emails:\n\n" + "\n\nEmail:\n\n".join(outputs)
+
+    best = await Runner.run(sales_picker, emails)
+
+    print(f"Best sales email:\n{best.final_output}")
+
+```
+This is basically, three agents running in parallel, and then a final run with
+a sales picker agent.
+
+**Is this really agent collaboration?** Yeah, at its core, this is all that agents
+are. Agent collaboration is this.
+
+**ALSO:** If we have a look at the traces, we can verify, we can double-check how
+the agents are running in parallel. (Python is simple, predictable, and we verify
+our expectations). We can see what was sent, what was generated by each agent.
+
+With this engine that will generate 3 emails, and then pick the best one, we can
+create a tool that will take care of sending an email, the email that was picked:
+
+```
+@function_tool
+def send_email_tool(subject: str, text_body: str, html_body: str) -> str:
+    """
+    Send out an email with the given subject and body to all sales prospects
+    
+    Args:
+        subject: The subject of the email
+        text_body: The body of the email as plain text
+        html_body: The HTML body of the email
+    """
+    send_message(subject, text_body, html_body)
+    return "Email sent successfully"
+```
+
+We will then setup a sales sender agent:
+
+```
+decision = """
+You pick the best cold sales email from the given options.
+Imagine you are a customer and pick the one you are most likely to respond to.
+Then use your tool to send the email.
+"""
+
+require_tool = ModelSettings(tool_choice="required")
+
+sales_sender = Agent(name="Sales Sender", instructions=decision, model=MODEL_NAME, tools=[send_email_tool], model_settings=require_tool)
+```
+`model_settings` => Is a special property that we can add to an agent object so
+that the model is not unreliable. The agents sometimes just didn't use the tool.
+Hence the `ModelSettings(tool_choice="required")` extra object, helps us force the
+model to use the tool _at least once_
+
+And lastly, let's run again three generations of sales email, and then the new agent
+that does picking, but also **email sending with a tool**
+
+[source, python]
+----
+message = "Write a cold sales email" <.>
+
+with trace("Sales selection workflow with sending"):
+    results = await asyncio.gather(
+        Runner.run(sales_agent1, message),
+        Runner.run(sales_agent2, message),
+        Runner.run(sales_agent3, message),
+    )
+    outputs = [result.final_output for result in results] <.>
+
+    emails = "Cold sales emails:\n\n" + "\n\nEmail:\n\n".join(outputs) <.>
+
+    response = await Runner.run(sales_sender, emails) <.>
+
+    print(f"Final response:\n{response.final_output}") <.>
+----
+<.> We will have the prompt for the three sales agents behind a variable
+<.> We will then make a flattened list of all the emails that were generated by
+the sales agents
+<.> And lastly we will mush together those responses in a string
+<.> We then send this message to the sales_sender
+<.> Lastly we print the response of the sales_sender (and email sender). If you
+setup email or push notifications, you should be able to see that notification also.
+
+**TRACES:** If you go back to them, you should see information about the run we
+had. What was generated, what was picked, and the tool usage.
+
+_If things are not working as expected:_ Roll up your sleeves, try again, iterate.
+This is highly empirical and highly experimental until you reach your _goal_.
+
+=== Orchestrate Agents as Tools with a Sales Manager Agent
+
+`Tools` => The more recommended approach. So that one Agent chooses to invoke another
+Agent (through a tool). This is really easy to do within the same `Runner.run`
+execution. This works perfectly when you have Agent A => That sends to Agent B
+something => Agent A expects a response back.
+
+`Handoffs` => Variation on tools, but it's a bit unreliable.
+
+```
+description = "Use this tool to write a sales email. In the input, just instruct it to write a sales email."
+
+tool1 = sales_agent1.as_tool(tool_name="sales_email_writer_1", tool_description=description)
+tool1
+```
+You can literally take an already created agent, and use `as_tool`. This will autogenerate
+a boiler-plate tool code, a wrapper that is in charge of calling the agent that
+was applied this on.
+
+With this concept in mind, we will turn all our agents into tools:
+
+```
+tool1 = sales_agent1.as_tool(tool_name="sales_email_writer_1", tool_description=description)
+tool2 = sales_agent2.as_tool(tool_name="sales_email_writer_2", tool_description=description)
+tool3 = sales_agent3.as_tool(tool_name="sales_email_writer_3", tool_description=description)
+
+tools = [tool1, tool2, tool3, send_email_tool]
+
+tools
+```
+We are shoving in the sales agent tools, and the send email tool.
+
+Lastly, we will just create one agent with the context and all the tools:
+
+```
+instructions = """
+You are a Sales Manager at ComplAI. Your goal is to find the single best cold sales email using the sales_writer tools.
+"""
+
+task = """
+Follow these steps:
+
+1. Generate Drafts: Use each of the three sales_email_writer tools to generate different email drafts.
+Just instruct each to write a sales email; no further details are needed.
+Do not proceed until all three drafts are ready, one from each tool.
+ 
+2. Evaluate and Select: Review the drafts and choose the single best email using your judgment of which one is most effective.
+ 
+3. Use your tool to send the best email (and only the best email) to the user. Only send 1 email.
+"""
+
+sales_manager = Agent(name="Sales Manager", instructions=instructions, tools=tools, model=MODEL_NAME)
+
+```
+
+You can leverage this tool to visualize how the agent is currently setup:
+
+`draw_graph(sales_manager)`
+
+You need the `graphviz` executable that can be installed through different means.
+
+And now when it comes to running the agent it's a simple one-liner:
+
+```
+with trace("Sales manager"):
+    result = await Runner.run(sales_manager, task)
+```
+The LLM decides what to do, he is in charge of the runtime, in a way. We are not
+writing code to get in-between and make decisions. Off he goes.
+
+_And lastly, don't forget:_ TRACING. If we look at our execution, we should satisfy
+ourselves to be 100% sure that the LLM is doing what it's supposed to do. See
+things executing in parallel, seeing the email tool getting called and so on.
+
+=== Orchestrate Agents with Handoffs in the OpenAI Agents SDK
+
+Handoffs are not used as other Frameworks. Prompts are baked into a Framework, that
+is Framework Voodoo. And Handoffs are doing just that.
+
+An agent can delegate to another agent, parsing control, in a way we don't expect.
+
+```
+
+instructions = """
+You are a Sales Manager at ComplAI. You get your sales team to draft emails, then send them all to a sales picker.
+"""
+
+task = """
+Follow these steps:
+
+1. Generate Drafts: Use each of the three sales_email_writer tools to generate different email drafts.
+Just instruct each to write a sales email; no further details are needed.
+Do not proceed until all three drafts are ready, one from each tool.
+ 
+2. Handoff to the sales sender to choose and send the best email.
+"""
+
+tools = [tool1, tool2, tool3]
+handoffs = [sales_sender]
+
+sales_manager = Agent(name="Sales Manager", instructions=instructions, tools=tools, handoffs=handoffs, model=MODEL_NAME)
+```
+The idea is that we setup the tools, and we then setup a handoff, which is another
+agent.
+
+If we visualize the diagram of the setup with Handoffs, we are baking in that
+there's a Sales Manager that send an instruction to a Sales Sender.
+
+Still, the running is one sole run:
+
+```
+with trace("Sales manager"):
+    result = await Runner.run(sales_manager, task)
+```
+
+The handoff => Is when the sales manager passes down the execution to the sales
+sender agent. So in short, you are passing down the execution power to further
+agents down the chain.
+
+- Spinning up multiple agents
+- Have another agent evaluates the other agents' outputs
+- Changing an agent into a tool
+- Handoffs so that the agent will decide to pass control over to based on the way
+the instructions have been laid out
+
+_IDEA:_ You could even have another LLM that refines the email that was selected,
+before sending it.
+
+_Commercial Implications:_ Sales automation is a huge deal. It can win you deals,
+by iterating agents until they yield results.
+
+LLMs makes plausible content. To make the output sucessful => Evaluate against actual
+metrics. Business metrics that measure outcomes. That's the only way you'll know
+if your agents are working, are actually improving your business.
+
+=== Day 3 - Use Any LLM with the OpenAI Agents SDK: Gemini, Groq and More
+
+
