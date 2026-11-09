@@ -7964,3 +7964,190 @@ no `next`**. It's too late. This is a great guard to record things, so analytics
 (telemetry).
 
 === Beyond Entering: Route Leave Guards
+
+There's also a useful Guard that triggers when the user is about to leave. So, right
+before leaving a component, you might want to run code and deny the leaving of the
+page.
+
+You could use `unmounted`
+
+```
+unmounted() {
+  console.log('Bye bye');
+}
+```
+But you would have to write a lot of hacky code to stop navigation.
+
+_Why would you want stop a user from leaving a page?_ Say you have a form, and the
+user filled it partially, what if by accident the user will press something and
+lose all of its data?
+
+We can use a guard so that we cover this UX concern.
+
+```
+beforeRouteLeave(to, from, next) {
+  console.log('UsersList Cmp beforeRouteLeave', to, from);
+  if (this.changesSaved) {
+    next();
+  } else {
+    const userWantsToLeave = prompt('Are you sure? You got unsaved changes!');
+    next(userWantsToLeave);
+  }
+}
+```
+We could keep track of whether we saved the form/info. And in case it's not,
+we can then control whether the user is sure that we want to leave (navigate away).
+In case we accept we will navigate away, otherwise we will remain in the page.
+
+Guards run in different parts of the app. And we can pick and choose what guard
+to use depending on the use case. By understanding the problem or feature you
+should be able to pick the ones you need, they are quite reusable, and thought
+of as an answer for many problems that present themselves on frontend UI.
+
+=== Utilizing Route Metadata
+
+On any given route, you can add an extra property:
+
+```
+{
+    name: 'teams',
+    path: '/teams', components: { default: TeamsList, footer: TeamsFooter }, children: [
+        { name: 'team-members', path: ':teamId', component: TeamMembers, props: true, meta: { needsAuth: true } },
+    ]
+},
+```
+Example, for auth you can add to a route: `{ needsAuth: true }`.
+
+And then you can leverage said metadata property on different parts of the code that
+deal with a route:
+
+```
+router.beforeEach((to, from, next) => {
+    console.log('Global beforeEach', to, from);
+
+    if (to.meta.needsAuth) {
+        console.log('Needs auth!');
+        next();
+    }
+
+    next();
+});
+```
+Of course we aren't implementing a full auth feature here, but the idea is already
+present.
+
+_This is an advanced feature that you might not use always, but know that it's there
+when the time comes_
+
+=== Organizing Route Files
+
+We will build a bigger project in the next module.
+
+When working with big things, you should be aware of how to organize files and
+folders (with routing now in mind)
+
+You might want to have a `pages` or `screens` folder. This is optional. However
+you could put the components that are loaded as pages to this folder, that way
+you have a clear distinction for components that are loaded through the router
+and the ones that are just embedded throughout the application.
+
+And so, refactoring can come in place for that. We would take our components and
+move them from `components` into `pages` and update the imports both in `main.js`
+and the components themselves since they now have to reference components in
+other folders.
+
+**Now, after refactoring, we will notice that `main.js` is starting to get big**,
+you might want to move elsewhere all the route declaration jargon.
+
+A separate `router.js` file should be a good place to put routing code.
+
+Basically a new js module in which we do router things, and by the end we export
+the object we configured:
+
+```
+import { createRouter, createWebHistory } from 'vue-router';
+
+import TeamsList from './pages/TeamsList.vue';
+import TeamsFooter from './pages/TeamsFooter.vue';
+import TeamMembers from './components/teams/TeamMembers.vue';
+import UsersList from './pages/UsersList.vue';
+import UsersFooter from './pages/UsersFooter.vue';
+
+const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/', redirect: '/teams' },
+        {
+            name: 'teams',
+            path: '/teams', components: { default: TeamsList, footer: TeamsFooter }, children: [
+                { name: 'team-members', path: ':teamId', component: TeamMembers, props: true, meta: { needsAuth: true } },
+            ]
+        }, // our-domain.com/teams => ...
+        {
+            path: '/users', components: { default: UsersList, footer: UsersFooter }, beforeEnter(to, from, next) {
+                console.log('users beforeEnter');
+                next();
+            }
+        }, // our-domain.com/user-list => ...
+        // { path: '/teams/new', component: TeamsList },
+        { path: '/:notFound(.*)', redirect: '/' }
+    ],
+    linkActiveClass: 'active',
+    scrollBehavior(_, _2, savedPosition) {
+        if (savedPosition) {
+            return savedPosition;
+        }
+        return { left: 0, top: 0 };
+    },
+});
+
+router.beforeEach((to, from, next) => {
+    console.log('Global beforeEach', to, from);
+
+    if (to.meta.needsAuth) {
+        console.log('Needs auth!');
+        next();
+    }
+
+    next();
+});
+router.afterEach((to, from) => {
+    console.log('Global afterEach', to, from);
+})
+
+export { router }
+```
+
+And just by separating the code, we make `main.js` so much leaner:
+
+```
+import { createApp } from 'vue';
+
+import App from './App.vue';
+import { router } from './router.js';
+
+const app = createApp(App)
+
+app.use(router);
+
+app.mount('#app');
+
+```
+
+=== Summary
+
+We explored routing. Why we need route, how we can configure them, how to setup
+many things within the router. Nested routes, children, dynamic path segments (props),
+query parameters, navigation guards, controlling scroll behavior, and how to navigate
+with `router-link` and the programmatic approach.
+
+We learned how to describe the location we want to go to. (A string, or an object).
+
+With all of these features, we should be able to provide great user experiences,
+and well crafted frontend code.
+
+== Section 14: Animations & Transitions
+
+=== Module Introduction
+
+
