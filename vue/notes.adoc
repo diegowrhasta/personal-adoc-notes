@@ -8150,4 +8150,140 @@ and well crafted frontend code.
 
 === Module Introduction
 
+Transitions & Animations can be totally optional. But they often help your UI
+and UX get better. So things give more feedback to the user.
 
+- Understanding Transitions & Animations
+- Animating with Vue
+- Animating Lists
+
+=== Animation Basics & CSS Transitions
+
+You know the drill. Download the project, install, and see it running. This is
+all but a dummy project to practice animations.
+
+- First Task: Click the `Animate` button. And have the black square animate.
+
+_Let's move the block a bit to the left_
+
+_We can animate things with CSS_ Only CSS. Javascript would come in to sort-of
+kickstart the css class that helps with animation.
+
+[source, vue]
+----
+<template>
+  <div class="container">
+    <div class="block" :class="{ animate: animatedBlock }"></div> <.>
+    <button @click="animateBlock">Animate</button> <.>
+  </div>
+  <base-modal @close="hideDialog" v-if="dialogIsVisible">
+    <p>This is a test dialog!</p>
+    <button @click="hideDialog">Close it!</button>
+  </base-modal>
+  <div class="container">
+    <button @click="showDialog">Show Dialog</button>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return { dialogIsVisible: false, animatedBlock: false }; <.>
+  },
+  methods: {
+    showDialog() {
+      this.dialogIsVisible = true;
+    },
+    hideDialog() {
+      this.dialogIsVisible = false;
+    },
+    animateBlock() {
+      this.animatedBlock = true; <.>
+    },
+  },
+};
+</script>
+----
+<.> By standing at the element we want to animate, we can establish a new class
+that can get added to it which will trigger the animation
+<.> And after we click this button we will trigger a method that allows the animation
+class to get applied
+<.> So, we have a flag state property, which will allow us to add or remove the
+animation class
+<.> Our method is a simple turn-on method
+
+[source, css]
+----
+.block {
+  width: 8rem;
+  height: 8rem;
+  background-color: #290033;
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease-out; <.>
+}
+
+.animate {
+  transform: translateX(-150px); <.>
+}
+----
+<.> This is really important. The way to understand how you animate by interacting
+among classes is that if you define in a class `transition` you can then configure
+which css property that the element has affected for it will be subject to "animation",
+the other two parameters are the length of the animation and then a specific modifier
+that helps you fine-tune the animation
+<.> This is the class that in a way represents the "final state" of the element
+we want to animate. `transform` helps us move an object on the screen from its
+original position to an offsetted position. `translateX` moves the object horizontally,
+and it's the preferred way to move things around because this property is highly
+performant. It makes sense why in the original class of the element, we are pointing
+at `transform` because that is the property that will be applied once the animation
+class kicks in
+
+=== Understanding CSS Animations
+
+The previous approach is the **recommended approach to animation**. It's lean and
+highly performant. However, there might be use cases in which you would use a
+different method:
+
+```
+.block {
+  width: 8rem;
+  height: 8rem;
+  background-color: #290033;
+  margin-bottom: 2rem;
+  /* transition: transform 0.3s ease-out; */
+}
+
+.animate {
+  /* transform: translateX(-150px); */
+  animation: slide-fade 0.3s ease-in forwards;
+}
+
+@keyframes slide-fade {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+
+  70% {
+    transform: translateX(-120px) scale(1.1);
+  }
+
+  100% {
+    transform: translateX(-150px) scale(1);
+  }
+}
+```
+You can be even more specific on your animation by defining a `keyframes` object,
+with a name you choose (we chose `slide-fade`). In here you define percentages or
+states (keyframes) at which the element will be affected in some way (through css
+properties). In this instance we have 3 states, the beginning, then at 70% of the
+animation we move the element to the left and make it a bit bigger, and lastly
+by the end we move the element even further to the left and we return it to
+its original size.
+
+And the way we chain things together is through the `animate` property, to which we
+will apply now `animation` and feed to it the name of the animation and then
+the same extra parameters as in `transition`, with the exception of `forwards`
+which actually helps us make the animation look smooth and intentional. Otherwise
+it will snap back to the original state. So add that if you want the box to stay
+at the last state after the animation is over.
