@@ -5511,4 +5511,72 @@ is quoted as a continously compounded rate.
 
 == Chapter 3
 
+=== Problem Sets
 
+1. **Bond prices and yields** A 10-year bond is issued with a face value of $1,000,
+paying interest of $60 a year. If interest rates increase shortly after the bond
+is issued, what happens to the bond's
+
+a. Coupon rate?
+b. Price?
+c. Yield to maturity?
+
+Face value: $1,000
+Annual Coupon payment: $60
+Maturity: 10 years
+
+Coupon Rate = Coupon Payment / Face Value = 60 / 1000 = 0.06 = 6%
+
+The coupon rate is established when the bond is issued. It determines the annual
+interest payment based on the face value.
+
+_Even if the market interest rates change afterward, the bond's contractual coupon
+payment remains $60 per year_
+
+**Price?**
+
+**The bond price decreases**
+
+Imagine this:
+
+- The market interest rates increase from 6% to 8%.
+- Your exisiting bond still pays $60 annually, but newly issued bonds now offer
+better returns.
+- Investors are less interested in purchasing your existing bond at its original
+$1,000 price.
+- **You would have to sell the bond at a discount to make it attractive to investors**
+
+**Yield to maturity?**
+
+**The yield to maturity increases**
+
+Yield to maturity represents the annualized return an investor expects to earn
+if they purchase the bond at its current market price and hold it until maturity,
+assuming the contractual payments are made.
+
+When the bond price decreases, the Yield to Maturity increases
+
+WHY???
+
+. You pay less to purchase the bond
+. You still receive $60 every year
+. You still receive the full $1,000 face value at maturity
+. Therefore, your return relative to the amount invested increases
+
+[IMPORTANT]
+====
+Bond prices and yields move in opposite directions
+====
+
+_Never confuse the coupon rate with the yield to maturity_
+
+Coupon rate = Contractual interest payment divided by face value. It doesn't change.
+Yield to maturity = Return based on the bond's current market price and remaining
+payments. It changes when the price changes.
+
+2. **Bond prices and yields** The following statements are true. Explain why.
+
+a. If a bond's coupon rate is higher that its yield to maturity, then the bond will
+sell for more than face value.
+b. If a bond's coupon rate is lower than its yield to maturity, then the bond's
+price will increase over its remaining maturity
