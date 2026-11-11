@@ -8287,3 +8287,115 @@ the same extra parameters as in `transition`, with the exception of `forwards`
 which actually helps us make the animation look smooth and intentional. Otherwise
 it will snap back to the original state. So add that if you want the box to stay
 at the last state after the animation is over.
+
+=== Why is "Just CSS" Not Enough?
+
+Let's be clear: CSS Animations will always be enough. But adding them as we
+are at the moment might not.
+
+Sometimes you want to animate something as a "in-transition" and "out-transition"
+
+```
+@keyframes modal {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+dialog {
+  position: fixed;
+  top: 30vh;
+  width: 30rem;
+  left: calc(50% - 15rem);
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: white;
+  z-index: 100;
+  border: none;
+  animation: modal 0.3s ease-out forwards;
+}
+```
+_Tip:_ If you only have two keyframes, you can write 0% {} and 100% {}. But also
+a short-handle is `from {}` and `to {}`. Right now we have a nice fade-in animation
+with this. But we have run into a problem:
+
+- We want to animate the fade-out/disappearance of the dialog too.
+
+And this, with pure CSS is a bit challenging. Because at a meta-level, the animation
+appears in the DOM for a brief moment and then is detached. But we want to sort
+of keep that animation reference live, so we can then trigger the fade-out behavior.
+
+**Vue helps us, delaying the detachment of the animation from the DOM** And Vue,
+_will help us_ in making a disappearance animation possible.
+
+=== Playing CSS Animations with Vue's Help
+
+`transition`
+
+Element not mounted => Element mounted => Element not mounted
+
+`*-enter-from`, `*-enter-to`, `*-enter-active`, `*-leave-from`, `*-leave-to`, `*-leave-active`
+
+Vue adds extra classes and analyzes the css code to find out duration and then
+takes care of adding styles that will help achieve the animation.
+
+The idea is that Vue reads the css code, checks the duration, and then adds the
+special css classes that help you animate through the Vue framework. Vue can tell
+if an animation takes place, how long it takes, and it only removes the element
+once the animation is done.
+
+=== Using the Transition Component
+
+So, there's a special component that you can use to enclose the content you want
+to animate (it has a rule of only having one child, except for a special case we
+will see later)
+
+And then you have to add css based around the vue specific classes we explained
+before:
+
+[source, css]
+----
+.v-enter-from { <.>
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.v-enter-active { <.>
+  transition: all 0.3s ease-out;
+}
+
+.v-enter-to { <.>
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.v-leave-from { <.>
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.v-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.v-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+----
+<.> This is the starting style, you should state the startng state
+<.> This is the class that brings together the animation behavior, `all` so that
+all sorts of properties are taken into account
+<.> This is the final state of the animation
+<.> And in the case of the `leave` classes, you would most of the time start at
+the end of the `enter` classes. And go all the way back, but the idea is the same,
+start and end states, and in the middle a class that determines how the animation
+behaves.
