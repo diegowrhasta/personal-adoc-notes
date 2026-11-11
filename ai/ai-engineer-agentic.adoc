@@ -2677,4 +2677,343 @@ if your agents are working, are actually improving your business.
 
 === Day 3 - Use Any LLM with the OpenAI Agents SDK: Gemini, Groq and More
 
+Recap: Orchestration
+
+There are a bunch of ways to Orchestrate LLMs => The bulletproof way is to
+orchestrate with code.
+
+_The fancy way is to orchestrate with LLMs_
+
+OpenAI Agents SDK => Makes Agent orchestration easy. Handoffs => This is a pattern
+of passing control between agents, and it's a bit of voodoo framework.
+
+_How do you do handoffs in other frameworks?_ => You really can't.
+
+Claude Code or Claude Design => These are the products that feed off of Orchestration
+with LLMs.
+
+We will start with different models.
+
+When using strings for the Agent() model, then the library assumes you are referring
+to an OpenAI model. However when interfacing with other LLMs you have to create
+a model object:
+
+[source, python]
+----
+gemini_client = AsyncOpenAI(base_url=GEMINI_BASE_URL, api_key=google_api_key) <.>
+openrouter_client = AsyncOpenAI(base_url=OPENROUTER_BASE_URL, api_key=openrouter_api_key)
+groq_client = AsyncOpenAI(base_url=GROQ_BASE_URL, api_key=groq_api_key)
+
+gemini_model = OpenAIChatCompletionsModel(model="gemini-3.1-flash-lite", openai_client=gemini_client) <.>
+kimi_model = OpenAIChatCompletionsModel(model="moonshotai/kimi-k2.6", openai_client=openrouter_client)
+oss_model = OpenAIChatCompletionsModel(model="openai/gpt-oss-120b", openai_client=groq_client)
+
+sales_agent1 = Agent(name="Gemini Sales Agent", instructions=instructions, model=gemini_model) <.>
+sales_agent2 = Agent(name="Kimi Sales Agent", instructions=instructions, model=kimi_model)
+sales_agent3 = Agent(name="GPT-OSS Sales Agent",instructions=instructions, model=oss_model)
+
+description = "Use this tool to write a sales email. In the input, just instruct it to write a sales email."
+
+tool1 = sales_agent1.as_tool(tool_name="sales_agent1", tool_description=description)
+tool2 = sales_agent2.as_tool(tool_name="sales_agent2", tool_description=description)
+tool3 = sales_agent3.as_tool(tool_name="sales_agent3", tool_description=description)
+----
+<.> Notice how for gemini for example, we use an `AsyncOpenAI` object to which we
+pass the gemini API url, and the google API key
+<.> We then feed this client to an `OpenAIChatCompletionsModel`, which will hold
+the model name as well
+<.> Lastly we instantiate an`Agent` with a specific name, instructions and then
+the model object
+
+**This is the officially supported way to use other models with the OpenAI SDK**
+
+The course then walks us through an example in which we use the different models
+to do the sales email generation and selection.
+
+The non-OpenAI models can also become tools themselves, they will behave the
+same as the OpenAI models.
+
+**You get the same traces as well**
+
+It's nice to have traces, because when you work with different models from different
+providers, you can easily check which model is the slowest, the fastest, and also
+see the quality of their outputs.
+
+=== Structured Outputs with Pydantic in the OpenAI Agents SDK
+
+LLMs produce language. That's what they do: _Generate tokens, the most likely sequence
+to follow an input_).
+
+However, if we prompt it correctly, it can also generate JSON.
+
+_It's all about trickery with LLMs_. We make good and creative prompts, to get
+around problems, and reach the end goal by talking to an LLM, and the LLM responding
+with something we can structurize.
+
+There's a popular framework (library) to define a JSON schema that can then be
+turned into an object: `Pydantic`, which has a really simple and intuitive API.
+
+[source, python]
+----
+class EmailReview(BaseModel): <.>
+    is_professional: bool = Field(description="Whether the email is professional and appropriate") <.>
+    number_of_sentences: int = Field(description="The number of sentences in the body of the email, not including the greeting and signature")
+    contains_placeholders: bool = Field(description="Whether the email contains placeholders for personalization")
+----
+<.> You essentially declare a class that needs to inherit from `BaseModel`
+<.> And then you declare a field, with its type and then metadata that helps describe
+the field. **This is really important for the LLM to know how to fill the field**
+There's one thing about structured outputs that the LLM adds as a safeguard. And
+that is "constrained decoding". Basically, an LLM could be generating wrong JSON
+output and break our code. However, under the hood it really makes sure (almost certain)
+that when selecting the next token, they zero-out the tokens that would break
+a spec you provide. _This is how LLMs are very good at generating a JSON that
+conforms to a schema_.
+
+**Not all LLMs support structured outputs**
+
+[IMPORTANT]
+====
+Keep your JSON schema relatively simple.
+====
+
+It's a lot to ask, for LLMs to work with highly nested and complex JSON objects.
+So try to reduce risk there.
+
+You can see the janky JSON of a schema: `EmailReview.model_json_schema()`
+
+**Structured Outputs is scaffolding**
+
+Now let's run a small example:
+
+```
+email = """
+Hi [first_name],
+
+I'm hitting you up to see if you'd like to buy our product. It's really great. You'll miss out if you don't buy it.
+
+Laters.
+
+Ed
+"""
+
+checker = Agent(name="Checker", instructions="You review potential sales emails", model="gpt-5.4-mini", output_type=EmailReview)
+result = await Runner.run(checker, email)
+
+review = result.final_output
+review
+
+review.is_professional
+```
+
+Look at this. We aren't really asking the LLM about its output, we are not really
+telling it much, as far as the user prompt goes, or event the system prompt.
+
+However, based on the structured output, and the user input it responds with JSON,
+yet that JSON is filled in with information that is extrapolated from the prompt
+and some sort of "evaluation"
+
+Why do we know this, because the result can literally look like this:
+
+`EmailReview(is_professional=False, number_of_sentences=3, contains_placeholders=True)`
+
+The OpenAI Agents SDK library does a lot in the background, because it leverages
+JSON the Pydantic object and outputs directly the object instance.
+
+==== Guardrails
+
+Something really important as a concept is guardrails. **You can write guardrails
+yourself**. However the SDK has an API for Guardrails, really opinionated and with
+multiple constructs.
+
+It's really set in its ways, so you can't migrate easily to other framework, it
+has a lot of Voodoo Framework, and updates run risks of breaking your solutions.
+
+_The preferred approach will always be to write your own code for guardrails_
+
+There are three types of guardrails:
+
+- Input guardrails => This runs only for the first agent on the chain
+- Output guardrails => This runs only on the last agent's output
+- Tool guardrails => Runs on every custom function-tool, before execution and
+after execution
+
+**Tripwire:** If this is triggered, then an exception is thrown because an agent
+hit the guardrail.
+
+_Why are Guardrails associated with an Agent?_ _Shouldn't it be in the `Runner.run`?_
+
+The real problem: Guardrails are just tests and controls => You should be able to
+write them anywhere you want. But OpenAI thinks otherwise. They want to attach
+the Guardrail to an agent.
+
+- `Parallel execution` => This is run like this by default, but there might be
+scenarios in which multiple LLMs were triggered, yet one that had the tripwire
+later triggered makes the whole execution fall, but you already wasted LLM calls.
+So _be careful around this_
+
+=== Build Guardrails for AI Agents Plus Sandboxes and MCP
+
+Guardrails are themselves making an LLM call. Because they should make a judgement.
+
+[source, python]
+----
+@output_guardrail
+async def email_guardrail(ctx, agent, message): <.>
+    result = await Runner.run(checker, message, context=ctx.context) <.>
+    review = result.final_output
+    is_problem = review.contains_placeholders or not review.is_professional <.>
+    return GuardrailFunctionOutput(output_info={"review": review},tripwire_triggered=is_problem) <.>
+----
+<.> A guardrail basically receives a context, an agent and a message. The context
+is an extra object that might be useful in some use cases that require further
+metadata and info, the `agent` is some specific agent to which you can apply a
+guardrail, you could re-use the guardrail with multiple things, however we are
+going to use just one. And lastly the message we will analyze and make the guardrail
+for.
+<.> We will run the agent that we used to check if an email has problems and
+so on, on top of the prompt, and lastly we will extend the context.
+<.> We are going to check two properties that come from the structured output to
+deem in a boolean variable whether the guardrail should trigger the tripwire
+<.> And we have to return a `GuardrailFunctionOutput`, we will add a `review` property
+to an object, and then based on what we find (if there is a problem or no) we will
+also state if the tripwire was triggered.
+
+Let's willfully try to make an agent that will write a bad sales email:
+
+```
+cowboy_instructions = instructions + "\nSpeak like a cowboy"
+
+sales_agent_cowboy = Agent(name="Cowboy", instructions=cowboy_instructions, model=gemini_model, output_guardrails=[email_guardrail])
+```
+Look how we are applying a guardrail through `output_guardrails.`
+
+```
+result = await Runner.run(sales_agent_cowboy, "Write a cold sales email")
+result.final_output
+```
+Immediately the run would throw an exception, because of the guardrail.
+
+And that is because the cowboy email was deemed as innapropriate.
+
+The trace even shows a specific item when it comes to a tripwire that was triggered.
+
+**On the other hand, you can write guardrails yourself:**
+
+```
+simple_cowboy = Agent(name="Simple Cowboy", instructions=cowboy_instructions, model=gemini_model)
+result = await Runner.run(simple_cowboy, "Write a cold sales email")
+email = result.final_output
+print(email)
+
+result = await Runner.run(checker, email)
+review = result.final_output
+if not review.is_professional or review.contains_placeholders:
+    print("The email is not professional or has placeholders and will not be sent")
+else:
+    print("Email is good")
+```
+
+That is all that we are doing in our guardrail => Keep it simple. Guardrails can
+be implemented by simple calls to `Runner.run`. And sometimes you will have to
+duplicate code. _But that's a good tradeoff instead of framework voodoo_. Run
+the checks you want to do **when you want to do them**
+
+_Simple is better_
+
+And that is because it will work within any agent framework, you won't tie to
+the Framework's flavor of Guardrails.
+
+==== Sandbox Agents
+
+In Windows you need WSL installed. MAC and Linux don't need extra dependencies.
+
+There is documentation: https://openai.github.io/openai-agents-python/sandbox_agents/
+
+Basically, this is a runtime, that provides a consistent harness. If it changes
+things, it won't change the original code/files. It will all run within a sandbox
+in your computer or in the cloud. It's a way for agents to have their own private
+sandbox that will not leak and will not break other files and things.
+
+This is a new feature, so it might be a bit experimental.
+
+The example the course shows is a python module with a really specific function
+that has a sneaky bug built into it.
+
+And you can create an agent in charge of fixing the bug:
+
+```
+instructions = f"""
+You are a software engineer that fixes bugs.
+Review files in the sandbox code directory.
+
+Write the fixed version of the file to this host output directory:
+{OUTPUT_DIR}
+
+Use full file paths when writing output.
+Respond with a summary of what you did.
+"""
+```
+
+Lastly, we have to instantiate a `Manifest` object:
+
+```
+manifest = Manifest(entries={"code": LocalDir(src=CODE_DIR)}, extra_path_grants=[SandboxPathGrant(path=str(OUTPUT_DIR))])
+capabilities = Capabilities.default()
+capabilities
+```
+Notice how we point to a source folder that holds the file that will be reviewed,
+and then a path to the sandbox folder.
+
+After we run the actual agent in order to fix the bug. We should see in the
+sandbox folder the fixed python module.
+
+==== MCP Teaser
+
+To start talking to an MCP Server you can import from a module and leverage it:
+
+```
+from agents.mcp import MCPServerStreamableHttp
+
+task = """
+In the new SandboxAgents feature in the OpenAI Agents SDK as of May 2026, what is the role of the Manifest object?
+Always be accurate. If you don't know the answer, say so.
+"""
+
+agent = Agent(name="Expert", instructions="Answer the question", model="gpt-4o-mini")
+result = await Runner.run(agent, task)
+print(result.final_output)
+
+params = {"url": "https://mcp.context7.com/mcp", "timeout": 60}
+
+
+async with MCPServerStreamableHttp(name="Context7", params=params) as server:
+    agent = Agent(name="Expert", instructions="Use Context7 to answer the question", mcp_servers=[server], model="gpt-4o-mini")
+    result = await Runner.run(agent, task)
+
+print(result.final_output)
+```
+Look how and MCP enables an agent to use tools that someone else wrote. You don't
+have to write tools yourself.
+
+The example was testing an LLM that didn't know about recent things. The model as
+is, doesn't know about a recent feature. However there's a tool called Context7
+that gives info about APIs to an LLM.
+
+And so, if we load an agent with the mcp server `mcp_servers=[server]`. And ask
+the same question, we will actually get a proper answer. All because the agent
+which had a cutoff training date before the feature was a thing, leveraged an
+extra tool and had the ability now to answer the question.
+
+_We could write a tool ourselves, add docstrings, and so on_. However with an
+MCP, you would just make a call to the server. And then the LLM would take care
+of interfacing with the MCP server and leverage the tools.
+
+**Even this interaction will have TRACES**
+
+And you can see what the model actually did. How he tries to get a tool that
+can help it get the info it needs, how it then leverages the tool.
+
+=== Day 4 - Plan a Deep Research AI Agent with the OpenAI Agents SDK
+
 
