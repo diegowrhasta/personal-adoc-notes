@@ -5580,3 +5580,61 @@ a. If a bond's coupon rate is higher that its yield to maturity, then the bond w
 sell for more than face value.
 b. If a bond's coupon rate is lower than its yield to maturity, then the bond's
 price will increase over its remaining maturity
+
+Answers:
+
+a. Because the rate is highly competitive. Even to the present at which the yield
+to maturity is being analyzed the ratio is highly profitable
+b. The bond became more competitive when compared to the current present that
+is shaping the yield to maturity, even though its rate over the principal fairs
+to be less than said yield.
+
+Corrections:
+
+a. Imagine:
+
+Face value: $1,000
+Coupon rate: 8% -> $80 annually
+Current market-required yield: 6%
+
+Investors want a 6% return, but this bond pays $80 annually. equivalent to an 8%
+on its face value.
+
+This makes the bond more attractive than newly issued bonds offering the market-required
+return.
+
+Investors are willing to pay MORE than $1,000 for it.
+
+Paying a premium reduces their effective return until it matches the market-required
+6%.
+
+**The higher purchase price reduces its yield to maturity to the prevailing market
+rate**
+
+_So it's an equalizer, to keep things in balance_
+
+b. Imagine:
+
+Face value: $1,000
+Coupon rate: 4% -> $40 annually
+Market-required yield: 6%
+
+The bond pays less interest than investors currently demand.
+
+Therefore, investors won't pay the full $1,000 for it. They will purchase it at
+a discount.
+
+**As the bond approaches maturity, its market price gradually increases toward
+its $1,000 face value**
+
+_WHY?_
+
+Regardless of how little interest the bond pays, the issuer is contractually obligated
+to repay $1,000 at maturity.
+
+_The closer maturity gets, the closer the bond's price moves toward that guaranteed
+repayment amount_
+
+So because the closer you are to getting that big payment of principal plus coupon,
+the selling price will start to adjust to that exact same value. _Hence the price
+increases toward face value_
