@@ -8399,3 +8399,211 @@ all sorts of properties are taken into account
 the end of the `enter` classes. And go all the way back, but the idea is the same,
 start and end states, and in the middle a class that determines how the animation
 behaves.
+
+=== CSS Animations with the Transition Component
+
+`transition` can also be used with `@keyframes`.
+
+[source, css]
+----
+.v-enter-from {
+  /* opacity: 0;
+  transform: translateY(-30px); */
+}
+
+.v-enter-active {
+  animation: slide-scale 0.3s ease-out; <.>
+}
+
+.v-enter-to {
+  /* opacity: 1;
+  transform: translateY(0); */
+}
+
+.v-leave-from {
+  /* opacity: 1;
+  transform: translateY(0); */
+}
+
+.v-leave-active {
+  animation: slide-scale 0.3s ease-out; <.>
+}
+
+.v-leave-to {
+  /* opacity: 0;
+  transform: translateY(-30px); */
+}
+
+@keyframes slide-scale { <.>
+  0% {
+    transform: translateX(0) scale(1);
+  }
+
+  70% {
+    transform: translateX(-120px) scale(1.1);
+  }
+
+  100% {
+    transform: translateX(-150px) scale(1);
+  }
+}
+----
+<.> Basically, we would no longer have need but for `v-enter-active` as the css
+class, which would actually point to the keyframes identifier alongside specific
+properties for the animation.
+<.> And when transitioning out, just the same, we can omit anything from all classes
+but the `*-active` class.
+<.> And as you can see, we have declared this specific animation with a specific
+identifier that we use to reference in the respective css animation classes.
+
+=== Using Custom CSS Class Names
+
+What if you had multiple transitions on a page?
+
+Maybe you don't want to animate the addition of removal of one element, but
+**many elements**
+
+You would face a problem, vue would add the same css class, so all elements would
+inherit the animation. (What if you don't want that?)
+
+You can setup the css classes that would respond to the vue animation classes,
+we need to tell Vue that it should add something like `para-*` prefix for all the
+animation classes.
+
+```
+<transition name="para">
+  <p v-if="paraIsVisible">This is only sometimes visible...</p>
+</transition>
+```
+
+With this, you would end-up with all classes as `para-enter-from`, `para-enter-active`,
+`para-enter-to`.
+
+What if not just a prefix, but you want **the whole class with a different name?**
+
+```
+<transition enter-to-class="some-class" enter-active-class="..." >
+  <p v-if="paraIsVisible">This is only sometimes visible...</p>
+</transition>
+```
+So you would verbatim add the name to the respective default class name.
+
+=== Example: Animating a Modal
+
+Let's now apply what we learned about transition (the component) to our modal.
+
+And this is necessary for the animation on closing the modal.
+
+```
+<transition name="modal">
+  <base-modal @close="hideDialog" v-if="dialogIsVisible">
+    <p>This is a test dialog!</p>
+    <button @click="hideDialog">Close it!</button>
+  </base-modal>
+</transition>
+```
+
+If we try to just do this and copy the `@keystrokes` from `base-modal`
+
+**There will be fall-through**, but inside of `base-modal` we have two components:
+
+```
+<template>
+  <div class="backdrop" @click="$emit('close')"></div>
+  <dialog open>
+    <slot></slot>
+  </dialog>
+</template>
+```
+If we comment the first `div` then the dialog would work, but that is because
+transition expects **one componment** 
+
+There are different ways to get around this issue, but the "easiest" one would be
+to change the animation to be applied at the `base-modal` level. So the parent
+should just capture the show or hide dialog action and send the state to the
+child:
+
+```
+<base-modal @close="hideDialog" :open="dialogIsVisible">
+  <p>This is a test dialog!</p>
+  <button @click="hideDialog">Close it!</button>
+</base-modal>
+```
+
+[source, vue]
+----
+<template>
+  <div v-if="open" class="backdrop" @click="$emit('close')"></div> <.>
+  <transition name="modal"> <.>
+    <dialog open v-if="open">
+      <slot></slot>
+    </dialog>
+  </transition>
+</template>
+
+<script>
+export default {
+  emits: ['close'],
+  props: ['open']
+};
+</script>
+
+<style scoped>
+@keyframes modal {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.75);
+}
+
+dialog {
+  position: fixed;
+  top: 30vh;
+  width: 30rem;
+  left: calc(50% - 15rem);
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: white;
+  z-index: 100;
+  border: none;
+  /* animation: modal 0.3s ease-out forwards; */
+}
+
+.modal-enter-active {
+  animation: modal 0.3s ease-out; <.>
+}
+
+.modal-leave-active {
+  animation: modal 0.3s ease-in reverse; <.>
+}
+</style>
+----
+<.> We need to now also add the `v-if` to the backdrop otherwise it will always show.
+<.> And because we want to animate the dialog, we will wrap it with `transition`
+<.> And so the in-animation would play out a certain way referencing the `@keyframes`
+<.> And the out-animation would play literally in reverse (thanks to the `reverse`
+property that we can apply)
+
+With this, we have a really smooth dialog coming-in and coming-out at out will.
+
+`transition` => MUST HAVE ONE DIRECT CHILD ELEMENT. **That's the reason we had
+to refactor a bit**
+
+
