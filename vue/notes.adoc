@@ -8606,4 +8606,240 @@ With this, we have a really smooth dialog coming-in and coming-out at out will.
 `transition` => MUST HAVE ONE DIRECT CHILD ELEMENT. **That's the reason we had
 to refactor a bit**
 
+=== Transitioning Between Multiple Elements
 
+transition -> Must always have **one direct child element**
+
+_However, there are exceptions to this rule_. There's a scenario in which you can
+have more than one child:
+
+```
+<div class="container">
+  <transition>
+    <button @click="showUsers" v-if="!usersAreVisible">Show Users</button>
+    <button @click="hideUsers" v-if="usersAreVisible">Hide Users</button>
+  </transition>
+</div>
+```
+The transition hinges on the condition that only **one element** will be in the
+DOM at any point in time, so in here because the elements are mutually exclusive
+when it comes to rendering, it's valid to use `transition` like this. However
+we **do get a warning when hot-reloading**
+
+And that is because of our conditions, Vue doesn't really know that the conditions
+are mutually exclusive. So it's better to rely on `v-else`
+
+[source, vue]
+----
+<div class="container">
+  <transition name="fade-button" mode="out-in"> <.>
+    <button @click="showUsers" v-if="!usersAreVisible">Show Users</button>
+    <button @click="hideUsers" v-else>Hide Users</button>
+  </transition>
+</div>
+
+.fade-button-enter-from, <.>
+.fade-button-leave-to {
+  opacity: 0;
+}
+
+.fade-button-enter-active {
+  transition: opacity 0.3s ease-out; <.>
+}
+
+.fade-button-enter-to,
+.fade-button-leave-from {
+  opacity: 1;
+}
+
+.fade-button-leave-active {
+  transition: opacity 0.3s ease-in; <.>
+}
+----
+<.> Notice how we are setting the custom prefix for the animation classes, and how
+we are leveraging `mode` a property in which there are two possible values:
+`in-out`, `out-in`. For our specific use case, we want for the appearing button
+to fade-in and the disappearing button to fade-out. Hence `out-in` allows us to
+get to that.
+<.> Because one button that appears and another that disappears come from the same
+state (disappearing-appearing) we can reuse the opacity for both specific points
+<.> Be careful, when working with `@keyframes` you would use `animation`, but when
+only dealing with specific css properties you have to use `transition`
+<.> And just to keep a much more intuitive and "pretty" animation the transition
+when appearing is `ease-out` yet when disappearing `ease-in`
+
+=== Using Transition Events
+
+Sometimes you want to run JS code, either as part of the transition, or to control
+the entire transition. Or maybe because you want to do something when an animation
+starts or ends.
+
+Vue gives you various events that are emitted by the `transition` component. Think
+of them as lifecycle hooks:
+
+```
+<div class="container">
+  <transition name="para" @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter"
+    @before-leave="beforeLeave" @after-leave="afterLeave">
+    <p v-if="paraIsVisible">This is only sometimes visible...</p>
+  </transition>
+  <button @click="toggleParagraph">Toggle Paragraph</button>
+</div>
+
+beforeEnter(el) {
+  console.log('beforeEnter()');
+  console.log(el);
+},
+beforeLeave(el) {
+  console.log('beforeLeave()');
+  console.log(el);
+},
+enter(el) {
+  console.log('enter()');
+  console.log(el);
+},
+afterEnter(el) {
+  console.log('afterEnter()');
+  console.log(el);
+},
+afterLeave(el) {
+  console.log('afterLeave()');
+  console.log(el);
+}
+```
+Look at all these hooks. Just like their name should suggest, they run at different
+moments of the animation. Bear in mind that all the callbacks will feed an element
+parameter. This is there so that we can grab the element and do whatever we want,
+we can intercept the event and we can start animating with JS if we want to.
+So you can use this specifically to control the entire animation with JS instead
+of CSS.
+
+=== Building JavaScript Transitions (instead of CSS)
+
+Let's build an entire animation with JS instead of CSS.
+
+**More often than not, you will use CSS animations**. However, libraries such as
+GreenSock build complex animations, and so to leverage it, you would hook into it.
+
+**Building an animation with JavaScript requires the transition hooks**. Even if
+there's no css animations. The hooks are still called, the events are always emitted.
+
+[source, vue]
+----
+beforeEnter(el) {
+  console.log('beforeEnter()');
+  console.log(el);
+
+  el.style.opacity = 0; <.>
+},
+enter(el, done) {
+  console.log('enter()');
+  console.log(el);
+
+  let round = 1;
+  const interval = setInterval(function () { <.>
+    el.style.opacity = round * 0.1;
+    round++;
+
+    if (round > 10) {
+      clearInterval(interval);
+      done(); <.>
+    }
+  }, 20)
+},
+----
+<.> So at the very beginning, `beforeEnter()` we can start with our starting state,
+in our case, the element that is at 0 opacity.
+<.> Then when we hit the next hook, we might start the animation, which seems that
+with an `interval` it would almost always be the case. Depending on the animation
+you want, you would play around with different values, css properties and so on.
+But this seems like a good pattern to memorize, keep the interval reference, to then
+stop counters from going up and down.
+<.> We should have an exit condition always, both for the interval, but also to
+run a specific function called `done()` which the hook also receives. This is to
+stop other hooks from running before this hook's logic is done. In this case because
+we are sending in another thread an interval, then the next hook would immediately
+trigger, which might be an issue in some instances, and so `done` is here to save
+us from such problems.
+
+Lastly, if we want the animation for fading-out, we can work on the `leave` hook:
+
+```
+leave(el, done) {
+  console.log('leave()');
+  console.log(el);
+
+  let round = 1;
+  const interval = setInterval(function () {
+    el.style.opacity -= round * 0.1;
+    round++;
+
+    if (round > 10) {
+      clearInterval(interval);
+      done();
+    }
+  }, 20)
+},
+```
+Basically, `opacity` would be reduced.
+
+The course does `1 - round * 0.1`. My solution still works though. You could also
+set `el.style.opacity = 1` in `beforeLeave()`.
+
+**There's a problem here** If we spam the button to switch states, the element
+freaks out, a flickering shows up. **And we can prevent this behavior as well**.
+
+That is through MORE HOOKS.
+
+There are: `enterCancelled` and `leaveCancelled`.
+
+```
+enter(el, done) {
+  console.log('enter()');
+  console.log(el);
+
+  let round = 1;
+  this.enterInterval = setInterval(() => {
+    el.style.opacity = round * 0.1;
+    round++;
+
+    if (round > 10) {
+      clearInterval(this.enterInterval);
+      done();
+    }
+  }, 20)
+},
+leave(el, done) {
+  console.log('leave()');
+  console.log(el);
+
+  let round = 1;
+  this.leaveInterval = setInterval(() => {
+    el.style.opacity -= round * 0.1;
+    round++;
+
+    if (round > 10) {
+      clearInterval(this.leaveInterval);
+      done();
+    }
+  }, 20)
+},
+enterCancelled() {
+  clearInterval(this.enterInterval);
+},
+leaveCancelled() {
+  clearInterval(this.enterInterval);
+},
+```
+In short, we can use the interval we set for the animations as a flag value,
+but the reference needs to survive the hook execution. Hence, we would put it
+behind a **state property**.
+
+After that we should switch out `setInterval` function for an arrow function,
+to workaround the madness that `this` is in normal functions.
+
+Lastly, we can kill the interval, so our whole running animation logic in the
+new hooks we pointed out. Thanks to the state property, we can now pass around the
+reference and kill it from any other hook. **IMPORTANT:** Notice how we have two
+separate interval properties, these are two different animations, with different
+characteristics, so separate them unless you want **still** strange behaviors.
