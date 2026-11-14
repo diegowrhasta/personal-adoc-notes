@@ -5823,3 +5823,42 @@ gains more proportionately.
 
 This is why low-coupon bonds generally have higher duration than high-coupon bonds
 of equal maturity.
+
+4. **Bond prices and yields** A 10-year German government bond (bund) has a face
+value of Euro 100 and a coupon rate of 5% paid annually. Assume that the interest
+rate (in euros) is equal to 6% per year. What is the bond's PV?
+
+Face Value = 100 Euro
+Coupon = 5 Euro
+YTM = 6 Euro
+
+PV = 100 / 1.06^10 = 55.84 Euros
+
+Corrections.
+
+We also have to account for the fact that we receive a final 5 Euro coupon and the
+100 Euro face value.
+
+PV = C (1 - (1 + r)^-n / r) + F / (1 + r)^n
+
+PV = 5 * [1 - (1.06)^-10 / 0.06] + 100 / 1.06^10
+PV = 92.64 Euros
+
+Further insight:
+
+Coupon rate = 5%
+Market interest rate (YTM) = 6%
+
+Investors require a 6% return, but the bond only pays 5% annually relative to its
+face value.
+
+Therefore, investors will only purchase it at a discount.
+
+The price of 92 Euros compensates investors for the difference.
+
+- Coupon payments = An Annuity
+- Face value = A single future payment
+- Bond PV = PV of the annuity + PV of the face value
+
+**So, what I did was simply calculate the PV of the face value**. Hence I needed
+to add to it all the coupon payments.
