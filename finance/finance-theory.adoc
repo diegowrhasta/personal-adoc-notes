@@ -5638,3 +5638,188 @@ repayment amount_
 So because the closer you are to getting that big payment of principal plus coupon,
 the selling price will start to adjust to that exact same value. _Hence the price
 increases toward face value_
+
+3. **Bond prices and yields** Construct some simple examples to illustrate your
+anwers to the following:
+
+a. If interest rates arise, do bond prices rise or fall?
+b. If the bond yield to maturity is greater than the coupon, is the price of the
+bond greater or less than 100?
+c. If the price of a bond exceeds 100, is the yield to maturity greater or less
+than the coupon?
+d. Do high-coupon bonds sell at a higher or lower prices than low-coupon bonds?
+e. If interest rates change, do the prices of high-coupon bonds change proportionately
+more than that of low-coupon bonds?
+
+_Answers_
+
+a. They fall. Imagine you bought a $1,000 bond with a 6% interest rate. And the
+market gets opportunities with MORE than 6% as opportunity cost. People would
+prefer to buy bonds with that interest rate. So the previous bonds would become
+cheaper for liquidity reasons.
+b. Less? Because the coupon itself is a percentage, if you have 100, the yield
+to maturity can only be a number greater than whatever the coupon is. And a number
+below 100 gives in to such a situation
+c. Greater than the coupon, because if the bond price goes beyond 100, the yield
+to maturity would grow, whereas the coupon remains static
+d. High prices. Coupon goes against yield to maturity, and based on the market,
+they can end up shielding you against falling rates. Say your yield to maturity is 30$
+for a 100$ bond, rates drop and new bonds on the new climate can only yield 20$,
+the old bond of 30$ becomes really strong
+e. Yes. High-coupon bonds become more sought after, because they are covering their
+bases against the fluctuating market rate.
+
+_Corrections_
+
+a. CORRECT. Bond prices do fall. But it's not about liquidity, it's about opportunity
+cost and competitive returns.
+
+Imagine:
+
+- You own a bond paying $6 annually
+- Its face value is $100
+- New bonds are now being issued with an 8% coupon
+
+Why would someone buy your old bond for $100 when they could buy a new one
+offering $8 annually for the same face value?
+
+They wouldn't, unless your bond became cheaper.
+
+The old bound must sell at a discount to compensate investors for its lower coupon.
+
+**Important:** The bond's coupon doesn't change. Its market price does.
+
+b. CORRECT
+
+The price is less than 100
+
+Let's use:
+
+Face value: $100
+Coupon rate: 6%
+Annual coupon: $6
+YTM: 10%
+Maturity: 1 year
+
+P = 106 / 1.10 = $96.36
+
+You are purchasing a bond that pays you a 6$ in interest, but the market requires
+a 10% return.
+
+You compensate for the difference by purchasing the bond below face value.
+
+There are two components to the return:
+
+. The $6 coupon payment.
+. The $3.64 capital gain when the bond matures and you receive $100
+
+Your total gain is $9.64 on your $96.36 investment, giving you a 10% return.
+
+_So the YTM is actually just a "theoretical coupon" based on the current market_
+
+YTM greater than coupon => Below 100
+YTM equal to coupon => Exactly 100
+YTM lower than coupon => Above 100
+
+The price falls **because** investors need a higher return
+
+c. CORRECT
+
+Let's reverse the previous example
+
+Face value: $100
+Coupon: $6
+Maturity: 1 year
+Market-required return: 4%
+
+The bond's price becomes:
+
+P = 106 / 1.04 = $101.92
+
+You pay $101.92 but receive only $106 in one year.
+
+Your profit is $4.08, which represents a 4% return.
+
+- You receive $6 in coupon payments
+- But you lose $1.92 relative to the face value you receive at maturity
+- Your actual return is therefore less than the coupon rate
+
+This is why a bond trading above par is called a _premium bond_
+
+d. CORRECT
+
+Generally, high-coupon bonds sell at higher prices than low-coupon bonds, provided
+we're comparing bonds with:
+
+- The same face value
+- The same maturity
+- The same credit risk
+- The same required market yield
+
+If we compare two bonds:
+
+Face value: $100 $100
+Coupon rate: 3% 8%
+Annual payment: $3 $8
+Maturity: 5 years 5 years
+Market YTM: 5% 5%
+
+We can discount all future payments and come up with the PV of each bond:
+
+Bond A = $91.34
+Bond B = $112.99
+
+Bond B is worth more because it delivers larger coupon payments throughout its
+lifetime.
+
+[IMPORTANT]
+====
+Bond's price adjusts until its YTM becomes competitive with the market
+====
+
+e. INCORRECT
+
+High-coupon bonds generally experience smaller percentage price changes than
+low-coupon bonds when interest rates change, assuming equal maturity and comparable
+risk.
+
+The concept behind this is called _duration_
+
+Think about two bonds:
+
+- Bond A pays $3 annually.
+- Bond B pays $8 annually.
+
+Both have a face value of $100 and mature in 10 years.
+
+Which one returns more of your invested money earlier?
+
+**Bond B**
+
+You receive more money through coupon payments during the earlier years of ownership.
+Bond A, on the other hand, gives you relatively little money until maturity, when you
+finally receive the $100 face value.
+
+This means Bond A's value depends more heavily on cash flows that occur further
+into the future.
+
+And future cash flows are more sensitive to changes in discount rates.
+
+**High-coupon bond:** Receives larger coupon payments throughout the bond's life.
+**Low-coupon bond:** Relatively little coupon income; more of the investment's
+value comes from the final payment.
+
+And now, let's make the comparison concrete.
+
+Suppose market YTM increases from 5% to 6%, with both bonds having 10 years remaining.
+
+- The high-coupon bond has more of its value coming from earlier coupon payments.
+- The low-coupon bond has more of its value concentrated in later payments.
+
+Consequently, the low-coupon bond generally loses a larger percentage of its price.
+
+The reverse also applies when interest rates fall: the low-coupon bond generally
+gains more proportionately.
+
+This is why low-coupon bonds generally have higher duration than high-coupon bonds
+of equal maturity.
