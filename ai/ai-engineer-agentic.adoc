@@ -3016,4 +3016,310 @@ can help it get the info it needs, how it then leverages the tool.
 
 === Day 4 - Plan a Deep Research AI Agent with the OpenAI Agents SDK
 
+OpenAI were the first ones to build a DeepResearch app. We are going to build that
+ourselves, and we are gonna orchestrate by code (bulletproof), with structured
+outputs, and with hosted tools.
+
+Deep Research => This is a feature that runs homework searches, it runs in parallel,
+and then refines info, searches again.
+
+This is a workflow that goes step by step, hence we will Orchestrate by code. With
+Runner.run() in different instances and _step-by-step_.
+
+We will build 4 Agents.
+
+- Search Agent = Looks on the internet
+- Planner Agent = When given a question, it's able to break it down into multiple
+elements to then run searches for
+- Writer Agent = Writes a report based on all the results of the searches
+- Email Agent = Sends the report through email
+
+Some of the magic of Deep Research will go away when we see how it works.
+
+=== Build a Web Search Agent with OpenAI Agents SDK Hosted Tools
+
+Let's start building a search agent that searches on the internet.
+
+Hosted Tools => Tools that run on managed infrastructure that OpenAI runs on our
+behalf. It's super easy as well. You don't have to write the tool yourself, and
+of course they will charge you. (1 cent per search which is **expensive**)
+
+When you are exploring and investigating. However when you build a production
+system, you would build a search yourself, instead of doing the amateur way of
+the hosted tools approach.
+
+**Another risk:** You would tie yourself to the OpenAI environment. You would have
+to use the APIs, the models of OpenAI.
+
+_What's the solution?_ Use an open-source tool that you can write yourself.
+
+Anyhow, we will use the hosted tools to learn about it:
+
+`WebSearchTool` => This will allow us to search the web.
+`CodeInterpreterTool` => Another tool that can run code in OpenAI's infrastructure
+`HostedMCPTool` => Another tool to run MCP servers on OpenAI's hardware. But it's
+so easy to do it on your own, that it might not be that necessary.
+`ImageGenerationTool` => Definitely something that you would like to offset to
+a provider
+`ToolSearchTool`
+
+- Every search is one cent
+
+And the pricing might change. So be careful around what you pay.
+
+This is how you specify tools:
+
+```
+INSTRUCTIONS = """
+You are a research assistant. Given a search term, you search the web for that term and 
+produce a concise summary of the results. The summary must 2-3 paragraphs and less than 300 words.
+Capture the main points and be succinct. Reply only with the summary.
+"""
+task = "Most popular AI Agent frameworks in 2026"
+
+settings = ModelSettings(tool_choice="required")
+tools = [WebSearchTool()]
+
+search_agent = Agent(name="Search Agent", instructions=INSTRUCTIONS, tools=tools, model=MODEL_NAME, model_settings=settings)
+
+result = await Runner.run(search_agent, task)
+display(Markdown(result.final_output))
+```
+And with this, we get a response, based on web search results.
+
+**And you can always look at the trace of this execution**
+
+- In the trace it's not shown as a tool, the usage. Execution only looks as if
+it was an LLM call. And that is because the tools are called with "Responses".
+
+=== Build Planner, Writer and Email Agents with Structured Outputs
+
+```
+class WebSearchItem(BaseModel):
+    reason: str = Field(description="Your reasoning for why this search is important to the query.")
+    query: str = Field(description="The search term to use for the web search.")
+
+
+class WebSearchPlan(BaseModel):
+    searches: list[WebSearchItem] = Field(description="A list of web searches to perform to best answer the query.")
+```
+
+These are structured outputs that we will be leveraging for our searches.
+
+[IMPORTANT]
+====
+When working with some form of search. The structured output should follow a rule
+of thumb: Structure a `reason` **FIRST**. Based on empirical evidence, if you tell
+an LLM to first justify, reason, as to why an answer will be reached, it will be
+more performant, consistent, and with higher chances of generating something good.
+After the reasoning, it can then construct a query that adheres to that. If you
+invert this order, it will just make a query, and then build a reason to justify
+the query, which, again, empirically, is not as good of an output.
+====
+
+**Justifications after the fact are not as good as having a rationale before**
+
+-This sounds hacky, and perhaps a bit backwards. But it works and it's a good
+practice.
+
+`WebSearchPlan` => It's a list of the searches. We are going to ask an LLM to
+generate the list of items, and in consequence a bunch of items will be generated.
+
+And don't forget that you can see the Pydantic schema:
+
+```
+WebSearchPlan.model_json_schema()
+```
+
+And we then start setting up the agent for writing summaries of the search results:
+
+```
+# See note above about cost of WebSearchTool
+
+INSTRUCTIONS = f"""
+You are a research assistant. Given a user query, come up with a set of web searches
+to perform to best answer the query. Output {HOW_MANY_SEARCHES} terms to query for.
+"""
+
+planner_agent = Agent(name="Planner Agent", instructions=INSTRUCTIONS, model=MODEL_NAME, output_type=WebSearchPlan)
+
+result = await Runner.run(planner_agent, task)
+result.final_output
+```
+
+**And now we will make a tool to send an email**
+
+```
+@function_tool
+def send_email_tool(subject: str, text_body: str, html_body: str) -> str:
+    """
+    Send out an email with the given subject and body to all sales prospects
+    
+    Args:
+        subject: The subject of the email
+        text_body: The body of the email as plain text
+        html_body: The HTML body of the email
+    """
+    if USE_EMAIL:
+        send_email(subject, text_body, html_body)
+    else:
+        push(f"Subject: {subject}\n\n{text_body}")
+    return "Email sent successfully"
+```
+
+And now, to prepare the agent with this tool equipped:
+
+```
+INSTRUCTIONS = """
+You are provided with a detailed report. Use your tool to send an email, converting the report into
+a clean, well presented HTML email with an appropriate subject line.
+"""
+
+email_agent = Agent(name="Email Agent", instructions=INSTRUCTIONS, tools=[send_email_tool], model=MODEL_NAME)
+```
+
+**And that's it we have our agents:**
+
+- Planner (query writing agent)
+- Search agent
+- Report Writer agent
+- Email writer-sender
+
+=== Run the Full Deep Research Agent Orchestrated by Code
+
+And now, because we have prepared all our agents, with their specific tools, their
+specific system prompts, and their specific structured outputs. We can then leverage
+them and Orchestrate through code.
+
+It's better to then separate the execution in their own functions, for better
+maintainability.
+
+[source, python]
+----
+async def run_searches(query: str):
+    print("Planning searches...")
+    result = await Runner.run(planner_agent, f"Query: {query}")
+    searches = result.final_output.searches <.>
+    print(f"Will perform {len(searches)} searches")
+    tasks = [search(item) for item in searches] <.>
+    results = await asyncio.gather(*tasks) <.>
+    print("Finished searching")
+    return results
+
+
+async def search(item: WebSearchItem):
+    input_message = f"Search term: {item.query}\nReason for searching: {item.reason}"
+    result = await Runner.run(search_agent, input_message) <.>
+    return result.final_output
+----
+<.> We have under the `run_searches` function code that will run the planner agent and
+gather _hopefully_ five search queries
+<.> We then turn each of the search items into a specific item
+<.> And lastly with `gather` we will make sure that all of our searches are run
+in parallel. **This is not the search yet, it's just the generation of the search
+prompts**
+<.> Lastly we will grab all the queries that were generated, and we will actually
+run them on the web (with the hosted tools)
+
+And now the second section of the execution:
+
+```
+async def write_report(query: str, search_results: list[str]):
+    print("Thinking about report...")
+    input_message = f"Original query: {query}\nSummarized search results: {search_results}"
+    result = await Runner.run(writer_agent, input_message) <.>
+    print("Finished writing report")
+    return result.final_output
+
+async def send_report_email(report: ReportData):
+    print("Writing email...")
+    result = await Runner.run(email_agent, report.markdown_report) <.>
+    print("Email sent")
+    return result.final_output
+```
+<.> After the searches are done, then we have to pass down as a prompt both the
+queries that were made and their respective results, and we will tell a writer agent
+to write a report of the results
+<.> And lastly a function to take the report and send it over through email
+
+The actual code that will run our whole setup:
+
+[source, python]
+----
+query ="Most popular AI Agent frameworks in 2026"
+
+with trace("Research trace"):
+    print("Starting research...")
+    search_results = await run_searches(query)
+    report = await write_report(query, search_results)
+    await send_report_email(report)  
+    print("Hooray!")
+----
+
+The output then did this:
+
+```
+Starting research...
+Planning searches...
+Will perform 5 searches
+Finished searching
+Thinking about report...
+Finished writing report
+Writing email...
+Push: Subject: Most Popular AI Agent Frameworks in 2026
+...
+```
+
+It takes a bit, the report writing is the bottleneck if anything.
+
+_You should check your email to see if the solution works as expected_
+
+**However, traces. Check them out to really debug and drill-down into everything
+that happened on the run of our solution**
+
+- You should be able to pinpoint all the Agents (there should be 4 and with the
+names we set out)
+- And we should also verify the search executions to be run at the same time
+(parallel)
+- We should also see all the agents running the things that we expected them to
+run. We should even see the tools that were used.
+
+**We should be always double checking these things to make sure our solution
+behaves as expected**
+
+- You just saw how Orchestrated Code Agentic solutions can be so easy, if you
+take your time to think the problem through, iterate, and in order tackle each
+sub-problem of the bigger goal.
+
+The `runner.Run` way doesn't stop LLMs also taking control of the workflow. However,
+this is a more regimented way to do things.
+
+**And then the course goes insane, because it runs 20 searches and with the beefiest
+model**
+
+_Note:_ The Jupyter notebook does not have anything of what the video has actually.
+
+**Report:** So far, 30 cents were used of the 5$ that we charged.
+
+_Emails are hard to format in a way that looks good_ => So the beefiest model
+and with the 20 searches the email looks good, and the output is actually really
+close to the reality (by having the instructor which is an expert evaluate said
+output).
+
+LangChain / LangGraph => Was **really, really** popular before for enterprise.
+So that history might distort the results.
+
+Again, this can be innacurate, **at the end of the day, only an expert in a field
+can truly vet the output with his own knowledge and critical thinking skills**
+
+_Traces:_ And again, when seeing the traces page (of this 20 search beefy attempt),
+we should be able to see EVERYTHING that took place.
+
+That would be the Big Research Agent in action.
+
+_This is a classic Agentic AI use case_. That we have dabbled in, and now saw
+all of its magic, open in the wild.
+
+=== Day 5 - Turn your Deep Research Agent into Python Modules for Deploy
+
 
