@@ -8843,3 +8843,176 @@ new hooks we pointed out. Thanks to the state property, we can now pass around t
 reference and kill it from any other hook. **IMPORTANT:** Notice how we have two
 separate interval properties, these are two different animations, with different
 characteristics, so separate them unless you want **still** strange behaviors.
+
+=== Disabling CSS Transitions
+
+Remember: The hooks for animations, **these are always emitted**
+
+If you control your entire animation through JavaScript, you can add another property
+in the transition instead of a name: `:css=false`.
+
+This tells Vue that the transition for the component, it should not use css transition.
+It should not use css animation.
+
+The entire thing should be controlled through JavaScript.
+
+_NOTE:_ It's not necessary to put this property. However if we add it, it will be
+a micro-optimization. It skips the CSS analysis step, it skips searching for respective
+CSS classes and the duration. _Unnecessary step, that is skipped_
+
+=== Getting Started with Animated Lists
+
+Even with buttons, it was all about having one button active on the page. However
+you might have multiple elements that you want to animate, how would you handle
+that?
+
+Let's make a list component first:
+
+.UsersList.vue
+[source, vue]
+----
+<template>
+    <ul>
+        <li v-for="user in users" :key="user">{{ user }}</li>
+    </ul>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            users: ['Angela', 'Max', 'Manu', 'Julie', 'Hanna', 'Michael']
+        };
+    },
+}
+</script>
+----
+
+And on `App.vue` we can render it:
+
+```
+<div class="container">
+  <users-list></users-list>
+</div>
+
+components: { UsersList },
+```
+
+Let's make sure that adding and removing items will be animated.
+
+_But plumbing first, let's code some UI that helps us add and remove items from
+a list:_
+
+```
+<template>
+    <ul>
+        <li v-for="user in users" :key="user" @click="removeUser(user)">{{ user }}</li>
+    </ul>
+    <div>
+        <input v-model="newUser" type="text" />
+        <button @click="addUser">Add User</button>
+    </div>
+</template>
+
+<script>
+export default {
+    data() {
+        return {
+            users: ['Angela', 'Max', 'Manu', 'Julie', 'Hanna', 'Michael'],
+            newUser: '',
+        };
+    },
+    methods: {
+        addUser() {
+            this.users.push(this.newUser);
+            this.newUser = ''
+        },
+        removeUser(user) {
+            this.users = this.users.filter(x => x !== user);
+        }
+    }
+}
+</script>
+
+<style scoped>
+ul {
+    list-style-type: none;
+    margin: 1rem 0;
+    padding: 0;
+}
+
+li {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    text-align: center;
+}
+</style>
+```
+
+=== Animating Lists with "transition-group"
+
+In the end, we want to wrap the `v-for` list items that are being rendered (iterated).
+
+However, Vue has us covered for this specific use case: `transition-group`. And
+because of its nature, this can work even when you add multiple items or remove
+multiple items.
+
+`transition` => Renders no element to the DOM, it's just in the template to help
+Vue get instructions. DOM is not affected.
+
+`transition-group` => This will be different. It renders an element to the DOM.
+You can control which element gets rendered though:
+
+```
+<template>
+    <transition-group tag="ul" name="users-list">
+        <li v-for="user in users" :key="user" @click="removeUser(user)">{{ user }}</li>
+    </transition-group>
+    <div>
+        <input v-model="newUser" type="text" />
+        <button @click="addUser">Add User</button>
+    </div>
+</template>
+```
+See how, in essence, we replaced `ul` with `transition-group`. And also how we
+are adding a prefix of our choosing.
+
+Lastly, it's all about css classes and css animation properties:
+
+```
+.users-list-enter-from {
+    opacity: 0;
+    transform: translateX(-30px);
+}
+
+.users-list-enter-active {
+    transition: all 0.3s ease-out;
+}
+
+.users-list-enter-to {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.users-list-leave-from {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.users-list-leave-active {
+    transition: all 0.3s ease-in;
+}
+
+.users-list-leave-to {
+    opacity: 0;
+    transform: translateX(-30px);
+}
+```
+Basically, when a new li appears, it will slide from the left to the position,
+and when leaving it will be pulled to the left (reverse animation).
+
+However we still have a problem here, and that is, after we remove an item, the
+list sort of jumps. And that's jarring, it doesn't feel right. Luckily Vue can
+help us with that.
+
+=== Animate List Item Movement
