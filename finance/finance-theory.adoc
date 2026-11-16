@@ -5862,3 +5862,58 @@ The price of 92 Euros compensates investors for the difference.
 
 **So, what I did was simply calculate the PV of the face value**. Hence I needed
 to add to it all the coupon payments.
+
+5. **Bond prices and yields** In November 2017, Treasury 4 and 3/4s of 2041 offered
+semiannually compounded yield to maturity of 2.6%. Recognizing that coupons are
+paid semiannually, calculate the bond's price.
+
+Let's work with 1$ as the base line.
+
+PV = 0.026 * (1 - (1.026)^2 / 0.026) + 1 / (1 + 0.026)^2
+
+But we don't have the periods? WTF? What does 4 and 3/4s mean?
+
+Corrections
+
+This is dumb.
+
+Face value (FV) = $100
+Annual coupon rate = 4.75%
+Annual YTM = 2.6%
+Maturity = 2041 - 2017 = 24 years
+Coupon payments = 2 per year
+
+4 + 3 / 4 = 4.75%
+
+The notation 4¾s is traditional bond-market terminology meaning a 4¾% annual
+coupon rate.
+
+Meaning that the cupon rate: 4.75% annually.
+Semiannual coupon = 100 x 0.0475/2 = $2.375
+
+It's not the YTM. The question separately gives the YTM as 2.6%
+
+_Remember:_ In traditional Treasury bond naming, the number before the maturity
+year often indicates the annual coupon rate.
+
+Yield per period = 0.026 / 2 = 1.3% (Which is an assumption and simplification)
+Number of periods: 24 x 2 = 48
+Face value: $100
+
+And with all the new found data, we can put it into our formula.
+
+P = C * [1 - (1 + r)^t] + FV / (1 + r)^n
+P = 2.375 * [1 - (1.013)^-48 / 0.013] + 100 / (1.013)^48
+P = $138.21
+
+**QUESTION:** Why is it selling above face value?
+
+The coupon rate (4.75%) is higher than the YTM (2.6%).
+
+Investors receive coupon payments that are most attractive than the current market-
+required return. Consequently, they are willing to pay more than the $100 face value.
+
+**Key lesson:** Always convert the annual coupon, annual yield, and maturity into
+the payment-period frequency before calculating bond prices.
+
+
