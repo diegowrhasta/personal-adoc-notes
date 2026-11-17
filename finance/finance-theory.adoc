@@ -5916,4 +5916,51 @@ required return. Consequently, they are willing to pay more than the $100 face v
 **Key lesson:** Always convert the annual coupon, annual yield, and maturity into
 the payment-period frequency before calculating bond prices.
 
+6. **Bond prices and yields** A 10-year U.S. Treasury bond with a face value of
+$1,000 pays a coupon of 5.5% (2.75% of face value every six months). The reported
+yield to maturity is 5.2% (a six-month discount rate of 5.2/2 = 2.6%)
 
+a. What is the present value of the bond?
+b. Generate a graph or table showing how the bond's present value changes for
+semiannually compounded interest rates between 1% and 15%
+
+a.
+PV = 27.50 * [(1 - (1.026)^-20) / 0.026] + 1000 / (1.026)^20
+PV = $1,023.16
+
+b.
+Annual YTM	Semiannual rate	Bond price
+1%	0.5%	$1,427.22
+2%	1.0%	$1,315.80
+3%	1.5%	$1,214.61
+4%	2.0%	$1,122.64
+5%	2.5%	$1,038.97
+5.2%	2.6%	$1,023.16
+6%	3.0%	$962.81
+7%	3.5%	$893.41
+8%	4.0%	$830.12
+9%	4.5%	$772.36
+10%	5.0%	$719.60
+11%	5.5%	$671.36
+12%	6.0%	$627.23
+13%	6.5%	$586.81
+14%	7.0%	$549.75
+15%	7.5%	$515.76
+
+[IMPORTANT]
+====
+The YTM is always the price you should use for discounting. That is the current
+market's baseline.
+====
+
+**CAREFUL ON THE ANNUITY FORMULA**, the numerator is 1 - (1 + r)^-n and the denominator
+is r. I messed up on the numerator and hence I was calculating the PV totally wrong.
+
+And yeah, it makes sense, **bond prices and yields move in oppposite directions**
+
+- When interest rates decrease, the present value of future coupon and principal
+payments increases.
+- When interest rates increase, their present value decreases.
+
+_Whenever coupons are paid semiannually, divide the annual coupon and annual YTM
+by two, and multiply the years to maturity by two_
