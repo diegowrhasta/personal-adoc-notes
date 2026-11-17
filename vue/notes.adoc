@@ -9109,3 +9109,109 @@ _With this we can animate changes between different pages_
 == Vuex
 
 === Module Introduction
+
+The more you grow an application. The harder patterns you are going to have to use.
+
+State tends to be an issue, and dependencies turn into a mess. Hence there are
+solutions such as `Vuex`
+
+- What & Why?
+- Understanding & Using Vuex
+
+=== What & Why?
+
+What is Vuex?
+
+It's a library for managing global state.
+
+State?
+
+That could be simply translated to "Data". That is data that your app needs, and
+that affects what the user sees in the screen.
+
+Data changes => Changes in the screen take place.
+
+Managing state that many components rely on, can end up tricky.
+
+**Local State:** Data that you manage inside _one component_. User-input, show/hide
+container.
+
+**Global State:** This is state that affects multiple components / entire app.
+Auth status, shopping cart items, and so on.
+
+**_We are essentially trying to replace provide-inject_**, since it can turn really
+messy if you over-complicate it. There are drawbacks such as: You end up with all
+the data and methods to change the data in one component. Which therefore gets
+rather big, with a lot of data and methods that aren't used by the component,
+yet other related components **do need**. So this gets harder to maintain the
+more things evolve.
+
+_provide-inject:_ Can have tricky problems when it comes to reactivity. Whilst there
+are possible solutions to deal with this state issue, Vuex is but **one of them**
+
+_Why Vuex?_
+
+Managing app-wide / global state can be difficult.
+
+"Fat Components" => App.vue (or similar components) contain lots of data and logic
+"Unpredictable" => It's not always obvious where data (state) gets changed in which way
+"Error-prone" => Accidental or missed state updates are possible
+
+You can edit data in places where it shouldn't be edited, there are no guardrails
+for that. In bigger projects and bigger teams, it definitely can become a problem.
+
+_With Vuex:_ Outsourced state management, Predictable state management / flow,
+Clearly defined data flow: Less errors
+
+=== Creating & Using a Store
+
+Download, extract, and install packages for the attached project of the course.
+
+We will add `vuex` as well: `pnpm install vuex@next`
+
+After that we will do a small test of Vuex by programming a counter.
+
+However, let's do the setup for `vuex`
+
+[source, js]
+----
+import { createApp } from 'vue';
+import { createStore } from 'vuex'; <.>
+
+const store = createStore({
+    state() { <.>
+        return {
+            counter: 0 <.>
+        };
+    }
+});
+
+import App from './App.vue';
+
+const app = createApp(App);
+
+app.use(store); <.>
+
+app.mount('#app');
+
+----
+<.> Visual Code might import from some weird place, but `vuex` works fine when
+importing this function.
+<.> Notice how the function receives a configuration object, and one of its properties
+is `state`
+<.> Inside you would return an object representing all properties that will hold the
+state you want
+<.> Lastly the store has to be wired to the app through `use`
+
+Lastly, you can easily access the state properties directly from templates even
+by referencing `$store.<state-property>`:
+
+[source, vue]
+----
+<template>
+  <base-container title="Vuex">
+    <h3>{{ $store.state.counter }}</h3>
+    <button @click="addOne">Add 1</button>
+  </base-container>
+</template>
+----
