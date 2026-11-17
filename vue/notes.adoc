@@ -9016,3 +9016,96 @@ list sort of jumps. And that's jarring, it doesn't feel right. Luckily Vue can
 help us with that.
 
 === Animate List Item Movement
+
+Whilst we are adding and removing one item at a time. `transition-group` has
+the feature to animate multiple elements. And there is a special class that we
+can leverage to move all other items that are moving around the "protagonist"
+element.
+
+Vue uses `transform` under the hood, to move around elements to new positions.
+
+```
+.users-list-move {
+    transition: transform 0.8s ease;
+}
+```
+
+The course doesn't do `push` to the list, so the new entry is not added to the end,
+when adding to the beginning the animation looks much cooler.
+
+```
+.users-list-leave-active {
+    transition: all 0.3s ease-in;
+    position: absolute;
+}
+```
+And lastly, when removing an element, adding a `position: absolute` helps us animating
+and making things smoother as well.
+
+=== Animating Route Changes
+
+So first, we need to add the router package, and then setup routing in `main.js`.
+
+After that we have to define some pages, establish navigation amongst them.
+
+After that you would think that a `<transition>` wrapping the router view would
+be enough. **And that would be the case in older Vue versions, Vue 3 does NOT
+do that**
+
+We would need to add css first so that we declare the animation:
+
+```
+.router-enter-from {}
+
+.route-enter-active {
+  animation: slide-scale 0.4s ease-out;
+}
+
+.route-enter-to {}
+
+.route-leave-active {
+  animation: slide-scale 0.4s ease-in;
+}
+```
+
+And after that we need to establish a really specific syntax so that we don't
+see strange behaviors and other warnings:
+
+```
+<template>
+  <router-view v-slot="slotProps">
+    <transition name="fade-button" mode="out-in">
+      <component :is="slotProps.Component"></component>
+    </transition>
+  </router-view>
+</template>
+```
+Basically, inside the `router-view` we can bind to `slotProps` and then inside
+use the generic `component` element to bind to the respective component that
+should be rendered based on the route. Also, the `transition` component has
+the `out-in` property so that the leaving animation is animated first, and the
+entering animation after (they don't overlap). With this, the animation we attached
+might look janky, but if we were to change the animation to the fade-button one
+we made, then it would be much much better.
+
+**NOTE:** We even see the animation when we load the page for the first time.
+And that is because the vue router does trigger a navigation right when the
+app starts. You go to the first route automatically.
+
+If you don't want this animation at the start, you can leverage a promise router
+function:
+
+```
+router.isReady()
+    .then(() => {
+        app.mount('#app');
+    });
+```
+In here, we run the app mounting right when the router is already at the start
+route. It's a slight change, but yeah, these details sometimes do make the difference.
+
+_With this we can animate changes between different pages_
+
+== Vuex
+
+=== Module Introduction
