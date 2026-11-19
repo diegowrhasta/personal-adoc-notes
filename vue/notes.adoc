@@ -9215,3 +9215,172 @@ by referencing `$store.<state-property>`:
   </base-container>
 </template>
 ----
+
+=== Connecting Components to State
+
+.App.vue
+```
+<template>
+  <base-container title="Vuex">
+    <the-counter></the-counter>
+    <button @click="addOne">Add 1</button>
+  </base-container>
+</template>
+
+<script>
+import BaseContainer from './components/BaseContainer.vue';
+import TheCounter from './TheCounter.vue';
+
+export default {
+  components: {
+    BaseContainer,
+    TheCounter
+  },
+  computed: {
+    counter() {
+      return this.$store.state.counter;
+    }
+  },
+  methods: {
+    addOne() {
+      this.$store.state.counter++;
+    }
+  }
+};
+</script>
+```
+
+.TheCounter.vue
+```
+<template>
+    <h3>{{ counter }}</h3>
+</template>
+
+<script>
+export default {
+    computed: {
+        counter() {
+            return this.$store.state.counter;
+        }
+    }
+}</script>
+```
+
+See how we are leveraging `$store` and we are using properties to mutate state,
+and to retrieve state. Without any extra setup, we can tap into the state and
+use the state as we see fit. See how it just flows, how we just have to declare
+the right reference, and state _just werks_
+
+=== Introducing Mutations - A Better Way of Changing Data
+
+We mentioned three points:
+
+- Predictable state
+- Outsourced state
+- Less-error prone
+
+The way we are leveraging vuex, we are not really following the `vuex` pattern.
+
+We are **directly tapping into our store**. We still can introduce errors,
+because we don't have a clearly defined way of mutating state.
+
+Let's analyze it:
+
+- App-wide, central Data Store/State Store <= Mutations
+  - Components
+
+We need to trigger `mutations`, in order to mutate state. Because they are thought
+of, as something predictable and deterministic.
+
+Say we have a component that adds the counter +1, and another component to add
++1. If that requirement changes, we would have to change all possible places.
+That's code duplication, that we can avoid by using mutations.
+
+You should register the mutations in `main.js`
+
+```
+const store = createStore({
+    state() {
+        return {
+            counter: 0
+        };
+    },
+    mutations: {
+        increment(state) {
+            state.counter++;
+        }
+    }
+});
+```
+
+Once we register the mutation, we can reference it from a component by committing
+the respective function name:
+
+```
+<template>
+    <button @click="addOne">Add 1</button>
+</template>
+
+<script>
+export default {
+    methods: {
+        addOne() {
+            this.$store.commit('increment');
+        }
+    }
+}
+</script>
+```
+
+=== Passing Data to Mutations with Payloads
+
+Say we also need to pass to the mutation some form of parameter, that is done
+through whatever you want. But a good practice is an object:
+
+```
+mutations: {
+        increment(state) {
+            state.counter++;
+        },
+        increase(state, payload) {
+            state.counter = state.counter + payload.value;
+        }
+    }
+```
+
+```
+<template>
+    <button @click="addOne">Add 1</button>
+    <button @click="addValue">Add 2</button>
+</template>
+
+<script>
+export default {
+    methods: {
+        addOne() {
+            this.$store.commit('increment');
+        },
+        addValue() {
+            this.$store.commit('increase', { value: 2 })
+        },
+    }
+}
+</script>
+```
+So see, how you declare a mutation with `state` and a second parameter of `payload`,
+which **can be anything**. We chose a JS object.
+
+And see how when we commit, we can pass an object to the commit function.
+
+Another way to use commit is by leveraging a JS object directly:
+
+```
+addValue() {
+    this.$store.commit({ type: 'increase', value: 2 })
+},
+```
+The name is under `type`, and then all other properties will immediately become
+the properties of the payload.
+
+**Again, this is the better practice for mutating state, never try to directly
+tap into the store**
