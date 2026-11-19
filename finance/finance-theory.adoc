@@ -5964,3 +5964,75 @@ payments increases.
 
 _Whenever coupons are paid semiannually, divide the annual coupon and annual YTM
 by two, and multiply the years to maturity by two_
+
+7. **Bond prices and yields** Choose 10 U.S. Treasury bonds with different coupons
+and different maturities. Calculate how their prices would change if their yields
+to maturity increased by 1 percentage point. Are long- or short-term bonds most
+affected by the change in yields? Are high- or low-coupons bonds most affected?
+(Assume annual coupon payments)
+
+Assuming this:
+
+- Face value: $1,000 for every bond.
+- Annual coupon payments
+- YTM increases by exactly **1 percentage point** (for example, 4% -> 5%)
+- No change in the bonds' cash flows or maturity dates
+
+We'll calculate the original price, the new price, the dollar loss, and the percentage
+loss.
+
+Bond	Coupon	Maturity	Original YTM
+A	2.0%	2 years	4.0%
+B	3.0%	3 years	4.0%
+C	4.0%	5 years	4.0%
+D	5.0%	7 years	4.0%
+E	2.5%	10 years	4.0%
+F	4.5%	10 years	4.0%
+G	3.5%	15 years	4.0%
+H	5.0%	20 years	4.0%
+I	2.0%	25 years	4.0%
+J	5.5%	30 years	4.0%
+
+Now, by moving the YTM to 5% we can see how all of the bonds end up affected in
+their price:
+
+Bond	Original price	New price	Dollar loss	% change
+A	$962.28	$944.22	$18.06	-1.88%
+B	$972.25	$945.54	$26.71	-2.75%
+C	$1,000.00	$956.71	$43.29	-4.33%
+D	$1,060.02	$1,000.00	$60.02	-5.66%
+E	$878.34	$806.96	$71.38	-8.13%
+F	$1,040.55	$961.39	$79.16	-7.61%
+G	$944.41	$844.31	$100.10	-10.60%
+H	$1,135.90	$1,000.00	$135.90	-11.96%
+I	$687.56	$577.18	$110.38	-16.05%
+J	$1,259.38	$1,076.86	$182.52	-14.49%
+
+In all cases, if the YTM increases by 1%
+
+**Long-term bonds are generally more affected**
+
+Notice how, the longer we go, the bigger the loss % change.
+
+- Bond A (2 years): loses 1.88%.
+- Bond I (25 years): loses 16.05%.
+- Bond J (30 years): loses 14.49%.
+
+**Reason being: A longer-term bond has more distant cash flows. Increasing the
+discount rate reduces their present value more substantially**
+
+**Low-coupon bonds are generally more affected, when comparing bonds with the
+same maturity and yield**
+
+- Bond E (2.5% coupon): loses 8.13%.
+- Bond F (4.5% coupon): loses 7.61%.
+
+**In short:** Long-term and low-coupon bonds generally experience the greatest
+percentage price decreases when yields to maturity increase.
+
+**BIG NUANCE:** Bond J (30 years, 5.5% coupon) lost a smaller percentage than
+BOND I (25 years, 2% coupon). This is not a contradiction. Coupon rates also
+influence sensitivity, so maturity alone does not determine the outcome.
+
+The general financial concept behind these observations is called **duration**:
+a measure of how sensitive a bond's price is to changes in interest rates.
