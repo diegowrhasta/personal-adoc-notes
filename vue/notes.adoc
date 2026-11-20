@@ -9384,3 +9384,209 @@ the properties of the payload.
 
 **Again, this is the better practice for mutating state, never try to directly
 tap into the store**
+
+=== Introducing Getters - A Better Way of Getting Data
+
+Besides state mutation with `mutations`, we could also argue that directly
+tapping into the state could be a problem. Look at this:
+
+[source, vue]
+.FavoriteValue.vue
+----
+<template>
+    <h3>{{ counter }}</h3> <.>
+    <p>We do more...</p>
+</template>
+
+<script>
+export default {
+    computed: {
+        counter() {
+            return this.$store.state.counter * 2; <.>
+        }
+    }
+}
+</script>
+----
+<.> We are also tapping into `counter` through a computed property.
+<.> And here we are tapping directly into the store's property. But what if this
+requirement of multiplying by 2, is repeated across multiple components. We
+would be repeating code, wouldn't we? And we would also be making maintenance
+harder.
+
+Any format, calculation, or sort of pre-processing for state, we could use `Getters`
+which are "computed properties" defined directly in the store, and things which we
+can tap into from any component.
+
+And so on `main.js` we would configure all our getters under the store object:
+
+```
+const store = createStore({
+    state() {
+        return {
+            counter: 0
+        };
+    },
+    mutations: {
+        increment(state) {
+            state.counter++;
+        },
+        increase(state, payload) {
+            state.counter = state.counter + payload.value;
+        }
+    },
+    getters: {
+        finalCounter(state) {
+            return state.counter * 2;
+        }
+    }
+});
+```
+As you can see, it's a method, but its access is quite interesting:
+
+```
+<template>
+    <h3>{{ counter }}</h3>
+    <p>We do more...</p>
+</template>
+
+<script>
+export default {
+    computed: {
+        counter() {
+            return this.$store.getters.finalCounter;
+        }
+    }
+}
+</script>
+```
+So under `$store.getters` you would have to reference the name of the getter
+as if it was a simple property.
+
+Now, the getter method, receives `state` as a **first parameter**, but there's
+also a **second parameter**. Which is `getters`. So that we can talk to other
+getters if we need to calculate something based on them.
+
+Getters are there to move code out of components, to keep them leaner.
+
+```
+getters: {
+    finalCounter(state) {
+        return state.counter * 2;
+    },
+    normalizedCounter(_, getters) {
+        const finalCounter = getters.finalCounter;
+        if (finalCounter < 0) {
+            return 0;
+        }
+        if (finalCounter > 100) {
+            return 100;
+        }
+        return finalCounter;
+    }
+}
+```
+And here, you can see how we can reference another getter's computed state, and
+then make further calculations with that. Sometimes `state` won't be necessary
+to deal with so you can "ignore" it with `_`
+
+=== Running Async Code with Actions
+
+Let's introduce an example:
+
+What if we send an HTTP request and wait for the response, once the response is
+there, we would change state? That's async code, code that will finish in the future.
+However mutations **have to be synchronous**. This is a safeguard to avoid errors
+when mutations require the **latest state**. _We want to wait though, there's no
+way around that fact_
+
+**DO NOT USE TIMEOUTS**
+
+Vuex has `actions` => Components should trigger actions that in turn execute
+mutations.
+
+_So a good practice is to put actions between components and mutations, even though
+components could commit mutations themselves_.
+
+In sync code, actions could be "skipped". However, to **ensure that you never put
+async code into mutations**. It's better to default to actions directly.
+
+_NOTE:_ You would normally name the action the same as the mutation. Because you
+have them paired up sitting in front of the component.
+
+This is how actions would be setup with mutations as well:
+
+```
+const store = createStore({
+    state() {
+        return {
+            counter: 0
+        };
+    },
+    mutations: {
+        increment(state) {
+            state.counter++;
+        },
+        increase(state, payload) {
+            state.counter = state.counter + payload.value;
+        }
+    },
+    getters: {
+        finalCounter(state) {
+            return state.counter * 2;
+        },
+        normalizedCounter(_, getters) {
+            const finalCounter = getters.finalCounter;
+            if (finalCounter < 0) {
+                return 0;
+            }
+            if (finalCounter > 100) {
+                return 100;
+            }
+            return finalCounter;
+        }
+    },
+    actions: {
+        increment(context) {
+            setTimeout(function () {
+                context.commit('increment');
+            }, 2000);
+        },
+        increase(context, payload) {
+            context.commit('increase', payload);
+        },
+    }
+});
+```
+
+And to make **sure that we are using the action**. We have to dispatch to the
+action: `this.$store.dispatch('increment');`.
+
+As you can see, through `dispatch` we would start talking to actions, and we can
+feed an object, or two arguments, the second being whatever extra value we want
+to submit.
+
+And then the actions, can call themselves to `commit` so that they trigger the
+mutations. Notice how the `action` itself has async code inside of it, and that's
+the layer at which we should offload any async logic.
+
+=== Understanding the Action "Context"
+
+Actions are important for async code. And it's a **good practice** to use them.
+
+Now, let's analyze further the `context` object that actions receive.
+
+- commit
+- dispatch -> You can dispatch **another action inside of an action**
+  - So basically, you can cascade other action executions
+- getters
+- state -> You can tap into the state (but don't try to manipulate the state,
+always use a mutation)
+
+- state
+- mutations
+- actions
+- getters
+
+With all of this, we have all the core concepts that Vuex uses to manage application
+state **application-wise**
