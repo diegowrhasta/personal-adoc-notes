@@ -6036,3 +6036,118 @@ influence sensitivity, so maturity alone does not determine the outcome.
 
 The general financial concept behind these observations is called **duration**:
 a measure of how sensitive a bond's price is to changes in interest rates.
+
+8. **Bond returns** If a bond's yield to maturity does not change, the return
+on the bond each year will be equal to the yield to maturity. Confirm this with
+a simple example of a four-year bond selling at a premium to face value. Now
+do the same for a four-year bond selling at a discount. For convenience, assume
+annual coupon payments.
+
+Let's assume a bond for 100$ face value, and a 4% YTM. Coupon can be 5%
+
+110$ => Premium => Every year you will receive 5$
+90$ => Discount => Every year you will receive 5$
+
+I don't understand how does the YTM affect anything if we are dead set on a 5$
+coupon.
+
+Corrections
+
+The coupon is fixed. The YTM, however, determines how much you initially pay for
+the bond and how its market price changes as it approaches maturity.
+
+Let's use the 100$ face value example.
+
+Face value = $100 repait at maturity
+Coupon = Annual cash payment you receive
+YTM = Annualized return you earn based on the price you pay, coupons received,
+and repayment of face value
+
+**The coupon doesn't change, but the market value of the bond does**
+
+Premium bond: 5% coupon, 4% YTM
+
+Face value = $100
+Annual coupon = $5
+YTM = 4%
+Maturity = 4 years
+
+Because the coupon rate (5%) is higher than the market-required return (4%), investors
+are willing to pay more than $100.
+
+We calculate the initial price using the present value formula:
+
+P = 5 / 1.04 + 5 / 1.04^2 + 5 / 1.04^3 + 105 / 1.04^4
+P = $103.63
+
+Notice how by calculating the PV of the whole cash flow, we determine that by
+the end, we do not actually gain $105. We only gain $103.63. (Or well, we would in
+this fantasy scenario in which YTM is static). So premium bonds, tend to decrease
+in value.
+
+To get an actual return value, a cold value, we have to go and gain an ending price
+per year for Year 1.
+
+This ending price can be calculated by **recalculating the bond's present value
+using the remaining years until maturity**
+
+P = C [1 - (1 + r)^-n / r] + FV / (1 + r)^n
+P0 = 5 [1 - (1.04)^-4 / 0.04] + 100 / 1.04^4
+P0 = $103.63
+
+Pend = Pstart(1 + YTM) - C
+
+P1 = 103.63(1.04) - 5
+P1 = $102.78
+
+And **RETURN** can be calculated like this:
+
+R = (Coupon + Pend - Pstart) / Pstart
+R = 5 + 102.78 - 103.63 / 102.78
+R = 0.04 = 4%
+
+And we could go and repeat the exact same operation for all the periods, but a
+trend starts showing up. And that is **that return is always 4%**
+
+Let's go and do this with a Discount bond
+
+Face value = $100
+Coupon = $3
+YTM = 4%
+Maturity = 4 years
+
+P = C [1 - (1 + r)^-n / r] + FV / (1 + r)^n
+P0 = 3 [1 - (1.04)^-4 / 0.04] + 100 / 1.04^4
+P0 = $96.37
+
+Pend = Pstart(1 + YTM) - C
+P1 = 96.37(1.04) - 3
+P1 = 97.23
+
+R = (Coupon + Pend - Pstart) / Pstart
+R = (3 + 97.232 - 96.37) / 96.37
+R = 0.04 = 4%
+
+Same story all the other returns between perios, will always be 4%
+
+AKA = Return = YTM
+
+So, takeaways:
+
+- When coupon rate is higher than the YTM, it sells at a premium
+	- As the bond approaches maturity, its price gradually decreases towards its
+	$100 face value. The investor receives $5 annually, but experiences capital
+	loss as the bond's price decreases. The combination of coupon income and capital
+	loss produces an annual return of 4%
+- With lower coupon rates (lower than YTM) they sell at a discount. As the bond
+approaches maturity, the price gradually increases towards its $100 face value.
+The investor only receives $3 annually, but benefits from a capital gain as the
+bond's price increases. The combination of coupon income and capital gain also
+produces an annual return of 4%.
+
+**Therefore, provided the YTM remains unchanged, the annual return equals the YTM
+in both cases, regardless of whether the bond sells at a premium or discount**
+
+A bond's return isn't simply its coupon payment. It is the combination of coupon
+income and the change in the bond's price. That's why both bonds produce a 4%
+annual return despite having different coupon rates.
