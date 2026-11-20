@@ -9590,3 +9590,197 @@ always use a mutation)
 
 With all of this, we have all the core concepts that Vuex uses to manage application
 state **application-wise**
+
+=== Using Mapper Helpers
+
+Utility features, let's look at them for a bit.
+
+**Mappers**
+
+Instead of `this.$store.getters.finalCounter`, which is drilling directly into the
+store. We can use a computed object:
+
+```
+<template>
+    <h3>{{ finalCounter }}</h3>
+    <p>We do more...</p>
+</template>
+
+<script>
+import { mapGetters } from 'vuex';
+
+export default {
+    computed: {
+        // counter() {
+        //     return this.$store.getters.finalCounter;
+        // }
+        ...mapGetters(['finalCounter'])
+    }
+}
+</script>
+```
+By importing the `mapGetters` function, we can merge into the object we are creating
+all the properties it will auto-generate for us. We just need to feed an array
+that should hold the name of all the getters we want to expose as "computed properties"
+
+And besides getters we can also setup `setters`.
+
+We can avoid drilling into the store to dispatch actions, we can import another
+helper:
+
+```
+<template>
+    <button @click="increment">Add 1</button>
+    <button @click="increase({ value: 10 })">Add 2</button>
+</template>
+
+<script>
+import { mapActions } from 'vuex';
+
+export default {
+    methods: {
+        // addOne() {
+        //     this.$store.dispatch('increment');
+        // },
+        // addValue() {
+        //     this.$store.commit({ type: 'increase', value: 2 })
+        // },
+        ...mapActions(['increment', 'increase'])
+    }
+}
+</script>
+```
+The convention is the same, merge the resulting auto-generated properties, and
+then we just consume them. Depending on whether we have a payload, that we simply
+feed.
+
+We can even rename how we will locally refer to the action that will be dispatched
+by using an object instead of an array for all the actions:
+
+```
+<template>
+    <button @click="inc">Add 1</button>
+    <button @click="increase({ value: 10 })">Add 2</button>
+</template>
+
+<script>
+import { mapActions } from 'vuex';
+
+export default {
+    methods: {
+        // addOne() {
+        //     this.$store.dispatch('increment');
+        // },
+        // addValue() {
+        //     this.$store.commit({ type: 'increase', value: 2 })
+        // },
+        // ...mapActions(['increment', 'increase'])
+        ...mapActions({
+            inc: 'increment',
+            increase: 'increase'
+        })
+    }
+}
+</script>
+```
+As you can see, we have to call `inc` instead of `increment`, to actually dispatch
+the `increment` action.
+
+=== Example: Adding More State
+
+Let's say that our application is growing. And besides the counter feature, we would
+have to deal with User Authentication.
+
+[source, vue]
+.UserAuth.vue
+----
+<template>
+    <button>Login</button>
+    <button>Logout</button>
+</template>
+
+----
+
+And let's build state that manages authentication. We should manage this requirement:
+
+- Add a new state
+  - With getters
+  - With setters
+  - Actions
+- We should manage state that shows or not shows the first section in `App.vue`
+based on whether we are logged in or not.
+
+Pretty easy. But yeah, if you go step by step. **Just like the course taught us**.
+It actually makes a lot of sense. You start with the state, then you build mutations
+for it, then you can add getters, finally the actions.
+
+I basically built:
+
+- 1 state property `isLoggedIn: boolean`
+- 1 getter `isLoggedIn`
+- 2 actions `login`, `logout`
+
+And then we can retrieve:
+
+```
+computed: {
+  ...mapGetters(['isLoggedIn'])
+},
+```
+
+And the actions can be dispatched as such:
+
+```
+<template>
+    <button @click="login">Login</button>
+    <button @click="logout">Logout</button>
+</template>
+
+<script>
+import { mapActions } from 'vuex';
+
+export default {
+    methods: {
+        ...mapActions(['login', 'logout'])
+    }
+}
+</script>
+```
+
+And just like that. _Everything just werks_
+
+**Note:** In the course the dispatches actually receive payloads ({ isAuth: false/true }).
+I guess a good practice is to always manage parameters through a paylod object, so
+that it's easier to extend, but that's _micro-optimization_.
+
+_Also the course didn't use `mapActions` it used the dispatches directly. And
+it added "better UX" by hiding the respective button based on the state of auth.
+
+This is the "better UX" version:
+
+```
+<template>
+    <button v-if="!isLoggedIn" @click="login">Login</button>
+    <button v-else @click="logout">Logout</button>
+</template>
+
+<script>
+import { mapActions, mapGetters } from 'vuex';
+
+export default {
+    methods: {
+        ...mapActions(['login', 'logout'])
+    },
+    computed: {
+        ...mapGetters(['isLoggedIn'])
+    }
+}
+</script>
+```
+
+Vuex gives us utility and features that are catered to bigger stores with multiple
+states, something for bigger projects.
+
+=== Organizing your Store with Modules
+
+
