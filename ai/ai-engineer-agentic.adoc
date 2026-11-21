@@ -3322,4 +3322,295 @@ all of its magic, open in the wild.
 
 === Day 5 - Turn your Deep Research Agent into Python Modules for Deploy
 
+Take Jupyter notebooks, and let's turn them into python modules.
 
+A pattern that I'm noticing is that each agent will become its own module:
+
+.search_agent.py
+```
+from agents import Agent, WebSearchTool, ModelSettings
+from dotenv import load_dotenv
+import os
+
+load_dotenv(override=True)
+MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+
+INSTRUCTIONS = """
+You are a research assistant. Given a search term, you search the web for that term and 
+produce a concise summary of the results. The summary must 2-3 paragraphs and less than 300 words.
+Capture the main points and be succinct. Reply only with the summary.
+"""
+
+settings = ModelSettings(tool_choice="required")
+tools = [WebSearchTool()]
+
+search_agent = Agent(name="Search Agent", instructions=INSTRUCTIONS, tools=tools, model=MODEL_NAME, model_settings=settings)
+```
+
+You can also configure in a place such as the `.env` file to grab a default model
+name:
+
+```
+MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+```
+
+This syntax makes it so that in case this env variable doesn't exist we fallback
+to the specific string after. `gpt-5.4-mini`
+
+.planner_agent.py
+```
+from pydantic import BaseModel, Field
+from agents import Agent
+import os
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+HOW_MANY_SEARCHES = int(os.getenv("HOW_MANY_SEARCHES", 5))
+
+
+INSTRUCTIONS = f"""
+You are a research assistant. Given a user query, come up with a set of web searches
+to perform to best answer the query. Output {HOW_MANY_SEARCHES} terms to query for.
+"""
+
+class WebSearchItem(BaseModel):
+    reason: str = Field(description="Your reasoning for why this search is important to the query.")
+    query: str = Field(description="The search term to use for the web search.")
+
+
+class WebSearchPlan(BaseModel):
+    searches: list[WebSearchItem] = Field(description="A list of web searches to perform to best answer the query.")
+    
+planner_agent = Agent(name="Planner Agent", instructions=INSTRUCTIONS, model=MODEL_NAME, output_type=WebSearchPlan)
+```
+This agent can also take some `env` set searches, otherwise fallback to `5`
+
+.writer_agent.py
+```
+from pydantic import BaseModel, Field
+from agents import Agent
+from dotenv import load_dotenv
+import os
+
+load_dotenv(override=True)
+MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+
+INSTRUCTIONS = """
+You are a senior researcher tasked with writing a cohesive report for a research query.
+You will be provided with the original query, and some research.
+Generate a comprehensive report based on the research and the query.
+The final output should be in markdown format, and it should be lengthy and detailed. Aim 
+for 5-10 pages of content, at least 1000 words.
+"""
+
+
+class ReportData(BaseModel):
+    short_summary: str = Field(description="A short 2-3 sentence summary of the findings.")
+    markdown_report: str = Field(description="The final report")
+    follow_up_questions: list[str] = Field(description="Suggested topics to research further")
+
+
+writer_agent = Agent(name="Writer Agent", instructions=INSTRUCTIONS, model=MODEL_NAME, output_type=ReportData)
+```
+This is the one that writes the report.
+
+[IMPORTANT]
+====
+The lab (the Jupyter notebook). Is a great tool to iterate, to keep on trying things
+until something works. Once you are sure your idea indeed works as expected, then
+you can start transferring from Jupyter notebooks to python modules
+====
+
+.email_agent.py
+```
+from agents import Agent, function_tool, ModelSettings
+from messenger import send_email, push
+import os
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+MODEL_NAME = os.getenv("DEFAULT_MODEL_NAME", "gpt-5.4-mini")
+USE_EMAIL = os.getenv("USE_EMAIL", "true").lower() == "true"
+
+settings = ModelSettings(tool_choice="required")
+
+@function_tool
+def send_email_tool(subject: str, text_body: str, html_body: str) -> str:
+    """
+    Send out an email with the given subject and body
+    
+    Args:
+        subject: The subject of the email
+        text_body: The body of the email as plain text
+        html_body: The HTML body of the email
+    """
+    if USE_EMAIL:
+        send_email(subject, text_body, html_body)
+    else:
+        push(f"Subject: {subject}\n\n{text_body}")
+    return "Email sent successfully"
+
+
+INSTRUCTIONS = """
+You are provided with a detailed report. Use your tool to send an email, converting the report into
+a clean, well presented HTML email with an appropriate subject line.
+"""
+
+email_agent = Agent(name="Email Agent", instructions=INSTRUCTIONS, tools=[send_email_tool], model=MODEL_NAME, model_settings=settings)
+```
+
+Also make sure that the agent **always uses its tool**
+
+`settings = ModelSettings(tool_choice="required")`
+
+**Intermediate flow module**
+
+So, the course now introduces the idea that a good abstraction to have is a class
+that only takes care of executing the `Runner.Run` sentences behind functions and
+all of them orchestrated under one mastger flow function `run`
+
+[source, python]
+----
+from agents import Runner, trace, gen_trace_id
+from search_agent import search_agent
+from planner_agent import planner_agent, WebSearchItem, WebSearchPlan
+from writer_agent import writer_agent, ReportData
+from email_agent import email_agent
+import asyncio
+
+class ResearchManager: <.>
+
+    async def run(self, query: str): <.>
+        """ Run the deep research process, yielding the status updates and the final report"""
+        trace_id = gen_trace_id()
+        with trace("Research trace", trace_id=trace_id):
+            yield f"Starting research. Trace: https://platform.openai.com/traces/trace?trace_id={trace_id}"
+            search_plan = await self.plan_searches(query)
+            yield f"Searches planned, starting {len(search_plan.searches)} searches..."     
+            search_results = await self.perform_searches(search_plan)
+            yield "Searches complete, writing report..."
+            report = await self.write_report(query, search_results)
+            yield "Report written, sending email..."
+            await self.send_email(report)
+            yield "Email sent, research complete"
+            yield report.markdown_report <.>
+
+    async def plan_searches(self, query: str) -> WebSearchPlan:
+        """ Plan the searches to perform for the query """
+        result = await Runner.run(planner_agent, f"Query: {query}")
+        return result.final_output
+
+    async def perform_searches(self, search_plan: WebSearchPlan) -> list[str]:
+        """ Perform the searches to perform for the query """
+        tasks = [self.search(item) for item in search_plan.searches]
+        return await asyncio.gather(*tasks)
+
+    async def search(self, item: WebSearchItem) -> str | None:
+        """ Perform a search for the query """
+        input_message = f"Search term: {item.query}\nReason for searching: {item.reason}"
+        result = await Runner.run(search_agent, input_message)
+        return result.final_output
+
+    async def write_report(self, query: str, search_results: list[str]) -> ReportData:
+        """ Write the report for the query """
+        input_message = f"Original query: {query}\nSummarized search results: {search_results}"
+        result = await Runner.run(writer_agent, input_message)
+        return result.final_output
+    
+    async def send_email(self, report: ReportData) -> None:
+        await Runner.run(email_agent, report.markdown_report)
+----
+<.> Under `ResearchManager` we will declare the flow of execution of the whole
+agent
+<.> And then we have our master function that runs in order all the steps that
+in turn will let the different "sub-agents" do their own thing.
+<.> By using `yield`, a run function turns into a `generator` function, which basically
+each execution turns into a `position` of a pseudo-array. The reason we are leveraging
+`yield` is because our chat function of gradio, that way the user interface gets
+updated on each step
+
+=== Build a Gradio UI for Your Deep Research AI Agent
+
+Here's a simple module:
+
+```
+import gradio as gr
+from dotenv import load_dotenv
+from research_manager import ResearchManager
+
+load_dotenv(override=True)
+
+
+async def run(query: str):
+    async for status_update in ResearchManager().run(query):
+        yield status_update
+
+
+with gr.Blocks() as ui:
+    query_textbox = gr.Textbox(label="What topic would you like to research?")
+    run_button = gr.Button("Run", variant="primary")
+    report = gr.Markdown(label="Report")
+    
+    run_button.click(run, inputs=query_textbox, outputs=report)
+    query_textbox.submit(run, inputs=query_textbox, outputs=report)
+
+ui.launch(theme=gr.themes.Default(primary_hue="sky"))
+```
+
+This is the gradio plumbing to build a nice and simple ui.
+
+It's a simple input and a button, once we put our question and press the button
+we then see how each step shows up as feedback as to what's happening under the
+hood. By the end we get a Markdown of the report.
+
+Just run `uv run simple.py`
+
+Simple.py => This looks immediately recognizable as a gradio default app.
+
+However, if you want something with more personality, YOU CAN ASK AN AGENT TO
+GIVE UI SIZZLE.
+
+And yeah, that better UI is under `app.py` we can run that, and it will look
+a bit better. It leveages a `styles.py` module as well. `uv run app.py`
+
+In short, you can instruct an agent to make some UI based on some color palette,
+and extra notes.
+
+A good QoL feature is that we get the trace URL so that we can get into OpenAI's
+trace platform and see all the executing steps and the like.
+
+Both Dark and Light Mode are also taken into account on the "clean UI"
+
+=== Deploy Your Deep Research Gradio App to Hugging Face Spaces
+
+If you want to login into the deployment platform:
+
+`uvx hf auth whoamai`
+
+`uvx run gradio deploy`
+
+- Hugging Face doesn't allow you to send emails with SMTP. There are guardrails
+so that they are not flagged as email spammers.
+
+**Don't forget you have to set the env variables under `secrets` on your space**
+Otherwise the application will have tons of issues, since it doesn't have the
+necessary configurations.
+
+**CHALLENGES**
+
+- Deep Research - Clarifying questions -> Before running the searches, the UI has
+to expose some buttons or a way to respond the clarifying question and then actually
+run the searches (a clarifying question agent should be added)
+- LLMs love to generate content, it's **your responsibility to make sure that content
+aligns with what you want**. So add some Evals
+- Instead of orchestrating by code. Change so that agents become tools, and then
+an orchestrator agent. Orchestrate by agents.
+	- If you orchestrate by LLMs, the manager gets the freedom to decide, if he
+	wants clarifying questions. You don't need a fixed flow, the manager decides
+	what to do. The agents get the freedom to solve the problem in the best way,
+	you get a stronger outcome by the end. **You should be able to measure**
+
+== Week 3
+
+=== Day 1 - Intro to CrewAI: Crews, Flows, and the Open Source Framework
