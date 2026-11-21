@@ -6151,3 +6151,69 @@ in both cases, regardless of whether the bond sells at a premium or discount**
 A bond's return isn't simply its coupon payment. It is the combination of coupon
 income and the change in the bond's price. That's why both bonds produce a 4%
 annual return despite having different coupon rates.
+
+9. **Bond returns**
+a. An 8%, five-year bond yields 6%. If this yield to maturity remains unchanged,
+what will be its price one year hence? Assume annual coupon payments and a face
+value of $1,000.
+b. What is the total return to an investor who held the bond over this year?
+c. What can you deduce about the relationship between the bond return over a
+particular period and the yields to maturity at the start and end of that period?
+
+a. 
+P = 80 [(1 - 1.06^-5) / 0.06] + 1000 / (1.06)^5
+P = $1084.25
+
+b.
+Pend = Pstart(1 + YTM) - C
+P1 = 1084.25 * 1.06 - 80
+P1 = 1069.30
+
+R = C + Pend - Pstart / Pstart
+R = (80 + 1069.30 - 1084.25) / 1084.25
+R = 0.06
+
+c. The YTM is equal to the bond's return over that same period
+
+Corrections
+
+**The question is asking to deduce something broader about the relationship
+between the bond's return and the YTMs at the beginning and end of the holding
+period**
+
+Scenario: 1 - Beginning YTM: 6% - Ending YTM: 6% - Effect on return: Return equals 6%
+Scenario: 2 - Beginning YTM: 6% - Ending YTM: 7% - Effect on return: Return is reduced by the price decline
+Scenario: 3 - Beginning YTM: 6% - Ending YTM: 5% - Effect on return: Return is increased by the price appreciation
+
+If YTM increases, the bond's market price decreases, reducing your total return.
+If YTM decreases, the bond's market price increases, improving your total return.
+If YTM remains unchanged, the bond's annual return equals its original YTM (assuming
+the coupon can be reinvested at that rate)
+
+**How the hell do you get to this conclusion**? You need to run extra calculations
+by changing the YTM.
+
+So, calculate P1, but with a 0.05 YTM. That way P1 changes.
+
+Say with a 5% YTM:
+
+P1 = $1,106.38
+
+Say with a 7% YTM:
+
+P1 = $1,033.87
+
+And with these numbers, we can calculate **new returns**
+
+				Ending YTM	Investor return
+YTM increases	7%	        2.73%
+YTM unchanged	6%	        6.00%
+YTM decreases	5%	        9.43%
+
+**This is a calculation ran only on Period 0 vs FIRST period**.
+
+We used the shortcut to calculate the next PV of the next period by leveraging
+**the YTM**. **This is how YTM can be leveraged to calculate what-if scenarios and
+see how prices fluctuate**
+
+
