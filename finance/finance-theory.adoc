@@ -6216,4 +6216,62 @@ We used the shortcut to calculate the next PV of the next period by leveraging
 **the YTM**. **This is how YTM can be leveraged to calculate what-if scenarios and
 see how prices fluctuate**
 
+10. **Bond returns** A six-year government bond makes annual coupon payments of
+5% and offers a yield of 3% annually compounded. Suppose that one year later the
+bond still yields 3%. What return has the bondholder earned over the 12-month
+period? Now suppose that bond yields 2% at the end of the year. What return did
+the bondholder earn in this case?
 
+P = 5 [(1 - 1.03^-6) / 0.03] + 100 / 1.03^6
+P0 = $110.83
+
+P1 = 110.83 * (1.03) - 5
+P1 = $109.16
+
+R = C + Pend - Pstart / Pstart
+R = (5 + 109.16 - 110.83) / 110.83
+R = 0.03
+
+With 0.02 YTM (CORRECTED)
+
+P1 = 5 [(1 - 1.02)^-5 / 0.02] + 100 / 1.02^5
+P1 = $114.14
+
+R = (5 + 114.14 - 110.83) / 110.83
+R = 0.075
+
+The idea is this:
+
+- You still purchased the bond at $110.83
+- You still receive the $5 coupon
+- But the market now requires only 2% YTM
+- Therefore, the bond's market price increases
+
+So we stand at P1 => And we have to calculate the new PV but with **five years
+remaining**, and a new YTM, which is the 2% YTM.
+
+And we calculate the return there.
+
+**The return is not automatically equal to the bond's ending YTM**
+
+When the YTM decreases, the bond's price increases, generating a capital gain
+on top of the coupon income. That's why the realized one-year return is approximately
+7.50%, even though the bond's ending YTM is only 2%.
+
+_So we are calculating **two scenarios**, one in which the YTM remains the same
+at the beginning and end_, and another in which after the first PV of the first
+period, the YTM changes and we calculate the PV at the P1 in the timeline, and
+then we factor the decreased `YTM`_.
+
+With that, calculating the return immediately shows us the difference, it's clear
+to see that the return is bigger for that bond just because the YTM decreased.
+
+**Which within a system makes it clear that we can look at trends, or just run
+simulations to give an answer with a high degree of certainty to a trader or
+someone that has to take a decision**.
+
+11. **Duration** True or false? Explain
+a. Longer-maturity bonds necessarily have longer durations
+b. The longer a bond's duration, the lower its volatility
+c. Other things equal, the lower the bond coupon, the higher its volatility
+d. If interest rates rise, bond durations rise also
