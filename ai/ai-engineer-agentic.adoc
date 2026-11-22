@@ -3614,3 +3614,545 @@ an orchestrator agent. Orchestrate by agents.
 == Week 3
 
 === Day 1 - Intro to CrewAI: Crews, Flows, and the Open Source Framework
+
+CrewAI => Is an Agent Framework.
+
+Crew is in the more opinionated framework tier, however it's really simple to
+use. It's batteries included.
+
+CrewAI has several offerings
+
+- crew.ai => Not their website
+- crewai.com => This is where you should begin.
+
+Crew AI Emp / Enterprise => This is an agent management platform. It's a multi-agent
+runtime, an environment in which you can run, deploy and monitor agents in production.
+
+CrewAI UI Studio => Similar to n8n. A no-code/low-code product for creating multi-agent
+solutions
+
+CrewAI open-source framework => "Orchestrade high performing AI agents with ease and
+scale" => This is what we are interested in. This is free and available for **everyone
+to use**
+
+The reason you need to dig a lot to get to the framework section. Is because the
+other products are actually the revenue making products. That's what's front
+and center. The framework is open-source and free.
+
+**When we look at platforms such as OpenAI Agents SDK, Google ADK**. They are
+all owned by high-profiting companies. That's why they are free, they have the
+luxury to make them free. Hence, smaller companies, who have to make their money,
+will be a bit more focused on those products.
+
+CrewAI Crews: the intelligence.
+
+Autonomous solutions with AI teams of Agents with different roles
+
+Crews are the "teams" that do the heavy lifting. You can trigger a Crew to tackle
+a complex problem requiring creativity and collaboration.
+
+CrewAI Flows: the backbone
+
+Structured automations by dividing complex tasks into precise workflows
+
+Think of a Flow as the "manager" or the "process definition" of your application.
+It defines the steps, the logic, and how data moves through your system.
+
+**Crews is the most popular solution, that's how it started**. Flows are not as
+popular, and we won't focus on them as much.
+
+=== CrewAI Core Concepts: Agents, Tasks, Crews, and YAML Files
+
+**Agent:** An autonomous unit, with an LLM, a role, a goal, a backstory, memory,
+tools.
+
+Whereas we used to just feed instructions previously, CrewAI asks for **three specific
+concepts to be filled in**. They however get squeezed together into the system
+prompt when running.
+
+- Role = What's the purpose of the agent
+- Goal = What you are trying to achieve, and how to measure success
+- Backstory = What background context might be relevant to the agent
+
+Some messaging is added on top of squeezing everything together.
+
+**This is the opinionated framework way**. After a lot of experiment and work, you
+should take advantage of the team's expertise and prompting best practices. However
+you are even further away from what's happening under the hood.
+
+**Task:** A specific assignment to be carried out, with a description, expected
+output, agent. It's like the user prompt, something assigned to an agent. There's
+not a direct analogous concept in OpenAI SDK
+
+**Crew:** A team of **Agents** and **Tasks**; either: Sequential: run tasks in
+order they are defined. Hierarchical: Use a manager LLM to assign.
+
+Be balanced, do not try to polish the agents and not the tasks, you won't get
+good results. _Refine both of them_
+
+CrewAI: It's lightweight, but somewhat more opinionated than OpenAI Agents SDK -
+more terminology, marginally more prescriptive.
+
+...and with an ability to get **much** more prescriptive. You can sign up for a
+lot, _if you want_
+
+- CrewAI => Clearly separates the definitions between the code that we write.
+And there's another way to write the whole agent workflow:
+
+- YAML files. With only text files
+
+```
+researcher:
+	role: >
+		Senior Financial Researcher
+	goal: >
+		Research companies, news and potential
+	backstory: >
+		You're a seasoned financial researcher with a talent for finding the most
+		relevant information
+	llm: openai/gpt-5.4-mini
+```
+By default you always start with a researcher agent that you can then edit or delete
+or do whatever you want with it.
+
+Separately in the code, there are references to the YAML file:
+
+`agent = Agent(config=self.agents_config['researcher'])`
+
+There are two of the YAML files: _one for agents, and one for tasks_
+
+There's a really important script:
+
+[source, python]
+.crew.py
+----
+class MyCrew():
+
+	@agent
+	def my_agent(self) -> Agent:
+		return Agent(
+			config=self.agents_config['my_agent'])
+
+	@task
+	def my_task(self) -> Task:
+		return Task(
+			config=self.tasks_config['my_task'])
+
+	@crew
+	def crew(self) -> Crew:
+		return Crew(
+			agents=self.agents,
+			tasks=self.tasks,
+			process=Process.sequential)
+----
+
+CrewAI makes it super easy to switch between what LLM you use. Under the hood
+LiteLLM helps us with that.
+
+Subtle gotchas:
+
+. Google key must be `GEMINI_API_KEY`
+. Sometimes crewai creates a new .env file that can override course .env file. If
+so, delete the new one
+. CrewAI calls `load_dotenv()` not `load_dotenv(override=True)` and that means
+system level env variables take priority.
+
+=== Installing CrewAI with uv tool and Setting Up Skills
+
+We will install a global tool through `uv` so that we can use it as a normal
+command.
+
+`uv tool install crewai=1.14.4`
+
+Let's pin the version to a particular one. Because we don't know if the course
+content will still be compatible. The Crew team sometimes makes breaking changes.
+
+`msbuild tools` => For Windows setups. INSTALL IT
+
+CrewAI => Has produced skills, that teaches agents all about CrewAI. That way it
+can leverage it even better.
+
+`npx skills add crewaiinc/skills`
+
+Replicate what `reference` holds (the folder of the Week 3 module). So we will
+be **really hands on at /3_crewai/coursework**. It's not the same as using a
+notebook, we will be working with Python directly.
+
+You can check if you have tools with, uninstall, install and so on:
+
+`uv tool list`, `uv tool uninstall`, `uv tool install crewai==1.14.4`
+
+And you can then install skills like so:
+
+`npx skills add crewaiinc/skills --use-pnpm` => This is for `pnpm` compatibility.
+
+When you run that command there's a terminal wizard so that you can install for
+project or globally and for what agent you want to install the different skills.
+This is realyl interesting, and I will definitely try to leverage in any capacity
+so that my Coding Agents are even more aware of how to leverage things.
+
+=== Build Your First Crew: crewai create crew and crewai run
+
+When creating products, you need to create **Crew Projects**. Each crew project
+is also a `uv` project in-it-of-itself.
+
+`crewai create crew [project_name]`
+
+When you do this, a pretty big project structure will be created. It sets up
+all the scaffolding that the crew project needs, a whole architecture comes to
+life:
+
+my_crew
+	src
+		my_crew
+			config
+				agents.yaml
+				yasks.yaml
+			crew.py
+			main.py
+
+These are the for files, two yaml, and two python code files. That's the initial
+crew project.
+
+And you can run with `crewai run` => With this the project just runs.
+
+When you create a default project, there's a mini-researcher test project.
+
+_Will it work out the box?_
+
+Let's create the researcher project:
+
+crewai create new researcher
+
+- This is really nice, because the `create crew` command, will ask for the LLM provider
+and the model you want to use. It will also use for the API KEY. BUT DON'T PUT IT THERE,
+WE ALREADY SET IT UP UNDER AN `.env`
+
+There will be a `.env` with a `MODEL` inside the crew project. **DELETE THAT OTHERWISE
+OUR UPPER LEVEL .ENV WILL BE IGNORED**
+
+You can then dig through the folders and files, you can find something like this:
+
+```
+researcher:
+  role: >
+    {topic} Senior Data Researcher
+  goal: >
+    Uncover cutting-edge developments in {topic}
+  backstory: >
+    You're a seasoned researcher with a knack for uncovering the latest
+    developments in {topic}. Known for your ability to find the most relevant
+    information and present it in a clear and concise manner.
+
+reporting_analyst:
+  role: >
+    {topic} Reporting Analyst
+  goal: >
+    Create detailed reports based on {topic} data analysis and research findings
+  backstory: >
+    You're a meticulous analyst with a keen eye for detail. You're known for
+    your ability to turn complex data into clear and concise reports, making
+    it easy for others to understand and act on the information you provide.
+```
+
+**NOTE:** Be sure to indent things properly. CrewAI gives a really weird error if
+you didn't indent properly. So be sure to look out for that first.
+
+On each agent definition you can select which model the researcher will be with
+a key: `llm: openai/gpt-5.4-mini`
+
+`crew.py` => This is where we define agents, tools, tasks.
+
+Under `main.py` you can as well define the inputs for the whole architecture:
+
+```
+def run():
+    """
+    Run the crew.
+    """
+    inputs = {
+        'topic': 'Most popular AI Agent frameworks as of now',
+        'current_year': str(datetime.now().year)
+    }
+
+    try:
+        Researcher().crew().kickoff(inputs=inputs)
+    except Exception as e:
+        raise Exception(f"An error occurred while running the crew: {e}")
+```
+
+`crewai run` => Installs packages, and does a lot in the background.
+
+_Apple PCs run into a weird error, and the course tells you how to fix it_
+
+[NOTE]
+====
+Okay, this is actually quite cool. On the terminal we have a lot of feedback as
+to what's being executed. It's well formatted, and by the end it even asks to
+"see traces" and you are taken to a CrewAI website, with all the traces of
+your execution (so there's a lot of instrumentation that they have built themselves,
+besides your LLM's provider)
+====
+
+This is cool, it really is a lot more patterns and cognitive overhead, yet it's
+clean and much more powerful.
+
+=== Build a CrewAI Debate Crew: Define Agents and Tasks in YAML
+
+Let's create a new crewai project: `crewai create crew debate`. => Delete the `.env`,
+never forget.
+
+Now let's head back into `agents.yaml` and `tasks.yaml`. (We'll use the reference
+folder so that we speedrun this)
+
+[source, python]
+.agents.yaml
+----
+debater:
+  role: >
+    A compelling debater
+  goal: >
+    Present a clear argument either in favor of or against the motion. The motion is: {motion}. You will be successful if a judge agrees with your argument. <.>
+  backstory: >
+    You're an experienced debator with a knack for giving concise but convincing arguments.
+    The motion is: {motion}
+  llm: openai/gpt-5.4-mini
+
+judge:
+  role: >
+    Decide the winner of the debate based on the arguments presented
+  goal: >
+    Given arguments for and against this motion: {motion}, decide which side is more convincing,
+    based purely on the arguments presented.
+  backstory: >
+    You are a fair judge with a reputation for weighing up arguments without factoring in
+    your own views, and making a decision based purely on the merits of the argument.
+    The motion is: {motion}
+  llm: openai/gpt-5.4-mini
+----
+<.> Keep in mind this `{motion}` notation, this marks this as an input, something
+we will have to setup ourselves later on `main.py`
+
+We will create new agents with new role, goal and backstories. The idea is to
+have two LLMs that are debating each other, and another agent that's going to judge
+the debate to see **who wins**.
+
+Tasks, will be copied from reference again:
+
+[source, python]
+.tasks.yml
+----
+propose:
+  description: >
+    You are proposing the motion: {motion}.
+    Come up with a clear argument in favor of the motion.
+    Be very convincing.
+  expected_output: >
+    Your clear argument in favor of the motion, in a concise manner.
+  agent: debater
+  output_file: output/propose.md
+
+oppose:
+  description: >
+    You are in opposition to the motion: {motion}.
+    Come up with a clear argument against the motion.
+    Be very convincing.
+  expected_output: >
+    Your clear argument against the motion, in a concise manner.
+  agent: debater
+  output_file: output/oppose.md
+  
+decide:
+  description: >
+    Review the arguments presented by the debaters and decide which side is more convincing.
+  expected_output: >
+    Your decision on which side is more convincing, and why.
+  agent: judge
+  output_file: output/decide.md
+----
+
+You can also setup tasks to generate files:
+
+`output_file: output/oppose.md`
+
+You can see why people like `crewai`'s way of organizing files and modules. And
+that's because the whole enforced structure is cleanly laid out.
+
+=== Wire Up crew.py and main.py to Run a CrewAI Debate
+
+We will now start laying the grounwork for `crew.py`
+
+```
+@agent
+def debater(self) -> Agent:
+    return Agent(
+        config=self.agents_config['debater'],
+        verbose=True
+    )
+
+@agent
+def judge(self) -> Agent:
+    return Agent(
+        config=self.agents_config['judge'],
+        verbose=True
+    )
+```
+Notice how these functions are pretty "empty". It's easy to write down this
+specific config.
+
+And after the agents, some more boiler-plate:
+
+```
+@task
+def propose(self) -> Task:
+    return Task(
+        config=self.tasks_config['propose'],
+    )
+
+@task
+def oppose(self) -> Task:
+    return Task(
+        config=self.tasks_config['oppose'],
+    )
+
+@task
+def decide(self) -> Task:
+    return Task(
+        config=self.tasks_config['decide'],
+    )
+
+@crew
+def crew(self) -> Crew:
+    """Creates the Debate crew"""
+    # To learn how to add knowledge sources to your crew, check out the documentation:
+    # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
+
+    return Crew(
+        agents=self.agents, # Automatically created by the @agent decorator
+        tasks=self.tasks, # Automatically created by the @task decorator
+        process=Process.sequential,
+        verbose=True,
+        tracing=True,
+        # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
+    )
+```
+
+Lastly, we need to setup the `{motion}` we defined previously, for that the `run`
+will be changed a bit:
+
+```
+#!/usr/bin/env python
+import sys
+import warnings
+
+from datetime import datetime
+
+from debate.crew import Debate
+
+warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
+
+# This main file is intended to be a way for you to run your
+# crew locally, so refrain from adding unnecessary logic into this file.
+# Replace with inputs you want to test with, it will automatically
+# interpolate any tasks and agents information
+
+def run():
+    """
+    Run the crew.
+    """
+    motion = input("Enter the motion: ") <.>
+    inputs = {
+        'motion': motion, <.>
+    }
+
+    try:
+        Debate().crew().kickoff(inputs=inputs)
+    except Exception as e:
+        raise Exception(f"An error occurred while running the crew: {e}")
+
+
+def train():
+    """
+    Train the crew for a given number of iterations.
+    """
+    inputs = {
+        "topic": "AI LLMs",
+        'current_year': str(datetime.now().year)
+    }
+    try:
+        Debate().crew().train(n_iterations=int(sys.argv[1]), filename=sys.argv[2], inputs=inputs)
+
+    except Exception as e:
+        raise Exception(f"An error occurred while training the crew: {e}")
+
+def replay():
+    """
+    Replay the crew execution from a specific task.
+    """
+    try:
+        Debate().crew().replay(task_id=sys.argv[1])
+
+    except Exception as e:
+        raise Exception(f"An error occurred while replaying the crew: {e}")
+
+def test():
+    """
+    Test the crew execution and returns the results.
+    """
+    inputs = {
+        "topic": "AI LLMs",
+        "current_year": str(datetime.now().year)
+    }
+
+    try:
+        Debate().crew().test(n_iterations=int(sys.argv[1]), eval_llm=sys.argv[2], inputs=inputs)
+
+    except Exception as e:
+        raise Exception(f"An error occurred while testing the crew: {e}")
+
+def run_with_trigger():
+    """
+    Run the crew with trigger payload.
+    """
+    import json
+
+    if len(sys.argv) < 2:
+        raise Exception("No trigger payload provided. Please provide JSON payload as argument.")
+
+    try:
+        trigger_payload = json.loads(sys.argv[1])
+    except json.JSONDecodeError:
+        raise Exception("Invalid JSON payload provided as argument")
+
+    inputs = {
+        "crewai_trigger_payload": trigger_payload,
+        "topic": "",
+        "current_year": ""
+    }
+
+    try:
+        result = Debate().crew().kickoff(inputs=inputs)
+        return result
+    except Exception as e:
+        raise Exception(f"An error occurred while running the crew with trigger: {e}")
+
+```
+<.> We can make python request the user for a motion
+<.> And lastly we can feed the captured input for the `motion` parameter
+
+All other code, already scaffolded code will remain there.
+
+**LOOK AT THE TRACES**, that's the way you will start to get a feel as to how
+Crew works, how things are running from beginning to end. And you also get into
+the headspace, the logic the framework prays for.
+
+_NOTE:_ You can choose to not have crew traces.
+
+**IDEA:** To me, just give an initial propose and opose is too simplistic. You should
+have a back and forth between all the LLMs. At least 5 rounds, so that through
+the exchange of ideas, synthesis and further analysis gets us to a better and
+more fruitful conclusion.
+
+=== Day 2 - The 5 Steps to Build Any CrewAI Project with Tools and Context
+
+
