@@ -9783,4 +9783,199 @@ states, something for bigger projects.
 
 === Organizing your Store with Modules
 
+As the store grows, you have the possibility to split the store into multiple
+modules.
+
+You might have one store per application, however that store can be made up
+of multiple modules.
+
+If you don't setup any modules, you can keep it to one module (a root state).
+However you can add as many other modules as you want.
+
+Example:
+
+```
+state() {
+  return {
+     counter: 0,
+     isLoggedIn: false,
+  }
+}
+```
+Say you move the `counter` property into another module.
+
+You can create a regular JS object, with the exact same features as the object
+you pass to the store:
+
+[source, js]
+----
+import { createApp } from 'vue';
+import { createStore } from 'vuex';
+
+const counterModule = { <.>
+    state() {
+        return {
+            counter: 0,
+        };
+    },
+    mutations: {
+        increment(state) {
+            state.counter++;
+        },
+        increase(state, payload) {
+            state.counter = state.counter + payload.value;
+        },
+    },
+    actions: {
+        increment(context) {
+            setTimeout(function () {
+                context.commit('increment');
+            }, 2000);
+        },
+        increase(context, payload) {
+            context.commit('increase', payload);
+        },
+    },
+    getters: {
+        finalCounter(state) {
+            return state.counter * 2;
+        },
+        normalizedCounter(_, getters) {
+            const finalCounter = getters.finalCounter;
+            if (finalCounter < 0) {
+                return 0;
+            }
+            if (finalCounter > 100) {
+                return 100;
+            }
+            return finalCounter;
+        },
+    }
+};
+
+const store = createStore({
+    state() {
+        return {
+            counter: 0,
+            isLoggedIn: false
+        };
+    },
+    mutations: {
+        login(state) {
+            state.isLoggedIn = true;
+        },
+        logout(state) {
+            state.isLoggedIn = false;
+        }
+    },
+    getters: {
+        isLoggedIn(state) {
+            return state.isLoggedIn;
+        }
+    },
+    actions: {
+        login(context) {
+            context.commit('login');
+        },
+        logout(context) {
+            context.commit('logout');
+        }
+    },
+    modules: { <.>
+        counter: counterModule <.>
+    },
+});
+
+import App from './App.vue';
+
+const app = createApp(App);
+
+app.use(store);
+
+app.mount('#app');
+
+----
+<.> You see, you can create the module with the same properties (characteristics)
+as the store object, so you need `state`, `mutations`, `getters`, `actions`, `modules`.
+<.> And the store object itself has a `modules` property, which is an object that
+will receive keys that are just an identifier for the module you want to integrate.
+<.> And then you can pass as a value the module you just defined. In this instance
+we separated all the counter related state into its own `counterModule` module.
+
+After making this whole change, the application **will still work the same way**.
+And that's because all modules that are integrated into the store, will be merged
+to the same level of the root module properties. So imagine, that by the end the
+same big-ass object with all the properties from all modules will be generated and
+can be leveraged by anyone.
+
+=== Understanding Local Module State
+
+Modules are merged into the store. They are merged at the same level and all
+properties end up exposed.
+
+When you are working with `state` at the module level, so if you want to console.log
+or just do whatever you want. **Be aware that a state inside of a module, is treated
+as local state**. You won't get automatically access to other modules or even the
+root module's properties. The module only cares about its own state and things.
+
+Which means, a `getter` in the `counterModule`, would not be able to get the
+`isLoggedIn` property. The getter won't work, it won't be able to find the
+state property. `actions`, `mutations` as well. They all have visiblity to the
+state of the module.
+
+**But there are ways to go around this**
+
+- The getters get access to extra parameters:
+
+`testAuth(state, getters, rootState, rootGetters) {}`. Through the extra parameters,
+you can fallback to global state. **But typically, you should keep to the domain
+of each state module**
+
+=== Namespacing Modules
+
+Besides local state, you can make the entire module **local**. That would be called
+**to make namespaced**. This will introduce a _total separation between modules_.
+
+And this is used to **avoid clashes of names**. That's why you can namespace
+modules:
+
+`namespaced: true,` => That's a simple flag in your configuration. With this,
+the module will be marked to be detached from the main store. If you do this,
+the interactions we coded will **break**.
+
+And that is because we no longer get access to all properties as if they were
+path of _one store_.
+
+You now have to access them with specific namespace names. (Remember that we added
+a name to the module when integrating it), and so, when trying to access this
+detached module you would do:
+
+`this.$store.getters['counter/normalizedCounter'];`
+
+And for getters you have to do something like this:
+
+`...mapGetters('counter', ['finalCounter'])`
+
+Actions also:
+
+`...mapActions('counter', {
+  inc: 'increment',
+  increase: 'increase'
+})`
+
+Dispatches as well:
+
+```
+this.$store.dispatch({
+  type: 'counter/increase',
+  value: 10,
+});
+```
+Notice how the syntax is `<namespace>/<property>`, and on functions you add ('<namespace>', ...).
+
+So yeah, if we want to avoid clashes, and not call something from a store, whereas
+we wanted a global call. We can introduce namespaces. But this adds extra plumbing,
+_and abstraction_. Again, it's Redux all over again, it's convoluted at best. And,
+yeah, better to know when to use it. But most of the time, I think there are better
+ways.
 
