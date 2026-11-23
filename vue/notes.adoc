@@ -10174,4 +10174,34 @@ will try to put that into the store as well.
 
 === Challenge Solution (2/3)
 
+Course uses namespaces. Again, I get the sentiment behind it, it keeps things
+organized, because without it, everything indeed becomes one global object that
+can easily be hard to understand the more it grows.
+
+Also, it doesn't use `mapGetters` it leverages the `this.$store.getters['']` syntax.
+Also, no `mapActions`, but `this.$store.dispatch('cart/addToCart')`
+
+_And again, `payload` seems to be the convention when dealing with the actions parameter_
+
+Also, for whatever reason `cart.js` in an action method needs to talk to the other
+module `context.rootGetters`. I guess that's because the setup is with namespaces.
+As we know, that sort of isolates properties and the way to access them. So we
+have to leverage the `rootState` and accessing manually other state modules
+
+=== Challenge Solution (3/3)
+
+`isLoggedIn` is kept at the root state. No need to make a whole new module for it
+since it's pretty straightforward and simple.
+
+=== Summary
+
+The idea of Vuex is to have a central state that you manage through different
+categories of modules and functions.
+
+You have to write extra-code, however you get a clearly defined flow and state
+management structure. And also, sharing and manipulating state becomes super easy.
+
+== Main Project: "Find a Coach" Web App
+
+=== Module Introduction
 
