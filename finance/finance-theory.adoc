@@ -6381,4 +6381,56 @@ Duration ↑ Price sensitivity ↑
 Coupon ↑ Duration ↓
 Yield ↑ Duration ↓ generally
 
+12. **Duration** Here are the prices of three bonds with 10-year maturities:
 
+Bound Coupon %  Price (%)
+2%              81.62%
+4               98.39
+8               133.42
+
+If coupons are paid annually, which bond offered the highest yield to maturity?
+Which had the lowest? Which bonds had the longest and shortest durations?
+
+I don't understand the notation, why the first row is percentage and then it's not?
+
+81.62 = 2 [(1 - (1 + y)^-10) / y] + 100 / (1 + y)^10
+
+_Note:_ Okay, LMAO. I can just trial and error it HAH. It might be more "time-consuming",
+but... MEH.
+
+4.30% = 81.62
+
+4.20% = 98.39
+
+3.90% = 133.42
+
+To get to duration we have to use **Macaulay duration** which is the weighted
+average time of the bond's cash flow:
+
+**There is a `closed-form` formula` for conventional bond with fixed annual coupons**
+
+D = 1 + y / y - (1 + y) + n(c - y) / c[(1 + y)^n - 1] + y
+
+Bond A:
+
+D = 1.043 / 0.043 - (1.043 + 10 * (0.02 - 0.043)) / (0.02 * (1.043^10 - 1) + 0.043)
+D = 24.26 - 15.20
+D = 9.06 years
+
+Bond B:
+
+D = 1.042 / 0.042 - (1.042 + 10 * (0.04 - 0.042)) / (0.04 * (1.042^10 - 1) + 0.042)
+D = 8.42
+
+Bond C:
+
+D = 1.039 / 0.039 - (1.039 + 10 * (0.08 - 0.039)) / (0.08 * (1.039^10 - 1) + 0.039)
+D = 7.65
+
+Shortest duration:
+
+Bond C
+
+Longest duration:
+
+Bond A
