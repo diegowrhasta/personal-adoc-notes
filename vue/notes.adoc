@@ -9979,3 +9979,199 @@ _and abstraction_. Again, it's Redux all over again, it's convoluted at best. An
 yeah, better to know when to use it. But most of the time, I think there are better
 ways.
 
+=== Structuring Vuex Code & Files
+
+In bigger apps, **we can't expect to put everything into `main.js`**. Let's separate
+things, just like router, put the store in another file.
+
+So the idea is simple: Cut all the store code into a `store.js` file, `export default store`,
+and then import in `main.js`.
+
+With that you already abstracted a bit more.
+
+But we can separate things even further. And that usually is by having a `store`
+folder and then having multiple modules (files) inside said folder.
+
+For this project what we are about to do is overkill as heck, but this is the
+idea:
+
+- store
+  - counter
+    - actions.js
+    - index.js
+    - mutations.js
+  - actions.js
+  - getters.js
+  - index.js
+  - mutations.js
+
+In short, `index.js` will grab and import from all the other modules and construct
+the store objects, and export that:
+
+/store/index.js
+```
+import { createStore } from "vuex";
+import mutations from "./mutations";
+import getters from "./getters";
+import actions from "./actions";
+import counterModule from "./counter";
+
+const store = createStore({
+    state() {
+        return {
+            counter: 0,
+            isLoggedIn: false
+        };
+    },
+    mutations: mutations,
+    getters: getters,
+    actions: actions,
+    modules: {
+        counter: counterModule
+    },
+});
+
+export default store;
+```
+
+_NOTE:_ By convention we named the files that way, but you are free to choose
+whichever names you want.
+
+Each module is simply an export of an object:
+
+.actions.js
+```
+export default {
+    login(context) {
+        context.commit('login');
+    },
+    logout(context) {
+        context.commit('logout');
+    }
+}
+```
+
+Lastly `main.js` can simple import the root `index.js`
+
+```
+import { createApp } from 'vue';
+
+import App from './App.vue';
+import store from './store/index.js';
+
+const app = createApp(App);
+
+app.use(store);
+
+app.mount('#app');
+
+```
+
+You can have multiple modules, and then create a `modules` folder. And inside
+have all the same separated file structures per module. It really is up to you.
+
+This is all but a refactor, for better maintainability. _Overkill for the demo_
+but it shows you what you can do in bigger apps.
+
+=== A Challenge!
+
+Download a new project. Install, boot up.
+
+This is an already scaffolded project but that is being affected by provide-inject
+as a limitation. However the goal is:
+
+- Try to migrate the entire state to Vuex.
+
+Set Vuex however you want.
+
+=== Challenge Solution (1/3)
+
+_Yeah, the thing is, you have to get your hands dirty, and overall, the course
+doesn't really give you much of an insight into what the mentality is. It is
+focused around the technicals, which are indeed still important, but most juniors
+get a warped sense of things if they only focus on the tutorial and hard skills_
+
+Anywho, this is the skeleton for a store, both root module and other modules:
+
+- index.js
+- actions.js
+- getters.js
+- mutations.js
+
+[IMPORTANT]
+====
+You need to understand the mechanics of the project. And also the domain of the
+problem the project aims to solve. Otherwise the store design and the way you
+laid out everything can just become cumbersome, since it's not really an abstraction
+of reality that's intuitive.
+====
+
+**BIG NOTE**
+
+Modules **DO NOT USE `createStore`, be careful, you will end up with weird errors
+and clashes**.
+
+```
+import mutations from "./mutations";
+import getters from "./getters";
+import actions from "./actions";
+
+const store = {
+    state() {
+        return {
+            items: [],
+            total: 0,
+            qty: 0
+        };
+    },
+    mutations: mutations,
+    getters: getters,
+    actions: actions,
+};
+
+export default store;
+```
+Modules should export a **plain JS object**
+
+Managed to migrate, and it was actually easier than I thought, (if you boilerplate
+the structure).
+
+**However the course does a "simplified version" of the previous structure**
+
+- store
+  - modules
+    - cart.js
+    - products.js
+  - index.js
+
+As you can see the biggest difference is that we are not splitting into all the
+multiple files, we are just keeping the store modules under **_one file_**.
+
+[NOTE]
+----
+To me, the fact that I went to each component/view, and then tried to understand
+the state that it managed, it made things way more intuitive what to move where,
+and how. The course does it more mechanically, it builds the whole structure as
+if following a formula, and doesn't really get into the domain, the logic, and
+something that grounds you. _Which I think is a risk when it comes to teaching
+the right lessons to students_
+----
+
+But yeah, it was oddly satisfying, how everyting _just werks_. After you have
+done the whole plumbing under the hood. It really feels easy to add more state
+management if you know what you are doing, and you know all the components and
+how they are interplaying.
+
+_Another thing the course emphasizes is to always have a `payload` as the parameter
+for your actions, whereas I just kept it to sometimes a number, and other times
+an object payload_
+
+_There was also a red herring in one component, that because you want to "put everything
+on the store"_ You are not realizing that a component such as `CartItem`, this is
+in a `for` rendered multiple times, and each instance should calculate something
+based on the `props`. I'm sure there will be people that without thinking too much,
+will try to put that into the store as well.
+
+=== Challenge Solution (2/3)
+
+
