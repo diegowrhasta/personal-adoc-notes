@@ -6275,3 +6275,110 @@ a. Longer-maturity bonds necessarily have longer durations
 b. The longer a bond's duration, the lower its volatility
 c. Other things equal, the lower the bond coupon, the higher its volatility
 d. If interest rates rise, bond durations rise also
+
+Answers:
+
+a. True. because longer-maturity bonds will inevitably be less subject to fluctuations.
+b. True. Because duration is a direct opposite measure of volatility
+c. True. Since it stabilizes by the end of its maturity, lower coupon has its value
+affected for quite some time
+d. False. Because interest rates inevitably cause volatility, something which goes
+in the opposite direction of duration
+
+Corrections:
+
+What exactly is duration?
+
+**Macaulay duration** is the weighted average time (in years) it takes to receive
+a bond's cash flows.
+
+For example, imagine a bond that pays:
+
+- $5 in one year
+- $5 in two years
+- $105 in three years
+
+Each payment contributes to the bond's duration according to its present value
+relative to the total bond price.
+
+- **Macaulay duration:** Weighted average time until cash flows are received
+- **Modified duration:** Estimates the percentage change in bond price for a
+1 percentage-point change in yield
+
+Modified duration is what connects duration to volatility.
+
+**Bond prices and yields move in opposite directions**
+
+a. A longer maturity usually means more distant cash flows, which tend to increase
+duration. However, the word **necessarily** makes this statement false.
+
+Consider two bonds:
+
+- Bond A: 10-year maturity, high coupon.
+- Bond B: 8-year maturity, very low coupon.
+
+Bond B can have a longer duration than Bond A because much more of its value comes
+from the distant principal payment.
+
+**The key:** Maturity is the final payment date; duration considers the timing and
+relative value of _all_ payments
+
+b. The longer a bond's duration, the lower its volatility
+
+Longer duration generally means greater sensitivity to interest-rate changes, and
+therefore greater price volatility.
+
+For example, using modified duration:
+
+Bond A
+
+Modified duration: 2 years, Yield rises 1%, +1 percentage point, Approx. price change -2%
+
+Bond B
+
+Modified duration: 8 years, Yield rises 1%, +1 percentage point, Approx. price change -8%
+
+**The key:** Higher duration generally means higher interest-rate risk
+
+c. Other things equal, the lower the bond coupon, the higher its volatility
+
+Why?
+
+A bond with a lower coupon returns less money to you during its lifetime. Consequently,
+a larger proportion of its value comes from the principal payment at maturity.
+
+Compare:
+
+- Bond A: 2% coupon, 10-year maturity.
+- Bond B: 8% coupon, 10-year maturity.
+
+Bond A receives less money along the way, so its duration is generally longer.
+Longer duration means greater sensitivity to interest-rate changes.
+**The key:** Lower coupon -> longer duration -> greater interest-rate sensitivity
+
+d. If interest rates rise, bond durations rise also
+
+False
+
+For a conventional option-free bond, when interest rates rise, its duration generally
+**decreases**
+
+Why?
+
+Duration is calculated using the present values of the bond's future cash flows.
+When interest rates increase, distant cash flows are discounted more heavily than
+nearer cash flows.
+
+Consequently, the relative weight of earlier payments increases, pulling the weighted
+average time closer to the present.
+
+The reverse happens when interest rates fall: duration generally increases.
+
+**So here are the four relationships worth remembering:**
+
+Maturity ↑ Usually duration ↑
+Duration ↑ Price sensitivity ↑
+Coupon ↑ Duration ↓
+Yield ↑ Duration ↓ generally
+
+
