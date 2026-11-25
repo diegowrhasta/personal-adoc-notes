@@ -10205,3 +10205,87 @@ management structure. And also, sharing and manipulating state becomes super eas
 
 === Module Introduction
 
+The idea is to combine all the concepts we saw into a project.
+
+- It's a simple website to find coaches, to contact the coach, view all the requests
+
+The idea is that we will be using all the concepts we saw, we will build a Big
+Vue Application. Everything should come together.
+
+- Build an entire app from the ground up
+- Add Routing & Vuex
+- Practice & Solve Problems
+
+=== Planning the Data Requirements
+
+The "Coach Finder" App.
+
+Will have two main features:
+
+- Find a Coach
+  - List all available coaches
+  - View coach details
+  - Register as a coach
+  - Contact a coach
+- Requests (Messages)
+  - Contact a coach
+  - View incoming requests
+
+The focus of the module is to add as many features as possible from Vue (something
+that in real life might not actually be the case)
+
+**IMPORTANT:** You need a plan that changes overtime, but the starting point is
+important.
+
+_There is no better method for planning_, you choose what to do and how.
+
+- Define **Features**
+  - Derive **Data** Models / Vuex Store Layout
+    - App-wide State & Getters
+    - Actions, Mutations
+  - Derive "Design" & Components / Layout
+
+_Advice:_ It's okay to start, and then change and iterate as you go. _Not plan for
+days_
+
+There's a designer that makes things look amazing. Better for a designer to take
+care of that part (or someone that knows his sh*)
+
+=== Planning the Data Requirements
+
+Data:
+
+Coaches: List of coaches
+
+Coach
+- id
+- first name
+- last name
+- description
+- rate
+
+Requests: List of requests => Every request should point to a coach
+
+- Request:
+  - coach ID -> Connection to Coaches
+  - message
+  - email
+
+This is a general plan, a simple data model.
+
+We can tie into the Vuex pattern now:
+
+Mutations:
+
+- Register
+- Set coaches
+- Contact coach
+- Set Requests
+
+When the app loads, we will load our coaches from a backend.
+
+Actions => Load coaches, load requests.
+
+=== Planning the Layout / Components
+
+
