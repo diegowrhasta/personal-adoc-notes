@@ -6434,3 +6434,153 @@ Bond C
 Longest duration:
 
 Bond A
+
+13. **Duration** Calculate the durations and volatilities of securities A, B, and
+C. Their cash flows are shown below. The interest rate is 8%
+
+Period 1
+
+A 40
+B 20
+C 10
+
+Period 2
+
+A 40
+B 20
+C 10
+
+Period 3
+
+A 40
+B 120
+C 110
+
+Answers
+
+A = Is probably longer than the other securities, it's a steady coupon.
+
+B = Period 3 seems to be maturity. You get 100 (Face Value) and 20 the last coupon
+
+C = Period 3 seems to be maturity. You get 100 (Face Value) and 10 the last coupon
+
+Corrections
+
+**Duration depends on the timing and present value of every cash flow**, not
+simply on the maturity date or whether coupons are steady.
+
+We have to calculate the present value of each cash flow
+
+PVt = CFt / 1.08^t
+
+**Period 1**
+
+Security A = 40 = 40 / 1.08^1 = $37.04
+
+Security B = 20 = 20 / 1.08^1 = $18.52
+
+Security C = 10 = 10 / 1.08^1 = $9.26
+
+**Period 2**
+
+Security A = 40 = 40 / 1.08^2 = $34.29
+
+Security B = 20 = 20 / 1.08^2 = $17.15
+
+Security C = 10 = 10 / 1.08^2 = $8.57
+
+**Period 3**
+
+Security A = 40 = 40 / 1.08^3 = $31.75
+
+Security B = 120 = 120 / 1.08^3 = $95.26
+
+Security C = 110 = 110 / 1.08^3 = $87.32
+
+**Total Prices**
+
+Security A = $103.08
+Security B = $130.93
+Security C = $105.15
+
+**Macaulay duration**
+
+t * (CASH FLOW SUM) / Total PV
+
+Security A
+
+D = 1(37.04) + 2(34.29) + 3(31.75) / 103.08
+D = 1.95
+
+Security B
+
+D = 1(18.52) + 2(17.15) + 3(95.26) / 130.93
+D = 2.59
+
+Security C
+
+D = 1(9.26) + 2(8.57) + 3(87.32) / 105.15
+D = 2.74
+
+**Volatility**
+
+Volatility is another word for **Modified Duration**
+
+Dmod = DMac / 1 + y
+
+Security A
+
+Dmod = 1.95 / 1.08 = 1.81
+
+Security B
+
+Dmod = 2.59 / 1.08 = 2.40
+
+Security C
+
+Dmod = 2.74 / 1.08 = 2.54
+
+[IMPORTANT]
+====
+Modified duration estimates the percentage price change for a 1 percentage-point
+change in yield:
+
+A: approximately 1.80% price change
+B: approximately 2.39% price change
+C: approximately 2.54% price change
+====
+
+For example, if interest rates rise by 1 percentage point, Security C's price is
+expected to fall approximately 2.54%, using the duration approximation.
+
+**What does this tell us?**
+
+Highest duration and volatility => Security C
+Lowest duration and volatility => Security A.
+
+With these parameters, you can make even further inferences about the bonds:
+
+- A: Its cash flows are distributed relatively evenly across the three periods.
+- B: A much larger proportion of its value arrives in Period 3.
+- C: An even larger proportion of its value arrives in Period 3 relative to its
+earlier payments
+
+A: 30.81% of its value comes in Period 3
+B: 72.76% of its value comes in Period 3
+C: 83.04% of its value comes in Period 3
+
+This explains why C has the longest duration: its value is concentrated most heavily
+in the distant future.
+
+**Takeaway:** Don't just look at when the security matures. Look at how much of
+its present value comes from each payment date. That's what determines duration
+and, consequently, interest-rate sensitivity.
+
+Basically => Shorter duration, better (sometimes), shorter volatility better (sometimes).
+It will always depend on what you are trying to get with a Bond. In the end, it's
+all about interpreting the data and the parameters.
+
+Example: _What if I want a bond with a really high duration and low volatility?
+Because I'm playing the long game in one way or the other_
+
+
