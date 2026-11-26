@@ -10288,4 +10288,139 @@ Actions => Load coaches, load requests.
 
 === Planning the Layout / Components
 
+- Components
+- Routes
 
+Let's start with routes. So the main pages to the application.
+
+/coaches => coachesList
+/coaches/:id => CoachDetails
+/register => CoachRegistration
+/contact => ContactCoach
+/requests => RequestsReceived
+
+Every page will be a component. Because you load components with the Vue router.
+
+On the layout side we would like to have a nav bar
+
+With Coaches - Requests => As buttons next to each other to the top right.
+
+CoachesList
+
+Filter -> Why don't we add an area of expertise to the coache?
+A list with the different coach items -> You click a coach item, and you are
+taken to the coach's details (alongside a contact button)
+
+_IMPORTANT:_ You start planning, and you then change the plan.
+
+Contact => Taken to a form to send a request to a coach
+
+REQUESTS: If clicked
+
+- We want to load a different page to render a list of requests
+  - Email, message => We can use that email to reply
+
+We could plan all the components right now. In paper. However, we will start drafting
+them on the project and on code.
+
+=== Registering Routes
+
+Basically, we have to download a project from the course, install packages, add
+vuex and vue-router. And we start by setting up routes:
+
+.router.js
+```
+import { createWebHashHistory } from "vue-router";
+
+const { createRouter } = require("vue-router");
+
+const router = createRouter({
+    history: createWebHashHistory(),
+    routes: [
+        { path: '/', component: null, redirect: '/coaches' },
+        { path: '/coaches', component: null },
+        {
+            path: '/coaches/:id', component: null, children: [
+                { path: 'contact', component: null }
+            ]
+        },
+        { path: '/register', component: null },
+        { path: '/requests', component: null },
+        { path: '/:notFound(.*)', component: null },
+    ],
+});
+
+export default router;
+```
+
+Empty, everything is barebones as of now. But we need to start somewhere and with
+a mental model to kickstart this.
+
+=== Adding Route Page Components
+
+```
+src/pages
+├── NotFound.vue
+├── coaches
+│   ├── CoachDetauls.vue
+│   ├── CoachRegistration.vue
+│   └── CoachesList.vue
+└── requests
+    ├── ContactCoach.vue
+    └── RequestsReceived.vue
+```
+This is how the structuer of the pages is
+
+We can wire these up now:
+
+```
+import { createWebHashHistory } from "vue-router";
+
+import CoachesList from "./pages/coaches/CoachesList.vue";
+import CoachDetails from "./pages/coaches/CoachDetails.vue";
+import CoachRegistration from "./pages/coaches/CoachRegistration.vue";
+import ContactCoach from "./pages/requests/ContactCoach.vue";
+import RequestsReceived from "./pages/requests/RequestsReceived.vue";
+import NotFound from "./pages/NotFound.vue";
+
+const { createRouter } = require("vue-router");
+
+const router = createRouter({
+    history: createWebHashHistory(),
+    routes: [
+        { path: '/', redirect: '/coaches' },
+        { path: '/coaches', component: CoachesList },
+        {
+            path: '/coaches/:id', component: CoachDetails, children: [
+                { path: 'contact', component: ContactCoach }
+            ]
+        },
+        { path: '/register', component: CoachRegistration },
+        { path: '/requests', component: RequestsReceived },
+        { path: '/:notFound(.*)', component: NotFound },
+    ],
+});
+
+export default router;
+```
+
+After wiring them up, we should also create the main container for the app: `App.vue`,
+and then put everything together in `main.js`:
+
+```
+import { createApp } from 'vue';
+
+import router from './router';
+import App from './App.vue';
+
+const app = createApp(App);
+
+app.use(router);
+
+app.mount('#app')
+
+```
+
+Now, since the first page that we are going to see when jumping into the website
+is the Coaches list. We might as well start there, building up as we are taken
+through the user journey.
