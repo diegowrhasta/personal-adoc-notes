@@ -4155,4 +4155,185 @@ more fruitful conclusion.
 
 === Day 2 - The 5 Steps to Build Any CrewAI Project with Tools and Context
 
+Let's build another project and get even deeper into CrewAI
+
+**Agent:** An autonomous unit, with an LLM, a role, a goal, a backstory, memory,
+tools
+
+**Task:** A specific assignment to be carried out, with a description, expected
+output, agent
+
+**Crew:** A team of Agents and Tasks; either: Sequential: run tasks in order they
+are defined, Hierarchical: Use a Manager LLM to assign
+
+**Sequential:** You can define dependencies too. So that one task runs only
+after another has finished (or was successful or failed). This is akin to **Orchestrating
+by code**. _Hierarchical:_ It's akin to Orchestrating by agents.
+
+==== The Five Steps to create a crew project
+
+1. Create the project with `crewai create crew my_project` => And answer the questions,
+(generally 1 - 1...), all defaults, and deleve the `.env`
+2. Fill in the config yaml files to define the **Agents** and **Tasks**
+3. Complete the crew.py module to create the Agents, Tasks and Crew, referencing
+the config. The text that you use to describe the agent, has to be exactly the same
+as the one in the yaml file. This step is manually intensive and error prone. And
+that is because it's really boiler-plaity. (The `yaml` approach is one way of
+doing things, but you can just use python code, instead of relying on fields).
+**They key in the python code, has to connect to the yaml key**. Some information
+of the agent can be added through the python code. **The recommendation is to keep
+static information in the yaml file**
+4. Update `main.py` to set any inputs. The only edit you have to make here, is basically
+the dictionary definition and the kick-off function
+5. Run with: `crewai run`
+
+**Tools** -> You can equip your agents with capabilities and features that are
+ready to be consumed by your agents (you don't code them yourself)
+**Context** -> This is a way to pass information from one task to another
+
+=== Build a Financial Researcher Crew with YAML, Context, and Tools
+
+You know the drill
+
+`crewai create crew brother`, delete .env
+
+Now
+
+**YAML files**. And yes, the course, does the same thing _just copy the reference_.
+But I think the value, what is actually going to set you apart **is the fact that
+you need to get into the mindset and do good prompting**
+
+**It's always a good practice to include success criteria within the goal**
+
+Basically, we will have two agents:
+
+- A Senior Financial Researcher for {company}
+- A Market Analyst and Report writer focused on {company}
+
+The Crew team, has figured out that this sort of structure and lingo you use when
+building Agentic projects, hence their framework works in the way it works.
+
+**tasks.yaml**
+
+research_task => This is for the researcher agent. **You can highlight within your
+tasks to use information up to some date to really emphasize to the agent that
+this is important**
+
+analysis_task => This is for the analyst agent. And we can also output:
+
+`output_file:` output/report.md
+
+And a new key is here:
+
+```
+context:
+	- research_task
+```
+This key ensures, that the context from anothertask can be exposed to the task.
+
+**This is Framework Voodoo**, because you don't know exactly how is it that
+the X task is sharing its context with Y task.
+
+_In the debater: We didn't set context. Yet it was aware, and worked fine_
+
+And that is because by default the framework will inject **all the contexts from
+all prior tasks**. _Only when you are explicit, only then the context you pointed
+out will be the only one loaded_
+
+_It's nice to be explicit, and to be aware of the voodoo_
+
+**Tools**
+
+This is something that comes out the box with Crew. There are tons of tools.
+
+When you use tools in Crew, you can stitch in a tool that is already written, or
+you can write one tool yourself.
+
+**In the docs you can see all the tools**
+
+`SerperDevTool` => This is a great tool to do web searches. We used OpenAI's
+search tool that costed 1 cent a search.
+
+There are even **paid tools**.
+
+`serper.dev` => This is a "freemium" tool. Which is basically an API. But you have
+to SUBSCRIBE.
+
+Create an account - verify your email.
+
+And then, under the API keys section, you can copy the default key your account
+automatically has assigned.
+
+And then under the `.env` file we can add this key under `SERPER_API_KEY=`
+
+=== Add the Serper Tool to a CrewAI Financial Researcher and Run It
+
+Copy the `crew.py` module from the reference.
+
+We need to register our agents and tasks, and they need to map to the yaml keys:
+
+```
+@agent
+def analyst(self) -> Agent:
+    return Agent(
+        config=self.agents_config['analyst'],
+        verbose=True
+    )
+
+@task
+def research_task(self) -> Task:
+    return Task(
+        config=self.tasks_config['research_task']
+```
+
+Because crewai comes with batteries included:
+
+```
+@agent
+def researcher(self) -> Agent:
+    return Agent(
+        config=self.agents_config['researcher'],
+        verbose=True,
+        tools=[SerperDevTool()]
+    )
+```
+You can just import the `SerperDevTool` function from a crewai module that comes
+with everything we installed.
+
+The `.env` convention is expected by this function. Hence we had to add ourselves.
+
+If you want to turn on traces:
+
+`crewai traces enable`
+
+You will make sure that by the end of the run, we will have the crewai traces
+generated.
+
+After, everything is done. We should see how serper is being used for making
+google searches. And how the analyst and reporter works on the information queried.
+
+[IMPORTANT]
+====
+The key here is to keep refining. Go back and tweak the agents, the tasks, all
+so that you get to a better result **you are envisioning**
+====
+
+The crewai traces tool, is **free*, you just get a nice website that interprets
+all the captured traces.
+
+**In the traces, you can see the system prompts that are built based on the yaml
+files we set up**
+
+On each task execution, there's tons of information, the user prompts, the system
+prompts, and many other things that add more context as to how the execution took
+place.
+
+The Framework Voodoo makes things happen so that the prompts are structured
+in a certain way.
+
+_Spend quality time with the traces, observe the LLM calls, see how they are
+addressing the tasks they are being asked to perform_
+
+=== Day 3 - Stock Picker Crew: Structured Outputs, Custom Tools, Memory
+
 
