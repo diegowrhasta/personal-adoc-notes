@@ -6583,4 +6583,78 @@ all about interpreting the data and the parameters.
 Example: _What if I want a bond with a really high duration and low volatility?
 Because I'm playing the long game in one way or the other_
 
+14. **Duration** Calculate durations and modified durations for the 3% bonds in Table 3.2.
+You can follow the procedure set out in Table 3.4 for the 9% coupon bonds. Confirm
+that modified duration closely predicts the impact of a 1% change in interest rates
+on the bond prices.
 
+Coupon 3%
+
+Price $ = 939.98
+
+Year 1: $30
+Year 2: $30
+...
+Year 6: $30
+Year 7: $1,030
+
+YTM: 4%
+
+Year 1: 30 / 1.04^1 = $28.85
+Year 2: 30 / 1.04^2 = $27.74
+Year 3: 30 / 1.04^3 = $26.67
+Year 4: 30 / 1.04^4 = $25.65
+Year 5: 30 / 1.04^5 = $24.66
+Year 6: 30 / 1.04^6 = $23.71
+Year 7: 1030 / 1.04^7 = $782.72
+
+Total = $940
+
+Macaulay Duration:
+
+D = 1(28.85) + 2(27.74) + 3(26.67) + 4(25.65) + 5(24.66) + 6(23.71) + 7(782.72) / 940
+D = 6.40
+
+Modified Duration:
+
+D = DMac / 1 + y
+D = 6.40 / 1.04
+D = 6.15
+
+
+So, if we raise YTM to 5%
+
+Year 1: 30 / 1.05^1 = $28.57
+Year 2: 30 / 1.05^2 = $27.21
+Year 3: 30 / 1.05^3 = $25.92
+Year 4: 30 / 1.05^4 = $24.68
+Year 5: 30 / 1.05^5 = $23.51
+Year 6: 30 / 1.05^6 = $22.39
+Year 7: 1030 / 1.05^7 = $732
+
+Total: $884.28
+
+Comparison = 884.28 / 940 = 0.94 = 0.06 change. Indeed 0.0615 almost 0.06, yeah?
+
+**EXTRA:**
+
+The results aren't exactly equal.
+
+**And that is because modified duration is a linear approximation of the relationship
+between bond prices and yields**
+
+The actual relationship is curved, not perfectly straight. This curvature is called
+_convexity_.
+
+Duration estimates the price change using a straight-line approximation. For a
+conventional bond, when yields rise, the actual price decline is generally slightly
+smaller than the duration estimate because of positive convexity.
+
+That's why:
+
+- Predicted loss: 6.15%
+- Actual loss: 5.93%
+
+15. Find the spreadsheet for Table 3.4 in Connect. Show how duration and volatility
+change if (a) the bond's coupon is 8% of face value and (b) the bond's yield is 6%.
+Explain your finding.
