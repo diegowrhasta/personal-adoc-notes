@@ -10424,3 +10424,243 @@ app.mount('#app')
 Now, since the first page that we are going to see when jumping into the website
 is the Coaches list. We might as well start there, building up as we are taken
 through the user journey.
+
+=== Working on the Main Layout & Styling
+
+.CoachesList.vue
+```
+<template>
+    <section>
+        FILTER
+    </section>
+    <section>
+        LIST OF COACHES
+    </section>
+</template>
+```
+You can literally draft things like this. And then abstract further, or refactor
+and so on.
+
+You can run the dev server, and we should be able to see this initial dummy content.
+
+_Of course there are no styles, of course content looks basic and really bad_.
+But a simple run can help us debug if we are going the right way.
+
+_NOTE:_ When you serve a Vue app and there are components without anything in them,
+the compiler will pick up on that and complain. (You need to at least have `<template>`).
+The site still runs, yet it will break if trying to render such components.
+
+We will download `.css` files to speed up the process. A global style under `App.css`
+will be applied.
+
+_Like a font `Roboto` and other base overrides_
+
+_Now we can choose to fill-in data_. Or then fill-in dummy code. Fire-up navigation
+and base layout.
+
+Let's go for that.
+
+On top of `App.vue` we can put a header component:
+
+```
+<template>
+    <the-header></the-header>
+    <router-view></router-view>
+</template>
+```
+
+This header component should be under: `/src/components/layout/TheHeader.vue`
+
+```
+<template>
+    <header>
+        <nav>
+            <h1><router-link to="/">Find a Coach</router-link></h1>
+            <ul>
+                <li><router-link to="/coaches">All Coaches</router-link></li>
+                <li><router-link to="/requests">Requests</router-link></li>
+            </ul>
+        </nav>
+    </header>
+</template>
+```
+
+On top of special styles for it. We should have
+
+=== Wiring Up Pages
+
+Now dummy content to other pages.
+
+- `RequestsReceived.vue` is easy to get
+- Other pages however are not hard to get to right now, there are no direct links.
+
+[NOTE]
+====
+Careful on the `createWebHistory` import when setting up the `router`. There's a
+`createWebHashHistory` function that might get imported wrongly. And it behaves
+strangely with the conventions of the former. **So you will have weird behaviors**
+====
+
+You can then layout some content:
+
+.CoachDetails.vue
+```
+<template>
+    DETAILS FOR COACH
+    <router-view></router-view>
+    <router-link to="/coaches/c1/contact">GO</router-link>
+</template>
+```
+
+The router will allow us to navigate to the child route of the coach details page.
+Now, bear in mind that unless we render a `router-view` here, we won't be able
+to visualize anything and that's due to the nature of parent and child routes
+conventions. You need a second `router-view` to render content that is a child
+of the parent route's component.
+
+=== Adding Vuex and Coach Data
+
+Let's now setup the Vuex store so that we can start rendering data/content.
+
+- store => A new folder, in which we will save a module that has static data for
+now (`coaches.js`). And inside we can setup modules, one file for the entire
+module, or multiple files. Alongside the respective `index.js` files.
+
+And the template for the modules will be:
+
+- actions.js
+- getters.js
+- index.js
+- mutations.js
+
+**This might be overkill for this project, but let's practice the higher level patterns**
+
+So, let's wire up the module:
+
+```
+import { createStore } from "vuex";
+
+import coachesModule from './modules/coaches/index'
+
+const store = createStore({
+    modules: {
+        coaches: coachesModule
+    }
+});
+
+export default store;
+```
+
+And then the coaches module
+
+```
+import mutations from './mutations';
+import actions from './actions';
+import getters from './getters';
+
+export default {
+    namespaced: true,
+    state() {
+        return {
+            coaches: [
+                {
+                    id: 'c1',
+                    firstName: 'Maximilian',
+                    lastName: 'Schwarzmüller',
+                    areas: ['frontend', 'backend', 'career'],
+                    description:
+                        "I'm Maximilian and I've worked as a freelance web developer for years. Let me help you become a developer as well!",
+                    hourlyRate: 30
+                },
+                {
+                    id: 'c2',
+                    firstName: 'Julie',
+                    lastName: 'Jones',
+                    areas: ['frontend', 'career'],
+                    description:
+                        'I am Julie and as a senior developer in a big tech company, I can help you get your first job or progress in your current role.',
+                    hourlyRate: 30
+                }
+            ]
+        };
+    },
+    mutations,
+    actions,
+    getters
+}
+```
+
+Don't forget that on the `main.js` we have to wire the root module of the store
+with `app.use(store)`. And with all of that we can start consuming the store:
+
+```
+<template>
+    <section>
+        FILTER
+    </section>
+    <section>
+        <div class="controls">
+            <button>Refresh</button>
+            <router-link to="/register">Register as a coach</router-link>
+        </div>
+        <ul>LIST OF COACHES</ul>
+        <li v-for="coach in filteredCoaches" :key="coach.id">{{ coach.firstName }}</li>
+    </section>
+</template>
+
+<script>
+import { mapGetters } from 'vuex';
+
+export default {
+    computed: {
+        filteredCoaches() {
+            return this.$store.getters['coaches/coaches'];
+        },
+        ...mapGetters([])
+    }
+}
+</script>
+```
+Notice how we are accessing the getters with a specific syntax. Since our coaches
+module is `namespaced` we have to access it with the key that is defined in the
+root module's `modules`. And then we can access the getter under that module.
+
+
+We can then configure a bit of the idea behind rendering only if coaches exist:
+
+```
+<template>
+    <section>
+        FILTER
+    </section>
+    <section>
+        <div class="controls">
+            <button>Refresh</button>
+            <router-link to="/register">Register as a coach</router-link>
+        </div>
+        <ul v-if="hasCoaches">
+            <li v-for="coach in filteredCoaches" :key="coach.id">{{ coach.firstName }}</li>
+        </ul>
+        <h3 v-else>No coaches found.</h3>
+    </section>
+</template>
+
+<script>
+import { mapGetters } from 'vuex';
+
+export default {
+    computed: {
+        filteredCoaches() {
+            return this.$store.getters['coaches/coaches'];
+        },
+        hasCoaches() {
+            return this.$store.getters['coaches/hasCoaches'];
+        },
+        ...mapGetters([])
+    }
+}
+</script>
+```
+_Note:_ I left the `mapGetters` because to me it's an easier wiring up, but for now
+we are still adding another layer of a `computed` property to get to the store's
+getters for the `coaches` module.
