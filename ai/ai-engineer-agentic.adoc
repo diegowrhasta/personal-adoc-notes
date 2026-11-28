@@ -4336,4 +4336,265 @@ addressing the tasks they are being asked to perform_
 
 === Day 3 - Stock Picker Crew: Structured Outputs, Custom Tools, Memory
 
+Five Steps
+
+1 - Create the project with crewai create crew my_project
+2 - Fill in the config yaml files to define the Agents and Tasks
+3 - Complete the crew.py module to create the Agents, Tasks and Crew, referencing
+the config
+4 - Update main.py to set any inputs
+5 - crewai run
+
+**Going deeper again...**
+
+Structured outputs => They are very similar to the OpenAI Agents SDK's way of
+leveraging structured outputs.
+
+- It uses pydantic
+- We will create our own custom tool => And it's done with a `decorator`
+- Hierarchical process => Agent managing tasks
+
+...and an improved Crew AI feature: **unified memory**.
+
+Previous crewai versions had **4 memory types** and you had to set all of them
+up manually. Alongside confusion on their usage.
+
+_Now, CrewAI has a simple construct called `Unified memory`_
+
+- It's incredibly easy to turn-on memory. It's heavily abstracted from you. So
+you don't know how to debug, and you don't know what's really happening. Traces
+help you and can give you a window into the framework, but, it definitely is not
+"pretty".
+
+_The Crew way is to trust the framework and go with the flow_
+
+**Connecting your traces**
+
+1 Visit https://app.crewai.com and sign up for a free account
+2 In the Terminal in Cursor, run `crewai login` to connect
+3 Either set `tracing=True` in the `Crew()` constructor or `CREWAI_TRACING_ENABLED=true`
+env variable or `crewai tracing enable`
+
+_In short, you just have to create an account in another platform_
+
+**Let's make a STOCK PICKER**
+
+=== Define Pydantic Structured Outputs for the Stock Picker Crew
+
+_And you know the drill, copy-paste from reference_
+
+Agents:
+
+- trending_company_finder = Financial News Analyst that finds trending companies
+in a sector.
+- financial_researcher = Analyse trending companies
+- stock_picker = List of researched companies, you pick the best one for investment
+
+Tasks:
+
+Basically, the tasks are specific descriptions of things that an agent can do.
+That doesn't mean each agent will use all the tasks, but it's a good way to organize
+your content.
+
+Going into `crew.py` we have to add Pydantic classes:
+
+[source, python]
+----
+class TrendingCompany(BaseModel):
+    """ A company that is in the news and attracting attention """
+    name: str = Field(description="Company name")
+    ticker: str = Field(description="Stock ticker symbol")
+    reason: str = Field(description="Reason this company is trending in the news")
+
+class TrendingCompanyList(BaseModel):
+    """ List of multiple trending companies that are in the news """
+    companies: list[TrendingCompany] = Field(description="List of companies trending in the news")
+
+class TrendingCompanyResearch(BaseModel):
+    """ Detailed research on a company """
+    name: str = Field(description="Company name")
+    market_position: str = Field(description="Current market position and competitive analysis")
+    future_outlook: str = Field(description="Future outlook and growth prospects")
+    investment_potential: str = Field(description="Investment potential and suitability for investment")
+
+class TrendingCompanyResearchList(BaseModel):
+    """ A list of detailed research on all the companies """
+    research_list: list[TrendingCompanyResearch] = Field(description="Comprehensive research on all trending companies")
+----
+_Again, the course sort of gives you everything chewed already_ That's both good,
+both bad. All these objects are thought of, in such a way that they carry data
+that the agents can leverage to then get to the end goal. It's actually clever,
+and smart. But the focus is mostly around the syntax, the structure. I think the
+way of thinking, the **abstraction mentality** is the gold mine here.
+
+If we analyze further the `crew.py` project, we will see how we define the agents
+and tasks with decorators `@agent`, `@task`
+
+`send_push_notification` => A new tool assigned to the `stock_picker`. This is
+a custom tool we ourselves will code.
+
+`output_pydantic=TrendingCompanyList` => This is a parameter you can set in your
+definitions. Once you define this, json will be output, and all will work. It's
+super simple actually to hook up structured outputs.
+
+=== Custom Tools, Memory, and Hierarchical Process in CrewAI
+
+Inside of the folder, there's a `tools` folder. You are supposed to code your
+custom tools for your agents here.
+
+There is an old clunky way, and a wizzy way.
+
+We will do the wizzy way:
+
+```
+from crewai.tools import tool
+import os
+import requests
+
+
+@tool("Send Push Notification")
+def send_push_notification(message: str) -> str:
+    """
+    Use this tool to send a push notification to the user.
+    Args:
+        message: The message to be sent as a push notification to the user.
+    Returns:
+        A string indicating the status of the push notification.
+    """
+    pushover_user = os.getenv("PUSHOVER_USER")
+    pushover_token = os.getenv("PUSHOVER_TOKEN")
+    pushover_url = "https://api.pushover.net/1/messages.json"
+    payload = {"user": pushover_user, "token": pushover_token, "message": message}
+    result = requests.post(pushover_url, data=payload).status_code
+    return f"Push notification sent with API response code: {result}"
+```
+We use `docstring` to define the tool and how it's supposed to be used. And then
+the code that actually makes things happen. (We are actually going to reuse the
+notification send logic)
+
+```
+@agent
+def trending_company_finder(self) -> Agent:
+    return Agent(config=self.agents_config['trending_company_finder'],
+                 tools=[SerperDevTool()], memory=True)
+```
+Notice how we have `memory=True`. We can turn this off or not
+
+```
+@crew
+def crew(self) -> Crew:
+    """Creates the StockPicker crew"""
+    # To learn how to add knowledge sources to your crew, check out the documentation:
+    # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
+
+    manager = Agent(
+        config=self.agents_config['manager'],
+        allow_delegation=True
+    )
+        
+    return Crew(
+        agents=self.agents,
+        tasks=self.tasks, 
+        process=Process.hierarchical,
+        verbose=True,
+        memory=True,
+        tracing=True,
+        manager_agent=manager
+    )
+```
+
+And also notice how on our `return Crew` we have `tracing=True`
+
+**Again, crazy easy to setup memory**
+
+```
+return Agent(config=self.agents_config['trending_company_finder'],
+			tools=[SerperDevTool()], memory=True)
+```
+A simple parameter set to `True`
+
+**Running the stock picker**
+
+Once you have run the stock picker. You can easily check the `outputs` folder
+to see both the json outputs from the tools, what the agents used as pydantic
+objects, and by the end a `decision.md` file with all the decisions made by the
+AI agent.
+
+```
+manager:
+  role: >
+    Manager
+  goal: >
+    You are a skilled project manager who can delegate tasks in order to achieve your goal, which is to pick the best company for investment.
+  backstory: >
+    You are an experienced and highly effective project manager who can delegate tasks to the right people.
+  llm: openai/gpt-5.4-mini
+```
+This is a new agent, that will take care of spinning up more agents. Careful on
+this step though, the errors that might come up are super hard to debug.
+
+When creating a Crew, you simply have to pass down a `manager_agent`, and we can
+change the `process` parameter to `Process.hierarchical`
+
+```
+@crew
+def crew(self) -> Crew:
+    """Creates the StockPicker crew"""
+    # To learn how to add knowledge sources to your crew, check out the documentation:
+    # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
+
+    manager = Agent(
+        config=self.agents_config['manager'],
+        allow_delegation=True
+    )
+        
+    return Crew(
+        agents=self.agents,
+        tasks=self.tasks, 
+        process=Process.hierarchical,
+        verbose=True,
+        memory=True,
+        tracing=True,
+        manager_agent=manager
+    )
+```
+
+This is not the rigorous way. Now we let the agent do its thing, he will have
+the power to spin up agents himself.
+
+**This didn't happen to me, but to the course it did** => Ah, probably because the
+push notification tool is not wired up correctly. But the code should be as
+resilient as it can finish without that.
+
+There was a detail stating:
+
+`Memory Saved`
+
+- If you bring up the traces you should see all the information in regards as
+to what happened. There will be an indicator stating `hierarchical`
+
+With memory, Crew inserts in the prompt:
+
+# Memories from past conversations:
+Relevant memories:
+balbalbalbalblablaba
+
+Crew basically looks at past runs/conversations and inserts all the extra context
+and information. RAG got added in to the agent _automatically_.
+
+This is really powerful, but **we didn't get a say**. And most times _it just werks).
+But when it doesn't, it's a head-scratcher. You have to hone it yourself, get your
+hands dirty and so on.
+
+[NOTE]
+====
+We need an evaluation loop. So that the AI learns from the results it gets and
+iterates. **Don't make financial decisions with this demo project**.
+
+Another thing, do not just **start creating multiple agents**. _Begin with one
+agent, one task_. Only scale up **WHEN IT MAKES SENSE**
+====
+
+=== Day 4 - Build a CrewAI Coding Agent: Intro and Installing Docker
+
 
