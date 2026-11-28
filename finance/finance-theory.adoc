@@ -6658,3 +6658,43 @@ That's why:
 15. Find the spreadsheet for Table 3.4 in Connect. Show how duration and volatility
 change if (a) the bond's coupon is 8% of face value and (b) the bond's yield is 6%.
 Explain your finding.
+
+_Paywalled my guy_
+
+Still, we can let チャーピー do it.
+
+Basically.
+
+Baseline:
+
+Duration = 5.69
+Modified Duration (volatility) = 5.47
+
+Coupon 8%:
+
+Duration = 5.79
+Modified Duration (volatility) = 5.56
+
+Yield 6%
+
+Duration = 5.61
+Modified Duration (volatility) = 5.29
+
+Yield => Goes up, duration goes down, volatility goes down. - WHY?
+- Higher interest rates discount distant cash flows more heavily than near-term
+cash flows. This shifts the relative importance of the earlier payments upward.
+Coupon => Goes down, duration goes up, volatility goes up - WHY?
+- The bond pays less money in the earlier coupon periods. Consequently, more of
+its value is concentrated in the final principal payment. That pushes the weighted
+average time of its cash flows further into the future.
+
+Corrections
+
+So a rule of thumb:
+
+. Lower coupon -> Higher duration -> Higher interest-rate sensitivity
+. Higher YTM -> Lower duration -> Lower interest-rate sensitivty, generally for
+conventional option-free bonds
+
+- Changing the coupon or yield changes the timing and present-value weighting of
+the bond's cash flows, which in turn changes its duration and interest-rate risk.
